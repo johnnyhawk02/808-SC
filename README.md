@@ -82,7 +82,7 @@ tail is counted.
   hit the table's decay times.
 
 Hosting: `.github/workflows/pages.yml` publishes the bench to GitHub Pages
-(https://johnnyhawk02.github.io/tr808/) on every push to `main`. One-time
+(https://johnnyhawk02.github.io/Tr808/) on every push to `main`. One-time
 setup: Settings > Pages > Source: "GitHub Actions".
 
 Running locally: any static server, e.g. `python3 -m http.server`, then open
