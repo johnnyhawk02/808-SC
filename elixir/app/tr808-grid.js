@@ -79,7 +79,27 @@ const g8Cells = {}, g8Labs = {};
 }
 // the side panel: the controls of the sound last put on a lane (or whose name was tapped)
 for (const id of T8_ORDER) t8Card(id, $('m-g8-side'));
-function g8Select(id) { g8.sel = id; g8Save(); g8Draw(); }
+// Picking a sound that plays cached turns it to the circuit, so its knobs are heard as they move; moving on (another
+// sound, or off the grid page) without touching a knob turns it back to cached. Once a knob moves it stays on the
+// circuit (until cache is pressed, which records it and plays it cached).
+let g8Auto = null; // { id, moved }
+function g8Unauto() {
+  const a = g8Auto; g8Auto = null;
+  if (a && !a.moved && t8.models[a.id] === 'circuit') g8SetModel(a.id, 'cached');
+}
+function g8Select(id) {
+  if (g8Auto?.id !== id) {
+    g8Unauto();
+    if (t8.models[id] === 'cached') { g8Auto = { id, moved: false }; g8SetModel(id, 'circuit'); }
+  }
+  g8.sel = id; g8Save(); g8Draw();
+}
+// (a knob moved by hand, or a model picked by hand, keeps it as it is)
+const g8SetKnob = t8SetKnob;
+t8SetKnob = function (id, p, x, save = true) { if (save && g8Auto?.id === id) g8Auto.moved = true; return g8SetKnob(id, p, x, save); };
+const g8SetModel = t8SetModel;
+t8SetModel = function (id, m) { if (g8Auto?.id === id) g8Auto = null; return g8SetModel(id, m); };
+new MutationObserver(() => { if ($('m').dataset.page !== 'grid') g8Unauto(); }).observe($('m'), { attributes: true, attributeFilter: ['data-page'] });
 function g8Load(pr) {
   g8.lanes = g8Empty();
   for (const id in pr.l) for (let s = 0; s < 16; s++) {
