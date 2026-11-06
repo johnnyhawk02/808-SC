@@ -1,0 +1,525 @@
+<meta charset="utf-8">
+<title>Elixir 808</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+/* Phones and tablets get the laptop layout, shrunk to fit: the page is laid out at least 1280 x 710 (the smallest
+   laptop window it was made for, wider on a long phone so it fills the height) and the browser scales that down to
+   the screen. Landscape only: held upright it shows a note to turn it sideways (.m-turn). */
+(() => {
+  if (!matchMedia('(pointer: coarse)').matches) return;
+  document.documentElement.classList.add('fit');
+  const vp = document.querySelector('meta[name="viewport"]');
+  let last = 0;
+  const fit = () => {
+    const land = innerWidth >= innerHeight;
+    let w = Math.max(1280, Math.ceil(710 * (land ? innerWidth / innerHeight : 1) / 10) * 10);
+    if (Math.abs(w - last) < 40) w = last; // (a small change is rounding from the last fit: keeping it stops the page see-sawing)
+    const dev = land ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height), s = +(dev / w).toFixed(4);
+    const c = `width=${w}, initial-scale=${s}, minimum-scale=${s}, maximum-scale=${s}, user-scalable=no, viewport-fit=cover`;
+    if (vp.content !== c) { last = w; vp.content = c; }
+  };
+  fit(); addEventListener('resize', fit); addEventListener('orientationchange', () => setTimeout(fit, 300));
+  // (where the browser can, the note offers full screen held in landscape: Android Chrome; iPhones can't)
+  addEventListener('DOMContentLoaded', () => {
+    const b = document.getElementById('m-turn-fs'), el = document.documentElement;
+    if (!el.requestFullscreen || !screen.orientation?.lock) return;
+    b.hidden = false;
+    b.onclick = () => el.requestFullscreen().then(() => screen.orientation.lock('landscape')).catch(() => {});
+  });
+})();
+</script>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1b1d1a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="description" content="Elixir 808: Elixir Desktop's drum machine with the TR-808 circuit-modelled voices on its tracks, beside the LXR-02 engine port.">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=VT323&display=swap">
+<style>
+/*@CSS@*/
+</style>
+
+<main class="m" id="m">
+  <header class="m-top">
+    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i>@VER@</small></b>
+    <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
+    <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
+    <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
+    <button class="m-toggle m-setbtn m-helpbtn" id="m-help-open" type="button" aria-label="Help me!"><span class="m-help-long">help me!</span><span class="m-help-short" aria-hidden="true">?</span></button>
+    <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
+  </header>
+  <section class="m-card m-trans">
+    <button class="m-play" id="m-play" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M7 4.5v15l13-7.5z"/><rect class="i-stop" x="5.5" y="5.5" width="13" height="13" rx="2"/></svg><span>play</span></button>
+    <button class="m-rec" id="m-rec" type="button" aria-pressed="false" aria-label="Record"><i></i><span id="m-rec-t">rec</span></button>
+    <button class="m-rec m-loop" id="m-loop" type="button" aria-pressed="false" aria-label="Record a loop"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h9a4 4 0 0 1 0 8h-1"/><path d="M17 17H8a4 4 0 0 1 0-8h1"/><path d="M14 4l3 3-3 3"/><path d="M10 20l-3-3 3-3"/></svg><span id="m-loop-t">loop</span></button>
+  </section>
+
+  <div class="m-pages" id="m-pages">
+  <div class="m-panel" data-m-panel="play">
+    <section class="m-card m-play-card"><div class="m-faders" id="m-faders"></div><div id="m-perf-src" hidden></div>
+      <div class="m-mutes" id="m-mutes"><div class="m-mutes-head"><b>verb · echo · level</b><button class="m-toggle" id="m-mute-clear" type="button">clear</button></div><div class="m-mute-rows" id="m-mute-rows"></div></div></section>
+    <section class="m-card m-rand-card" aria-label="randomise">
+      <div class="m-rand">
+        <label class="m-chk m-nextbar"><input id="m-nextbar" type="checkbox"><i aria-hidden="true"></i>next bar</label>
+        <label class="m-chk m-nextbar"><input id="m-assign" type="checkbox"><i aria-hidden="true"></i>assign</label>
+        <button class="m-btn m-big" id="m-everything" type="button">everything</button>
+        <button class="m-btn" id="m-kit" type="button">kit</button>
+        <button class="m-btn" id="m-alter" type="button">alter</button>
+        <button class="m-btn" id="m-pattern" type="button">pattern</button>
+        <button class="m-btn" id="m-xrand" type="button">crossfeed</button>
+        <button class="m-btn" id="m-fx-rand" type="button">random fx</button>
+        <button class="m-btn" id="m-fx-alter" type="button">alter fx</button>
+        <button class="m-btn" id="m-undo" data-m-undo type="button" disabled>undo</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="m-panel" data-m-panel="beat">
+    <section class="m-card m-beat-card"><div class="m-faders" id="m-beat-faders"></div><div class="m-dens"><b>density</b><div class="m-faders" id="m-dens-faders"></div></div></section>
+  </div>
+
+  <div class="m-panel" data-m-panel="dice">
+    <section class="m-card m-dice-card">
+      <div class="m-voice" id="m-voice" role="tablist" aria-label="voice"></div>
+      <div class="m-voice m-vsec" id="m-vsec" role="tablist" aria-label="section"></div>
+      <div class="m-vsets" id="m-vsets"></div>
+    </section>
+  </div>
+
+  <div class="m-panel" data-m-panel="t808">
+    <section class="m-card m-808-card" aria-label="TR-808 voices">
+      <div class="m-voice m-808-tracks" id="m-808-tracks" role="tablist" aria-label="track"></div>
+      <div class="m-808-pick" id="m-808-pick" role="group" aria-label="808 voice on this track"></div>
+      <div class="m-808-body" id="m-808-body">
+        <div class="m-808-head"><b id="m-808-name"></b>
+          <span class="m-808-models" role="group" aria-label="model"><button class="m-toggle" type="button" data-m808="circuit" title="The component-level circuit simulation: every knob works, costs CPU">circuit</button><button class="m-toggle" type="button" data-m808="cached" title="16 normal + 16 accented hits rendered by the circuit, one picked at random per hit. Level, decay and the clap's snap stay live. Almost no CPU">cached</button></span></div>
+        <div class="m-808-knobs" id="m-808-knobs"></div>
+        <div class="m-808-cache"><button class="m-btn" id="m-808-cache-go" type="button" title="Render 16 normal + 16 accented hits through the circuit at these knob settings, keep them in this browser and play them as cached">cache</button><span class="m-808-status" id="m-808-status" aria-live="polite"></span><button class="m-btn" id="m-808-revert" type="button" hidden title="Forget your cached hits and go back to the shipped ones (default knobs)">revert</button></div>
+      </div>
+      <p class="m-808-lxr" id="m-808-lxr" hidden>This track plays its LXR voice (the voice page). Pick an 808 voice above to swap it.</p>
+      <div class="m-808-all"><button class="m-btn" id="m-808-kit" type="button" title="Every track on its 808 voice: BD, LT, HT, SD, CY, CH, OH">808 kit</button><button class="m-btn" id="m-808-alllxr" type="button" title="Every track back on its LXR voice">all lxr</button></div>
+    </section>
+  </div>
+
+  <div class="m-panel" data-m-panel="xy">
+    <section class="m-card m-xy-card" id="m-xy-card"></section>
+  </div>
+
+  <div class="m-panel" data-m-panel="fx">
+    <section class="m-card m-fx-card">
+      <div class="m-fx-row"><div class="m-fxhead"><b>echo</b><label class="m-chk"><input id="m-pp" type="checkbox"><i aria-hidden="true"></i>ping pong</label><label class="m-chk"><input id="m-sync" type="checkbox" checked><i aria-hidden="true"></i>sync</label></div><div class="m-faders" id="m-fx-echo"></div></div>
+      <div class="m-fx-row"><b>reverb</b><div class="m-faders" id="m-fx-ring"></div></div>
+      <div class="m-fx-row m-fx-slot"><b>insert</b><div class="m-fx-empty">empty slot</div></div>
+      <div class="m-fx-row m-fx-slot"><b>insert</b><div class="m-fx-empty">empty slot</div></div>
+      <div class="m-fx-row m-xrow"><div class="m-fxhead"><b>crossfeed</b><button class="m-toggle" id="m-xclear" type="button">clear</button></div><div class="m-xgrid" id="m-xgrid" role="grid" aria-label="crossfeed: from each drum (rows) into each drum (columns)"></div></div>
+    </section>
+  </div>
+
+  <div class="m-panel" data-m-panel="xf">
+    <section class="m-card m-fx-card m-xf-card" id="m-xf-card"></section>
+  </div>
+
+  <div class="m-panel" data-m-panel="mix">
+    <section class="m-card m-fx-card m-mix-card">
+      <div class="m-fx-row"><b>echo send</b><div class="m-faders" id="m-mix-echo"></div></div>
+      <div class="m-fx-row"><b>reverb send</b><div class="m-faders" id="m-mix-ring"></div></div>
+      <div class="m-fx-row m-mix-pan"><b>pan</b><div class="m-faders" id="m-mix-pan"></div></div>
+      <div class="m-fx-row m-mix-vol"><b>level</b><div class="m-faders" id="m-mix-vol"></div></div>
+    </section>
+  </div>
+
+  <div class="m-panel" data-m-panel="comp">
+    <section class="m-card m-comp-card">
+      <div class="m-chead"><b>drum 1 sidechain</b><div class="m-gr" aria-label="sidechain duck"><i><b id="m-dk"></b></i><output id="m-dk-out">0 dB</output></div></div>
+      <div class="m-faders" id="m-duck"></div>
+      <div class="m-chead"><b>distortion</b></div>
+      <div class="m-faders" id="m-dist"></div>
+      <div class="m-chead"><b>compressor</b><div class="m-gr" aria-label="gain reduction"><i><b id="m-gr"></b></i><output id="m-gr-out">0 dB</output></div><button class="m-toggle" id="m-comp-on" type="button" aria-pressed="true">on</button></div>
+      <div class="m-faders" id="m-comp"></div>
+    </section>
+  </div>
+
+  <div class="m-panel" data-m-panel="presets">
+    <section class="m-card m-presets-card">
+      <div class="m-psaves"><button class="m-btn m-big" id="m-psave" type="button">save new</button><button class="m-btn" id="m-pover" type="button">save over</button></div>
+      <label class="m-chk"><input id="m-pbpm" type="checkbox" checked><i aria-hidden="true"></i>loading a preset uses its tempo</label>
+      <input class="m-psearch" id="m-psearch" type="search" placeholder="search presets" aria-label="Search presets" autocomplete="off" spellcheck="false">
+      <p class="m-note" id="m-pnote" aria-live="polite"></p>
+      <ul class="m-plist" id="m-plist"></ul>
+      <div class="m-pio">
+        <label class="m-btn m-file" title="Reads a presets file exported here">import<input id="m-pimport" type="file" accept="application/json,.json" multiple></label>
+        <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
+        <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
+      </div>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v@VER@, @BUILT@</footer>
+    </section>
+  </div>
+  </div>
+
+  <div class="m-rs" id="m-set" hidden>
+    <section class="m-card m-rs-card m-set-card" role="dialog" aria-labelledby="m-set-title">
+      <div class="m-chead"><b id="m-set-title">settings</b><button class="m-toggle" id="m-set-close" type="button">done</button></div>
+      <div class="m-rs-tabs m-set-tabs" id="m-set-tabs" role="tablist"><button class="m-btn" type="button" role="tab" data-set="faders" aria-selected="true">copy</button><button class="m-btn" type="button" role="tab" data-set="rush" aria-selected="false">rush</button></div>
+      <div class="m-setpane" data-set-pane="faders">
+        <button class="m-btn" id="m-set-slots" type="button">copy perf faders</button>
+        <p class="m-note">Copies what the twelve PERF knobs do, to paste to Claude as the new defaults.</p>
+        <button class="m-btn" id="m-set-presets" type="button">copy presets</button>
+        <p class="m-note">Copies your saved presets (and any built-in ones you've saved over), to paste to Claude to build them in.</p>
+        <button class="m-btn" id="m-set-export" type="button">export presets</button>
+        <p class="m-note">Saves the same presets, and every starred one, to a file.</p>
+        <button class="m-btn" id="m-set-clear" type="button">clear all</button>
+        <p class="m-note">Deletes all your saved presets and clears every star (asks first).</p>
+      </div>
+      <div class="m-setpane m-rushpane" data-set-pane="rush" hidden>
+        <svg class="m-rushg" id="m-rushg" role="img" aria-label="how the rush changes as it rises"></svg>
+        <div class="m-rs-rows m-rush-glides" id="m-rush-glides"></div>
+        <div class="m-rush-btns"><output id="m-rush-say" aria-live="polite">drag a point</output><button class="m-btn" id="m-rush-reset" type="button">reset</button></div>
+      </div>
+    </section>
+  </div>
+  <div class="m-rs" id="m-user" hidden>
+    <section class="m-card m-rs-card m-set-card" role="dialog" aria-labelledby="m-user-title">
+      <div class="m-chead"><b id="m-user-title">user settings</b><button class="m-toggle" id="m-user-close" type="button">done</button></div>
+      <div class="m-rs-tabs m-user-tabs" id="m-user-tabs" role="tablist"><button class="m-btn" type="button" role="tab" data-user="midi" aria-selected="true">midi</button><button class="m-btn" type="button" role="tab" data-user="seq" aria-selected="false">seq</button></div>
+      <div class="m-setpane m-midipane" data-user-pane="midi">
+        <b class="m-userhead">cc presets</b>
+        <div class="m-ccpresets" id="m-ccpresets"></div>
+        <b class="m-userhead">perf faders: tap one to set its cc</b>
+        <div class="m-ccgrid" id="m-ccgrid"></div>
+        <button class="m-btn" id="m-ccsave" type="button">save as midi cc preset</button>
+      </div>
+      <div class="m-setpane" data-user-pane="seq" hidden>
+        <b class="m-userhead">fader step sequencers</b>
+        <label class="m-chk"><input id="m-seqgroove" type="checkbox"><i aria-hidden="true"></i>follow the groove</label>
+        <p class="m-note">On: each step lands as late or early as the groove and its depth put that 16th's hits, for the fader's drum (all the drums' average for a fader that isn't one drum's). Off: steps land on the grid.</p>
+      </div>
+    </section>
+  </div>
+  <div class="m-rs" id="m-help" hidden>
+    <section class="m-card m-rs-card m-help-card" role="dialog" aria-labelledby="m-help-title">
+      <div class="m-chead"><b id="m-help-title">help</b><button class="m-toggle" id="m-help-close" type="button">done</button></div>
+      <div class="m-rs-tabs m-help-tabs" id="m-help-tabs" role="tablist"></div>
+      <div class="m-help-text" id="m-help-text"></div>
+    </section>
+  </div>
+  <div class="m-rs m-small" id="m-looplen" hidden>
+    <section class="m-card m-rs-card" role="dialog" aria-labelledby="m-looplen-title">
+      <div class="m-chead"><b id="m-looplen-title">loop length</b><button class="m-toggle" id="m-looplen-close" type="button">done</button></div>
+      <div class="m-looplens" id="m-loop-lens"></div>
+    </section>
+  </div>
+
+  <div class="m-rs" id="m-ch" hidden>
+    <section class="m-card m-rs-card m-ch-card" role="dialog" aria-labelledby="m-ch-title">
+      <div class="m-chead"><b id="m-ch-title">slot</b><button class="m-toggle" id="m-ch-reset" type="button">default</button><button class="m-toggle" id="m-ch-close" type="button">done</button></div>
+      <div class="m-rs-tabs" id="m-ch-tabs" role="tablist"></div>
+      <div class="m-ch-list" id="m-ch-list"></div>
+    </section>
+  </div>
+
+  <div class="m-rs" id="m-rs" hidden>
+    <section class="m-card m-rs-card" role="dialog" aria-labelledby="m-rs-title">
+      <div class="m-chead"><b id="m-rs-title">randomisers</b><button class="m-toggle" id="m-rs-copy" type="button">copy</button><button class="m-toggle" id="m-rs-close" type="button">done</button></div>
+      <div class="m-rs-tabs" id="m-rs-tabs" role="tablist"></div>
+      <div class="m-rs-rows" id="m-rs-rows"></div>
+      <div class="m-rs-btns"><button class="m-btn m-big" id="m-rs-go" type="button">randomise</button><button class="m-btn" id="m-rs-play" type="button">play</button><button class="m-btn" id="m-rs-reset" type="button">reset</button></div>
+    </section>
+  </div>
+
+  <div class="m-seq" id="m-seq" hidden>
+    <section class="m-card m-seq-card" role="dialog" aria-labelledby="m-seq-name">
+      <div class="m-chead"><b><span id="m-seq-name"></span> seq</b><span class="m-seq-pages" id="m-seq-pages" role="group" aria-label="step pages"></span><output id="m-seq-val"></output><button class="m-toggle" id="m-seq-on" type="button" aria-pressed="true">on</button></div>
+      <div class="m-seq-steps" id="m-seq-steps" aria-label="steps"></div>
+      <div class="m-seq-lenrow"><span>length</span><div class="m-seq-len" id="m-seq-len" role="slider" aria-label="length"><i></i></div><output id="m-seq-len-out"></output></div>
+      <div class="m-seq-lenrow"><span>slew</span><div class="m-seq-len" id="m-seq-slew" role="slider" aria-label="slew"><i></i></div><output id="m-seq-slew-out"></output></div>
+      <div class="m-seq-lenrow"><span>speed</span><div class="m-seq-len" id="m-seq-speed" role="slider" aria-label="speed"><i></i></div><output id="m-seq-speed-out"></output></div>
+      <div class="m-seq-lenrow"><span>depth</span><div class="m-seq-len" id="m-seq-depth" role="slider" aria-label="depth"><i></i></div><output id="m-seq-depth-out"></output></div>
+      <div class="m-seq-btns"><div class="m-seq-shapes" id="m-seq-shapes"><button class="m-btn" type="button" data-shape="up">ramp ↑</button><button class="m-btn" type="button" data-shape="down">ramp ↓</button><button class="m-btn" type="button" data-shape="tri">tri</button><button class="m-btn" type="button" data-shape="square">square</button><button class="m-btn" type="button" data-shape="sine">sine</button></div><div class="m-seq-shapes m-seq-rnds" id="m-seq-rnds"><button class="m-btn" type="button" data-rnd="rnd">rnd</button><button class="m-btn" type="button" data-rnd="drunk">drunk</button><button class="m-btn" type="button" data-rnd="hold">hold</button><button class="m-btn" type="button" data-rnd="sparse">sparse</button><button class="m-btn" type="button" data-rnd="smooth">smooth</button></div><button class="m-btn m-big" id="m-seq-rand" type="button">randomise</button><button class="m-btn" id="m-seq-close" type="button">done</button></div>
+      <span class="m-seq-midi">midi cc 21–24</span>
+    </section>
+  </div>
+
+  <nav class="m-tabs" role="tablist" aria-label="pages">
+    <button type="button" role="tab" data-m-tab="play" aria-selected="true">perf</button>
+    <button type="button" role="tab" data-m-tab="beat" aria-selected="false">beat</button>
+    <button type="button" role="tab" data-m-tab="dice" aria-selected="false">voice</button>
+    <button type="button" role="tab" data-m-tab="t808" aria-selected="false">808</button>
+    <button type="button" role="tab" data-m-tab="xy" aria-selected="false">x/y</button>
+    <button type="button" role="tab" data-m-tab="fx" aria-selected="false">fx</button>
+    <button type="button" role="tab" data-m-tab="xf" aria-selected="false">xfeed</button>
+    <button type="button" role="tab" data-m-tab="mix" aria-selected="false">mix</button>
+    <button type="button" role="tab" data-m-tab="comp" aria-selected="false">mstr</button>
+    <button type="button" role="tab" data-m-tab="presets" aria-selected="false">prst</button>
+  </nav>
+</main>
+<div class="m-turn" id="m-turn"><div><b>turn it sideways</b><span>elixir plays in landscape</span><button type="button" id="m-turn-fs" hidden>full screen</button></div></div>
+
+<div class="wrap" aria-hidden="true">
+  <header class="topbar">
+    <h1><button class="title" id="about-open" type="button" aria-haspopup="dialog" title="About Elixir"><b>elixir</b> <small>six-voice drum machine</small></button></h1>
+    <div class="kitbar">
+      <label class="field" for="kit"><span class="lbl">preset</span> <select id="kit" aria-label="Preset"></select></label>
+      <span class="stepper"><button class="btn" id="kit-prev" type="button" aria-label="Previous preset">‹</button><button class="btn" id="kit-next" type="button" aria-label="Next preset">›</button></span>
+      <label class="field bpm-chk" for="preset-bpm" title="Ticked: loading a preset brings its saved tempo. Unticked: the tempo stays as it is"><input id="preset-bpm" type="checkbox" checked> bpm</label>
+      <button class="btn" id="kit-save" type="button" title="Save everything (sound, pattern, tempo, mixer, FX and master) as a new preset">save<span id="dirty" class="dirty" title="Unsaved changes" aria-hidden="true">★</span></button>
+      <button class="btn ghost" id="pm-open" type="button" aria-haspopup="dialog" title="Preset manager: load, favourite, delete, export">presets</button>
+      <button class="btn ghost" id="pc4-open" type="button" aria-haspopup="dialog" title="Faderfox PC4: map its 24 knobs (CC 1-24) to the perform controls">PC4</button>
+      <span class="msg" id="kit-msg" aria-live="polite"></span>
+    </div>
+    <div class="seq-ctrl transport">
+      <button class="btn play" id="play" type="button" aria-pressed="false">PLAY</button>
+      <button class="recbtn" id="rec-open" type="button" aria-haspopup="dialog" title="Recorder: record your jam and export a WAV" aria-label="Recorder"><i></i></button>
+      <label class="field" for="tempo">tempo <input id="tempo" type="number" min="40" max="240" value="118"></label>
+      <span class="bars" aria-label="Bar of 8"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Section">
+    <button class="tab" type="button" role="tab" data-tab="perform" aria-selected="true">perform</button>
+    <button class="tab" type="button" role="tab" data-tab="sound" aria-selected="false">sound</button>
+    <button class="tab" type="button" role="tab" data-tab="steps" aria-selected="false">steps</button>
+  </nav>
+
+  <section class="panel rack tab-perform" data-panel="perform" role="tabpanel" aria-label="Perform">
+    <div class="bay-a">
+    <div class="card pattern-card">
+    <div class="pc-head"><span class="style-pick"><button class="sarrow" id="style-prev" type="button" aria-label="Previous pattern style">‹</button><h2 id="style-name" aria-live="polite">electro</h2><button class="sarrow" id="style-next" type="button" aria-label="Next pattern style">›</button></span><span class="switch src-pick" role="radiogroup" aria-label="What plays: the perform pattern, the steps grid, or nothing (MIDI in)"><button type="button" role="radio" data-src="perform" aria-checked="true">perform</button><button type="button" role="radio" data-src="steps" aria-checked="false">steps</button><button type="button" role="radio" data-src="off" aria-checked="false">off</button></span></div>
+    <div class="midi-info" id="midi-info" hidden>
+      <p class="midi-status" id="midi-status">MIDI in</p>
+      <p class="hint">Any channel, General MIDI drum notes; velocity sets the level.</p>
+      <dl class="midi-map" title="Also: 35 drum 1; 40 snare; 41, 45 drum 2; 48, 50 drum 3; 44 closed hat; 51, 55, 57 cymbal">
+        <dt>C1 · 36</dt><dd>drum 1</dd><dt>G1 · 43</dt><dd>drum 2</dd><dt>B1 · 47</dt><dd>drum 3</dd><dt>D1 · 38</dt><dd>snare</dd>
+        <dt>C♯2 · 49</dt><dd>cymbal</dd><dt>F♯1 · 42</dt><dd>closed hat</dd><dt>A♯1 · 46</dt><dd>open hat</dd>
+      </dl>
+    </div>
+    <div class="perform" id="perform">
+      <div class="pknobs" id="pk-pattern"></div>
+      <div class="pknobs" id="pk-feel"></div>
+    </div>
+    </div>
+    <div class="card sound-card" role="group" aria-label="Sound macros">
+      <h2>sound</h2>
+      <div class="pknobs macro" id="pk-macro"></div>
+    </div>
+    </div>
+    <div class="card fx-card" role="group" aria-label="Effects">
+      <h2>fx</h2>
+      <div class="fx-groups">
+        <div class="fxg" role="group" aria-label="FX 1, echo"><span class="fxh"><b>1</b> echo <select class="pick" id="r-echo" aria-label="echo type"></select></span><div class="knobs" id="k-echo"></div></div>
+        <div class="fxg" role="group" aria-label="FX 2, distortion"><span class="fxh"><b>2</b> distortion <select class="pick" id="r-dist" aria-label="distortion type"></select></span><div class="knobs" id="k-dist"></div></div>
+        <div class="fxg" role="group" aria-label="FX 3, ring mod"><span class="fxh"><b>3</b> ring mod <select class="pick" id="r-ring" aria-label="ring mod type"></select></span><div class="knobs" id="k-ring"></div></div>
+      </div>
+    </div>
+    <div class="bay-c">
+    <div class="card master-card comp-card" role="group" aria-label="Compressor">
+      <div class="mhead"><h2>compressor</h2><button class="mon" id="comp-on" type="button" aria-pressed="true" aria-label="Compressor on" title="Compressor on/off"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.2 4.1a5 5 0 1 0 5.6 0"/><path d="M8 2v6"/></svg></button></div>
+      <div class="mbody"><div class="knobs" id="comp-knobs"></div></div>
+    </div>
+    <div class="card master-card duck-card" role="group" aria-label="Drum 1 sidechain">
+      <div class="mhead"><h2>drum 1 sidechain</h2><label class="mchk" for="duck-fx" title="Duck the echo, distortion and ring mod returns too"><input id="duck-fx" type="checkbox"> fx</label><button class="mon" id="duck-on" type="button" aria-pressed="true" aria-label="Sidechain on" title="Sidechain on/off"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.2 4.1a5 5 0 1 0 5.6 0"/><path d="M8 2v6"/></svg></button></div>
+      <div class="mbody"><div class="knobs" id="duck-knobs"></div></div>
+    </div>
+    </div>
+    <div class="right-col">
+    <div class="card rand-card" role="group" aria-label="Randomise">
+      <h2>randomise</h2>
+      <div class="rand perform-rand">
+        <div class="rbtns"><button class="btn" id="rand-all" type="button" title="Each drum voice takes its sound from a random built-in kit">kit</button>
+        <button class="btn" id="alter" type="button" title="Small variations of the current drum sounds">alter</button>
+        <button class="btn" id="xrand2" type="button">crossfeed</button>
+        <button class="btn" id="new-kit" type="button" title="A new sound from voices of the built-in kits, varied by 10%, with new crossfeed, delay time and pattern">everything</button>
+        <button class="btn" id="undo" type="button" disabled>undo</button></div>
+                <span class="rand-opts">
+          <label class="field" for="depth">depth <input id="depth" type="range" min="1" max="100" value="30"><output id="depth-out">30%</output></label>
+          <label class="field" for="wild"><input id="wild" type="checkbox"> wild</label>
+        </span>
+        <div class="vrand" id="vrand"></div>
+      </div>
+    </div>
+    <div class="card mix-card">
+      <h2>mixer</h2>
+      <div class="strips" id="strips"></div>
+    </div>
+    </div>
+  </section>
+
+  <section class="panel rack tab-sound" data-panel="sound" role="tabpanel" aria-label="Sound" hidden>
+    <div class="col snd-main" aria-label="Voice">
+      <div class="snd-bar">
+        <div class="voices" id="voices" role="group" aria-label="Voice"></div>
+        <span class="snd-acts"><button class="pad" id="pad" type="button" aria-label="Trigger the selected voice"><span>trig</span><kbd>space · 1–7</kbd></button>
+        <span class="rand"><button class="btn" id="rand" type="button">randomise <span id="rand-name" class="sr">DRUM 1</span></button></span></span>
+      </div>
+      <div class="pcards" id="knobs"></div>
+    </div>
+    <div class="col snd-side">
+      <div class="lcd" aria-live="polite">
+        <div class="lcd-line"><b id="lcd-name">DRUM 1</b><span id="lcd-detail"></span></div>
+        <canvas id="scope" width="800" height="220" aria-label="Waveform of one hit of the selected voice, first 500 ms"></canvas>
+      </div>
+      <div class="card xcard">
+        <h2>crossfeed</h2>
+        <div class="xfeed" aria-label="Crossfeed">
+          <div class="xfeed-head">
+            <label class="field" for="xdepth">depth <input id="xdepth" type="range" min="0" max="100" value="100"><output id="xdepth-out">100%</output></label>
+            <button class="btn" id="xrand" type="button">randomise</button>
+            <button class="btn" id="xclear" type="button">clear</button>
+          </div>
+          <div class="xgrid" id="xgrid"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel rack tab-steps" data-panel="steps" role="tabpanel" aria-label="Steps" hidden>
+    <div class="col seq" aria-label="Steps">
+      <div class="seq-ctrl" id="steps-tools">
+        <button class="btn" id="clear" type="button">CLEAR</button>
+        <span class="switch src-pick steps-src" role="radiogroup" aria-label="What plays: the perform pattern, the steps grid, or nothing (MIDI in)"><button type="button" role="radio" data-src="perform" aria-checked="true">perform</button><button type="button" role="radio" data-src="steps" aria-checked="false">steps</button><button type="button" role="radio" data-src="off" aria-checked="false">off</button></span>
+        <button class="btn" id="grab" type="button" title="Copy the pattern the perform tab is playing into the grid">GRAB FROM PERFORM</button>
+        <span class="seg" role="group" aria-label="What a click on a step sets">
+          <button class="btn" type="button" data-mode="step" aria-pressed="true">STEP</button>
+          <button class="btn" type="button" data-mode="acc" aria-pressed="false">ACCENT</button>
+        </span>
+        <span class="seg up-tools" role="group" aria-label="User patterns">
+          <button class="btn" id="up-save" type="button">SAVE AS USER</button>
+          <button class="btn" id="up-over" type="button">SAVE OVER</button>
+          <button class="btn" id="up-del" type="button">DELETE</button>
+        </span>
+        <output class="up-cur" id="up-cur" aria-live="polite"></output>
+        <span class="seq-ctrl groove-ctl"><label class="field" for="groove-type" title="Where each track's hits sit against the grid: swings, triplet, shuffle, push-pull, drunk">groove <select class="pick" id="groove-type"></select></label>
+        <label class="field" for="gdepth" title="How much of the groove plays: 0% is straight">depth <input id="gdepth" type="range" min="0" max="100" value="100"><output id="gdepth-out">100%</output></label></span>
+      </div>
+      <div class="seq-ctrl trig-row" role="group" aria-label="Trig conditions: pick one, then click steps to set it">
+        <span class="trl">trig</span>
+        <span class="seg"><button class="btn" type="button" data-cond="0" aria-pressed="false" title="Play on every bar (takes a condition off)">EVERY BAR</button></span>
+        <span class="tg"><i>last bar of</i><span class="seg"><button class="btn" type="button" data-cond="2" aria-pressed="false" title="Only on bar 2 of every 2 (where fills go)">2</button><button class="btn" type="button" data-cond="4" aria-pressed="false" title="Only on bar 4 of every 4">4</button><button class="btn" type="button" data-cond="8" aria-pressed="false" title="Only on bar 8 of every 8">8</button></span></span>
+        <span class="tg"><i>all but the last of</i><span class="seg"><button class="btn" type="button" data-cond="-2" aria-pressed="false" title="Every bar except bar 2 of every 2">≠2</button><button class="btn" type="button" data-cond="-4" aria-pressed="false" title="Every bar except bar 4 of every 4">≠4</button><button class="btn" type="button" data-cond="-8" aria-pressed="false" title="Every bar except bar 8 of every 8">≠8</button></span></span>
+        <span class="tg"><i>first bar of</i><span class="seg"><button class="btn" type="button" data-cond="102" aria-pressed="false" title="Only on bar 1 of every 2 (the bar after a fill)">1/2</button><button class="btn" type="button" data-cond="104" aria-pressed="false" title="Only on bar 1 of every 4">1/4</button><button class="btn" type="button" data-cond="108" aria-pressed="false" title="Only on bar 1 of every 8 (where the crash goes)">1/8</button></span></span>
+      </div>
+      <div class="seq-ctrl trig-row page-row" role="group" aria-label="Pages: up to eight bars, played in turn">
+        <span class="trl">page</span>
+        <span class="seg pages"><button class="btn" type="button" data-page="0" aria-pressed="true">1</button><button class="btn" type="button" data-page="1" aria-pressed="false">2</button><button class="btn" type="button" data-page="2" aria-pressed="false">3</button><button class="btn" type="button" data-page="3" aria-pressed="false">4</button><button class="btn" type="button" data-page="4" aria-pressed="false">5</button><button class="btn" type="button" data-page="5" aria-pressed="false">6</button><button class="btn" type="button" data-page="6" aria-pressed="false">7</button><button class="btn" type="button" data-page="7" aria-pressed="false">8</button></span>
+        <label class="tg" for="page-len"><i>length</i><select class="pick" id="page-len"><option value="1">1 bar</option><option value="2">2 bars</option><option value="3">3 bars</option><option value="4">4 bars</option><option value="5">5 bars</option><option value="6">6 bars</option><option value="7">7 bars</option><option value="8">8 bars</option></select></label>
+        <span class="tg"><i>expand to</i><span class="seg"><button class="btn" type="button" data-expand="2" title="Bake the trig conditions into 2 pages: each step lands on the bars its condition plays, and the conditions are cleared">2</button><button class="btn" type="button" data-expand="4" title="Bake the trig conditions into 4 pages: each step lands on the bars its condition plays, and the conditions are cleared">4</button><button class="btn" type="button" data-expand="8" title="Bake the trig conditions into 8 pages: each step lands on the bars its condition plays, and the conditions are cleared">8</button></span></span>
+      </div>
+      <p class="hint">Perform / steps / off picks what plays (the same switch is on the pattern card). The grid keeps its own pattern; grab from perform copies in what the perform tab plays. Save as user keeps it: the perform tab's user style plays your patterns, beat picks one, energy thins it out and fills adds fills.</p>
+      <div class="grid" id="grid" role="group" aria-label="Step sequencer, 7 tracks by 16 steps"></div>
+    </div>
+  </section>
+
+
+
+  <dialog class="about-dlg" id="about" aria-label="About Elixir">
+    <div class="about-head"><b>elixir</b><button class="btn ghost" id="about-close" type="button">close</button></div>
+    <div class="about">
+  <details open>
+    <summary>HOW TO PLAY IT</summary>
+    <div class="body">
+      <p class="src">Elixir by Johnny Hawk is an unofficial browser drum machine, not made or endorsed by Erica Synths. Its sound engine is a JavaScript port of the six drum voices and the FX bus of the Erica Synths LXR-02 firmware (<a href="https://github.com/erica-synths/lxr-desktop-app" target="_blank" rel="noopener">erica-synths/lxr-desktop-app</a>, GPL-3.0, commit a43cd4f), ported line by line; its output matches the original C code compiled for the Cortex-M7 sample for sample. The FX bus (distortion, ring mod, compressor, delay) is the firmware's too; the mixer, the three FX sends, crossfeed and the pattern generator are new. The generator's source kits include Hrtl's free LXR-02 DLC kits, used with credit, and any LXR kit file (.SND) can be opened. Source and licence (GPL-3.0): <a href="https://github.com/johnnyhawk02/johnnyhawk02.github.io/tree/main/elixir" target="_blank" rel="noopener">github.com/johnnyhawk02/johnnyhawk02.github.io/tree/main/elixir</a>.</p>
+      <p class="note">Crossfeed patches voices into each other: a cell sends the row's sound into the column's voice. Each column picks what it modulates: fm bends the pitch of that voice's main oscillator with the incoming audio (metallic, clangy, a voice into itself gives feedback FM), filter lets the incoming level open (positive) or close (negative) that voice's filter, ring multiplies the two sounds. Open and closed hat are one voice, so the matrix is 6 × 6. Crossfeed is an addition to the firmware's engine; with every cell at 0 the engine runs exactly as verified.</p>
+      <p class="note">The mixer's level and pan are the voices' own VOLUME and PAN parameters, so they are saved with the kit. Each fader is its level meter, with a triangle beside it marking the level: drag the meter or the triangle for fine control (it moves less than the mouse; hold Shift for finer still) or scroll on it; the strip's name shows the level while it moves.</p>
+      <p class="note">Save keeps everything as a preset in this browser under a two-word alien name: the sound (kit, crossfeed, FX and sends) and the song (pattern, perform dials, tempo, velocity, accent, master), and loading it brings all of that back. A red star by save means a randomise has changed things since the last save or load. ‹ and › step through the presets; untick bpm beside them to keep the current tempo when a preset loads (everything else still loads); while playing, a new preset comes in at the start of the next bar. Presets opens the preset manager: load, delete, and star favourites; export favourites downloads them as a file, and favourites sent in that way are built into the next release. Open .snd there loads an LXR kit file as the current sound, and export .snd downloads it as an LXR kit file (.SND, without the crossfeed, which the hardware doesn't have).</p>
+      <p class="note">There are three effects, all the LXR-02's own FX-slot code run as sends: each mixer strip has three send dials left of its fader: echo, dist and ring. Every voice keeps its dry sound and each effect's output is fully wet. The echo's time is synced to the tempo: from 1/128 of a bar fully left to one bar fully right, gliding through the musical lengths (the readout names the nearest, with ≈ when it is between); randomise picks 1/2, 1/4, dotted 1/8, 1/8 or 1/16 (now and then 1/128) and puts it within 10 ms of it either way (at 120 bpm; the window scales with the tempo). Ticks round the time dial mark the musical lengths (long for straight notes, short for dotted and triplet); a drag catches on them, and the scroll wheel and arrow keys step from one to the next (Shift + arrow for fine steps). The FX section above the mixer sets all three: echo mode (normal or ping-pong), time, tone, feedback and width (100% is the firmware's own; 0% is mono; the firmware's ping-pong only bounces sound that reaches it off-centre, and most drums sit in the middle, so above 100% width pushes the echo's input to one side, and at 200% a centred drum bounces fully; on a normal echo, above 100% widens the echoes' stereo); distortion type (tube, fold or rat), drive, color, tone and volume; ring mod carrier wave and frequency. A kit that used distortion or ring mod in its FX slot loads those settings into that effect with a little of each routed voice sent to it. The sync, the sends, the extra buses and the larger delay buffer are additions to the firmware.</p>
+      <p class="note">The master section sits after everything, in two cards, each with a power button: drum 1 sidechain ducks every other voice (before the FX bus) by up to the duck amount whenever drum 1 hits (tick fx to duck the echo, distortion and ring mod returns as well, so their tails pump with drum 1), and the compressor works on the whole mix like the LXR-02's FX-slot compressor; the needle meters show how far each is pulling down, in dB.</p>
+      <p class="note">The red circle by play opens the recorder: pick free (records until you press stop, up to ten minutes) or a loop of 1 to 16 bars, which starts on the next bar (starting playback from bar 1 if it is stopped) and is cut to exactly that many bars at the tempo, with the echo carried in from before so it loops cleanly. Tick count-in for a bar of beeps first (a high beep then three lower boops, with the music turned down; from bar 1 if stopped), and the take starts on the bar after it. Pressing record closes the recorder; the red circle by play blinks while it waits or counts and pulses while it records. Choose 44.1 or 48 kHz, 16-bit (dithered) or 24-bit, and normalise (peak at −0.3 dB). Each take is listed with a player and a save .wav button; takes are kept until you reload the page.</p>
+      <p class="note">The sound knobs on the pattern card are performance macros over all six voices at once: fm depth (the drums' FM amount and the cymbal and hat FM), decay (every amp decay), pitch (every voice's coarse tune, up to two octaves either way) and filter (every filter's cutoff). Each sits in the middle as the kit is; turning it pushes every voice's own value towards the top or the bottom, so the kit's differences stay. They change what the engine plays, not the kit: the sound tab still shows the kit's own values, and double-click sets a macro back to the middle. They are saved with presets.</p>
+      <p class="note">Perform builds the pattern from the dials while it plays: Energy goes from empty through a sparse groove up to the full kit, Beat picks one of thirty-two grooves in the pattern's style, and Fills sets how often a fill plays (every 8, 4 or 2 bars) and how long and busy it is. Rush hands the other drums' hits to the snare as it goes up, slowly at first and more as it rises (the hats go faster and are gone by 80%; from 98% only the snare plays); the kick's downbeats keep going up to 90%, then only the first kick of each bar plays, and from 95% none. Above 75% it also rolls the snare on every step alongside the drums still playing, doubling to 32nds at 77.5%; above 80% the roll comes off the grid and speeds up smoothly as the dial moves, gliding from 32nds at 80% to 256ths at 100% (at fast tempos it tops out at about 170 hits a second), the roll swelling louder as it rises. Above 90% a high-pass filter comes in on the whole mix, its cutoff rising from 30 Hz at 90% to 1.5 kHz at 100% so the low end drains away into the build. The small set button above rush opens its settings, with these numbers as the defaults: where the roll starts, the 1/32 point where the free roll begins (the 32nd band starts halfway between the two), its top speed at 100% (1/64, 1/128 or 1/256), when the hats are gone, when only the snare is left, how long all four beat kicks and then only the first keep going, where the filter starts and its top cutoff, and how quickly the roll's speed and the filter glide after the dial (0 to 500 ms). The curves keep their shape and stretch to the new points; reset puts them back. Presets save the rush dial and these settings (the built-in ones load with rush at 0 and the defaults), and the last ones used are kept in this browser. The arrows by the pattern card's title switch the style: electro (the original five grooves plus eleven after classic records and styles: Clear, Al-Naafiysh, Egypt Egypt, Numbers, freestyle, ghettotech, Drexciya, Detroit, Hip Hop Be Bop, Pack Jam, Sharevari), techno (four on the floor, off-beat open hats, snare builds), broken beat (syncopated kicks under a snare on 2 and 4, fills in threes), IDM (lopsided kicks, hats in threes, a second bar that answers the first, stutter fills), breakcore (chopped amen breaks, ghost snares, stuttering snare rolls, a second bar that re-cuts the first) and user (patterns you save from the steps tab with Save as user; beat picks one, energy thins it out, fills adds electro fills; Save over and Delete change the one beat has picked). Presets save the style, and a preset in user style carries its pattern with it. Off on the pattern card's switch turns the patterns off: the sequencer keeps time but plays nothing, and MIDI note-ons from a keyboard or another sequencer play the voices instead (any channel, General MIDI drum notes, velocity sets the level; the card shows the note map and which MIDI inputs it hears; needs a browser with Web MIDI, such as Chrome or Edge).</p>
+      <p class="note">The steps tab has its own grid of up to eight pages (bars) of 16 steps, played in turn: the page buttons pick the page to edit (one past the length adds pages, copied from the last), length sets how many play, and expand to 2, 4 or 8 bakes the trig conditions into that many pages, each step landing on the bars its condition plays, with the conditions cleared. User patterns and presets keep all the pages. The grid is separate from the perform tab's generated pattern. The perform / steps / off switch (on the pattern card and on the steps tab) picks which one plays, or neither: off hands the voices to MIDI in. Grab from perform copies the perform tab's pattern into the grid (only when pressed). Presets save both patterns and the switch.</p>
+      <p class="note">Drag a slider up or down, click along it, scroll on it, or use the arrow keys. Double-click puts it back to the loaded kit's value; a red readout means it differs from the kit.</p>
+      <p class="note">Randomise (sound tab) varies the selected voice around its current sound, up to the depth, and keeps it sounding like a drum; tick Wild to let every parameter use its full range. In the mixer, r by each name gives that voice a random sound from the bundled kits, varied by 10%, and a varies the voice's current sound by 10%; undo takes either back. The randomise card on the perform tab: kit gives each of the six drum voices a sound straight from a random bundled kit, and alter makes small variations of the current drum sounds (5%, so each stays recognisable); both leave the mixer, FX, crossfeed and pattern alone. Press R to randomise the selected voice; Shift-R randomises every voice at once, up to the depth. Everything builds a fresh sound from voices of the bundled kits (Hrtl's LXR-02 kits and twelve generated ones, which aren't listed as presets), varies each by 10%, and rolls new crossfeed, delay time, echo feedback (usually low, now and then high), beat, energy and fills, keeping the mixer levels; save keeps it.</p>
+      <p class="note">Groove (on the pattern card, and on the steps tab) sets where each track's hits sit against the grid: straight; MPC-style swing 54, 58 or 62 (every second 16th late); triplet and shuffle; hat swing (only the hats swing); gallop; push-pull (kick and closed hat ahead of the beat, snare and open hat behind); laid back; rushed; and drunk (hats swung unevenly, kick and snare loose, after J Dilla). Depth sets how much of it plays, from 0% (straight) to 100%. The groove applies to the perform patterns and the steps grid alike, and is saved with presets. In the grid, Shift-click toggles an accent (bright step with a bar on top) and The trig buttons under the tools pick a bar condition (every bar; last bar of 2, 4 or 8; all but the last of 2, 4 or 8; first bar of 2, 4 or 8), and a click on a step then sets it (click again to take it off); Cmd-click (Ctrl-click on Windows) cycles through them all. 2, 4 and 8 play the step only on the last bar of every 2, 4 or 8 (where the fills go); ≠2, ≠4 and ≠8 play it on every bar but that one; 1/2, 1/4 and 1/8 only on the first bar of every 2, 4 or 8 (the bar after a fill, where the crash goes). Click a track name to edit that voice on the sound tab. Both hats share one voice, so the open hat chokes the closed one.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>HOW THE PORT WAS CHECKED</summary>
+    <div class="stats">
+      <div class="stat"><b>176 M</b><span>samples compared, 6 voices and the FX bus</span></div>
+      <div class="stat"><b>0</b><span>samples that differ from the C</span></div>
+      <div class="stat"><b>700</b><span>random scenarios: kits, edits, triggers, FX settings, LFO and velocity modulation</span></div>
+      <div class="stat"><b>−77 dB</b><span>difference to the -ffast-math firmware build, init kit</span></div>
+    </div>
+    <div class="body">
+      <p>The reference is the firmware's own sound engine (<code>Core/Src/Soundengine</code>: voices, oscillators, filter, envelopes, LFOs, modulation, the parameter handler and the FX bus), cross-compiled for the Cortex-M7 FPU and run under qemu with a small harness. <code>verify.mjs</code> sends the same parameter edits and triggers to both and compares every 64-sample block. The STM32's hardware random number generator is replaced by the same xorshift on both sides.</p>
+      <p>The port is exact against the C as written. The shipped firmware is built with <code>-O3 -ffast-math</code>, which lets the compiler fuse and reorder float operations, so the hardware rounds slightly differently: with the init kit, the largest difference is 9 LSB. With extreme random settings, self-oscillating filters can drift further apart, because a one-LSB difference grows in the feedback loop.</p>
+      <p>The engine runs at the LXR's 44 140 Hz and is resampled to your sound card's rate in the browser.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>SOURCE</summary>
+    <div class="code-head">
+      <label class="field" for="src-pick">File
+        <select id="src-pick">
+          <option value="lxr">lxr.js · the engine</option>
+          <option value="verify">verify.mjs · comparison against the C</option>
+        </select>
+      </label>
+      <button class="btn" id="copy" type="button">COPY</button>
+    </div>
+    <pre id="code"></pre>
+  </details>
+  </div>
+  </dialog>
+</div>
+
+<dialog class="pm rec" id="rec" aria-labelledby="rec-title">
+  <div class="pm-head"><h2 id="rec-title">recorder</h2><button class="btn ghost" id="rec-close" type="button" aria-label="Close">close</button></div>
+  <div class="rec-opts">
+    <span class="rlab">length</span><div class="radios" id="rec-len"></div>
+    <span class="rlab">format</span><div class="rec-fmt"><div class="radios" id="rec-rate"></div><div class="radios" id="rec-bits"></div>
+      <label class="field" for="rec-norm"><input id="rec-norm" type="checkbox"> normalise</label></div>
+    <span class="rlab">start</span><div><label class="field" for="rec-count"><input id="rec-count" type="checkbox"> count-in</label></div>
+  </div>
+  <p class="pm-hint" id="rec-hint"></p>
+  <div class="rec-go"><button class="btn rec-go-btn" id="rec-go" type="button"><i></i><span>record</span></button><span class="rec-status" id="rec-status" aria-live="polite"></span></div>
+  <ul class="pm-list rec-takes" id="rec-takes"></ul>
+</dialog>
+
+<dialog class="pm rushset" id="rush-set" aria-labelledby="rush-set-title">
+  <div class="pm-head"><h2 id="rush-set-title">rush settings</h2><button class="btn ghost" id="rush-set-close" type="button" aria-label="Close">close</button></div>
+  <div class="rs-opts" id="rs-opts"></div>
+  <div class="pm-foot"><button class="btn" id="rs-reset" type="button">reset</button><span class="pm-hint">Saved with each preset.</span></div>
+</dialog>
+
+<dialog class="pm" id="pm" aria-labelledby="pm-title">
+  <div class="pm-head"><h2 id="pm-title">presets</h2><button class="btn ghost" id="pm-close" type="button" aria-label="Close">close</button></div>
+  <p class="pm-hint">Star the ones you like. Export favourites downloads them as a file; send it over and they become built-in presets in the next release.</p>
+  <ul class="pm-list" id="pm-list"></ul>
+  <div class="pm-foot">
+    <button class="btn" id="pm-export" type="button">export favourites</button>
+    <span class="btn ghost file">import<input id="pm-import" type="file" accept=".json,application/json" aria-label="Import presets from a file"></span>
+    <!-- TEMP: delete-all-user-presets — remove when factory presets are done -->
+    <button class="btn ghost pm-del-all" id="pm-del-all" type="button" title="Delete every preset saved in this browser (built-in presets are kept)">delete all user presets</button>
+    <!-- END TEMP -->
+    <span class="pm-sep"></span>
+    <button class="btn ghost" id="kit-export" type="button" title="Download the current sound as an LXR kit file">export .snd</button>
+    <span class="btn ghost file" title="Open an LXR kit file (.SND) as the current sound">open .snd<input id="kit-file" type="file" accept=".snd,.SND" aria-label="Open a kit file (.SND) from an LXR SD card"></span>
+    <span class="msg" id="pm-msg" aria-live="polite"></span>
+  </div>
+</dialog>
+
+<dialog class="pm pc4" id="pc4" aria-labelledby="pc4-title">
+  <div class="pm-head"><h2 id="pc4-title">Faderfox PC4</h2><button class="btn ghost" id="pc4-close" type="button" aria-label="Close">close</button></div>
+  <p class="pm-hint">The PC4's 24 knobs send CC 1–24, six rows of four. Drag a control from the right onto a knob, or click a control and then a knob. Double-click a knob to clear it. The mapping is kept in this browser.</p>
+  <div class="pc4-body">
+    <div class="pc4-grid" id="pc4-grid" role="group" aria-label="PC4 knobs"></div>
+    <div class="pc4-tiles" id="pc4-tiles" role="group" aria-label="Perform controls"></div>
+  </div>
+  <div class="pm-foot"><button class="btn ghost" id="pc4-reset" type="button">reset to default</button></div>
+</dialog>
+
+<script id="engine">
+/*@ENGINE@*/
+</script>
+
+<script id="player">
+/*@PLAYER@*/
+</script>
+
+<script>
+/*@APP@*/
+</script>

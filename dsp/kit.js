@@ -71,6 +71,7 @@ export class Kit {
     this.queue = [];     // {frame, id, accent}
     this.mix = new Float32Array(128);
     this.solo = null;    // render a single voice (tests)
+    this.split = null;   // per-voice outputs, see _renderChunk
   }
   spec() {
     return VOICES.map(([id, name]) => ({ id, name, params: this.voices[id].params, values: { ...this.voices[id].p } }));
@@ -137,12 +138,14 @@ export class Kit {
     sh.metal.active = () => this._usesCircuit(METAL_IDS);
     sh.metal.render(n);
     const ids = this.solo ? [this.solo] : ORDER;
-    for (const id of ids) this.voices[id].render(mix, n);
+    // split (optional, { id: Float32Array }): those voices render into their own buffer, not the mix (Elixir 808)
+    const sp = this.split, to = sp ? (id) => (sp[id] ? (off ? sp[id].subarray(off, off + n) : sp[id]) : mix) : () => mix;
+    for (const id of ids) this.voices[id].render(to(id), n);
     // the models that aren't selected finish any tail they were playing
     if (!this.solo) for (const [id] of VOICES) for (const m of ['behavioural', 'circuit', 'cached', 'sampled']) {
       const other = this[m][id];
       if (!other || other === this.voices[id]) continue;
-      if (m === 'behavioural' || (other.awake ?? true)) other.render(mix, n);
+      if (m === 'behavioural' || (other.awake ?? true)) other.render(to(id), n);
     }
     const g = this.master * VOLT_SCALE;
     for (let i = 0; i < n; i++) {

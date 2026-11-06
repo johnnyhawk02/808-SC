@@ -1,0 +1,242 @@
+// ---- UI state ----
+let track = 0;
+const $ = (id) => document.getElementById(id);
+
+const voicesEl = $('voices');
+TRACKS.forEach((t, i) => {
+  const b = document.createElement('button');
+  b.className = 'vbtn'; b.type = 'button'; b.dataset.track = i;
+  b.innerHTML = `<i></i>${t.name}<kbd>${i + 1}</kbd>`;
+  b.setAttribute('aria-pressed', i === track);
+  b.addEventListener('click', () => { selectTrack(i); });
+  voicesEl.appendChild(b);
+});
+
+function selectTrack(i) {
+  track = i;
+  voicesEl.querySelectorAll('.vbtn').forEach((b, k) => b.setAttribute('aria-pressed', k === i));
+  gridEl.querySelectorAll('.row-name').forEach((b, k) => b.classList.toggle('active', k === i));
+  $('lcd-name').textContent = TRACKS[i].name; $('rand-name').textContent = TRACKS[i].name;
+  buildKnobs(); drawScope();
+}
+
+function visiblePages() {
+  return VOICE_PAGES[TRACKS[track].voice].groups.filter((g) => g.params.length || g.name === 'LFO');
+}
+
+function detail(text) { $('lcd-detail').innerHTML = text; }
+
+// ---- performance macros: global offsets on top of the kit, sent to the engine only (the kit keeps its own values) ----
+// fm, decay and filter go from -100% (every voice's value down to 0) through 0 (as the kit) to +100% (all the way up);
+// pitch moves every voice's tune by up to two octaves either way, freely: a whole number of semitones moves coarse
+// alone (as the firmware's knobs do), anything between splits across coarse and fine (fine spans a semitone, ±0.5)
+const MACROS = {
+  fm: ['FMAMNT1', 'FMAMNT2', 'FMAMNT3', 'MOD_OSC_GAIN1_CYM', 'MOD_OSC_GAIN2_CYM', 'MOD_OSC_GAIN1', 'MOD_OSC_GAIN2'],
+  decay: ['VELOD1', 'VELOD2', 'VELOD3', 'VELOD4', 'VELOD5', 'VELOD6_CLOSED', 'VELOD6_OPEN'],
+  pitch: ['COARSE1', 'COARSE2', 'COARSE3', 'COARSE4', 'COARSE5', 'COARSE6', 'FINE1', 'FINE2', 'FINE3', 'FINE4', 'FINE5', 'FINE6'],
+  filter: ['FILTER_FREQ_1', 'FILTER_FREQ_2', 'FILTER_FREQ_3', 'FILTER_FREQ_4', 'FILTER_FREQ_5', 'FILTER_FREQ_6'],
+};
+const MACRO0 = { fm: 100, decay: 100, pitch: 24, filter: 100 }; // knob positions: 100 (24 for pitch) is the middle
+const macro = { ...MACRO0 };
+const macroOf = {};
+for (const m in MACROS) for (const n of MACROS[m]) if (PAR[n] !== undefined) macroOf[PAR[n]] = m;
+// each voice's coarse and fine, by either's parameter number
+const PITCH_PAIR = {};
+for (let i = 1; i <= 6; i++) { const c = PAR['COARSE' + i], fi = PAR['FINE' + i]; if (c !== undefined && fi !== undefined) PITCH_PAIR[c] = PITCH_PAIR[fi] = [c, fi]; }
+function eff(par, v) {
+  const m = macroOf[par];
+  if (!m || macro[m] === MACRO0[m]) return v;
+  const max = spec(par).max;
+  if (m === 'pitch') {
+    const d = macro.pitch - 24, pair = PITCH_PAIR[par];
+    if (Number.isInteger(d) || !pair) return pair && par === pair[1] ? v : Math.max(0, Math.min(max, Math.round(v + d)));
+    // the voice's tune in semitones (fine's middle is 63.5), moved, then split back into coarse and fine
+    const [c, fi] = pair, t = values[c] + values[fi] / 127 - 0.5 + d;
+    const C = Math.max(0, Math.min(spec(c).max, Math.round(t)));
+    return par === c ? C : Math.max(0, Math.min(127, Math.round((t - C + 0.5) * 127)));
+  }
+  const k = (macro[m] - 100) / 100;
+  return Math.round(k > 0 ? v + (max - v) * k : v * (1 + k));
+}
+const effValues = () => Array.from(values, (v, par) => eff(par, v));
+function setMacro(m, v) {
+  macro[m] = v;
+  for (const n of MACROS[m]) if (PAR[n] !== undefined) send({ type: 'param', par: PAR[n], value: eff(PAR[n], values[PAR[n]]) });
+}
+function sendMacros() { for (const par in macroOf) send({ type: 'param', par: Number(par), value: eff(Number(par), values[par]) }); }
+function setValue(par, v, quiet) {
+  values[par] = v;
+  if (mixInputs[par] && Number(mixInputs[par].value) !== v) { mixInputs[par].value = v; mixInputs[par].dispatchEvent(new Event('sync')); }
+  if (!quiet) for (const k in homes) delete homes[k]; // a knob edit makes the current sound the new home
+  send({ type: 'param', par, value: eff(par, v) });
+  // off the semitone grid, a voice's coarse and fine are split together, so an edit to either re-sends both
+  if (PITCH_PAIR[par] && !Number.isInteger(macro.pitch - 24)) for (const q of PITCH_PAIR[par]) if (q !== par) send({ type: 'param', par: q, value: eff(q, values[q]) });
+  if (!quiet) scheduleScope();
+}
+
+const knobsEl = $('knobs');
+function buildKnobs() {
+  knobsEl.innerHTML = '';
+  const voice = TRACKS[track].voice;
+  // every page of the voice at once, one card each, sized by how many controls it holds
+  for (const g of visiblePages()) {
+    const card = document.createElement('div'); card.className = 'card pcard';
+    const h = document.createElement('h2'); h.textContent = PAGE_NAMES[g.name.replace(/ \(.*\)/, '')] || g.name;
+    const box = document.createElement('div'); box.className = 'knobs';
+    card.append(h, box);
+    const seen = {};
+    let n = 0;
+    for (const [text, parName] of g.params) {
+      const par = PAR[parName];
+      if (text === 'VEL_DEST') { box.appendChild(targetSelect('VELOCITY TARGET', par, voice, false)); n += 2; continue; }
+      seen[text] = (seen[text] || 0) + 1;
+      const dup = g.params.filter((p) => p[0] === text).length > 1;
+      box.appendChild(knob((LABELS[text] || text) + (dup ? ' ' + seen[text] : ''), par)); n++;
+    }
+    if (g.name === 'LFO') { box.appendChild(targetSelect('LFO TARGET', PAR.TARGET_LFO1 + voice, voice, true)); n += 2; }
+    card.style.flex = `${n} 1 min(100%, calc(var(--kw, 66px) * ${n} + 32px))`;
+    box.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
+    knobsEl.appendChild(card);
+  }
+}
+
+// a select over modTargets: velocity targets stay in the voice, LFO targets can reach any voice
+function targetSelect(label, par, voice, anyVoice) {
+  const wrap = document.createElement('div'); wrap.className = 'sel';
+  const id = 'sel-' + par;
+  wrap.innerHTML = `<label for="${id}">${label}</label>`;
+  const s = document.createElement('select'); s.id = id;
+  const none = new Option('none', 0); s.appendChild(none);
+  const groups = anyVoice ? [0, 1, 2, 3, 4, 5] : [voice];
+  const vnames = ['Drum 1', 'Drum 2', 'Drum 3', 'Snare', 'Cymbal', 'Hihat'];
+  for (const v of groups) {
+    const og = document.createElement('optgroup'); og.label = vnames[v];
+    const [a, b] = MOD_TARGET_VOICE_RANGES[v];
+    for (let i = a; i <= b; i++) {
+      const [t, p] = MOD_TARGETS[i];
+      if (t.startsWith('FX_') || t === 'VEL_DEST') continue;
+      const pageName = VOICE_PAGES[v].groups.find((gr) => gr.params.some((x) => PAR[x[1]] === p));
+      const pre = pageName ? (PAGE_NAMES[pageName.name.replace(/ \(.*\)/, '')] || '') + ' ' : '';
+      og.appendChild(new Option(pre + (LABELS[t] || t).toLowerCase(), i));
+    }
+    s.appendChild(og);
+  }
+  s.value = values[par];
+  s.addEventListener('change', () => {
+    setValue(par, Number(s.value));
+    if (anyVoice) setValue(PAR.VOICE_LFO1 + voice, voiceOfTarget(Number(s.value)) + 1, true);
+  });
+  wrap.appendChild(s);
+  return wrap;
+}
+const voiceOfTarget = (i) => Math.max(0, MOD_TARGET_VOICE_RANGES.findIndex(([a, b]) => i >= a && i <= b));
+
+const A0 = Math.PI * 0.75, A1 = Math.PI * 2.25;
+const arc = (r, a, b) => {
+  const x0 = 32 + r * Math.cos(a), y0 = 32 + r * Math.sin(a), x1 = 32 + r * Math.cos(b), y1 = 32 + r * Math.sin(b);
+  return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 ${b - a > Math.PI ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+};
+// ---- shared input for the sliders, dials, faders and crossfeed cells ----
+// a vertical drag changes a value from where it was: rate units per pixel (Shift: a quarter of that).
+// opts.start(e, d) runs on the press and may move d.acc; opts.end() runs when it lets go
+function dragY(el, get, put, rate, opts = {}) {
+  let d = null;
+  el.addEventListener('pointerdown', (e) => {
+    if (e.button) return;
+    el.setPointerCapture(e.pointerId);
+    d = { last: e.clientY, acc: get(), rate: typeof rate === 'function' ? rate() : rate };
+    if (opts.start) opts.start(e, d);
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (!d) return;
+    d.acc += (d.last - e.clientY) * d.rate * (e.shiftKey ? 0.25 : 1); d.last = e.clientY;
+    put(d.acc);
+  });
+  const stop = () => { if (!d) return; d = null; if (opts.end) opts.end(); };
+  el.addEventListener('pointerup', stop); el.addEventListener('pointercancel', stop);
+}
+// the wheel and the arrow and page keys step a value
+function stepKeys(el, get, put, { small = 1, big = 10, wheel = 2 } = {}) {
+  el.addEventListener('wheel', (e) => { e.preventDefault(); put(get() + (e.deltaY < 0 ? wheel : -wheel)); }, { passive: false });
+  el.addEventListener('keydown', (e) => {
+    const d = { ArrowUp: small, ArrowRight: small, ArrowDown: -small, ArrowLeft: -small, PageUp: big, PageDown: -big }[e.key];
+    if (d) { put(get() + d); e.preventDefault(); }
+  });
+}
+// a vertical slider: o = { max, get, put, show, center, detents, snap }. Click the track to jump there,
+// drag the cap (Shift: fine)
+function slider(aria, o) {
+  const el = document.createElement('div'); el.className = 'sl'; el.tabIndex = 0;
+  el.setAttribute('role', 'slider'); el.setAttribute('aria-label', aria); el.setAttribute('aria-orientation', 'vertical');
+  el.setAttribute('aria-valuemin', 0); el.setAttribute('aria-valuemax', o.max);
+  el.innerHTML = '<i class="rail"><i class="fill"></i><b class="thumb"></b></i>';
+  const rail = el.firstChild, snap = o.snap || ((v) => v);
+  for (const [v, major] of o.detents || []) {
+    const t = document.createElement('i'); t.className = major ? 'tick major' : 'tick';
+    t.style.bottom = (100 * v / o.max) + '%'; rail.prepend(t);
+  }
+  const draw = () => {
+    const v = Math.min(o.get(), o.max), f = o.max ? v / o.max : 0, c = o.center !== undefined ? o.center / o.max : 0;
+    el.style.setProperty('--p', f); el.style.setProperty('--a', Math.min(c, f)); el.style.setProperty('--w', Math.abs(f - c));
+    el.setAttribute('aria-valuenow', v); el.setAttribute('aria-valuetext', o.show(v));
+  };
+  const put = (v) => o.put(snap(Math.max(0, Math.min(o.max, v))));
+  // the whole rail is the range; a press off the cap jumps there
+  dragY(el, o.get, put, () => o.max / (rail.getBoundingClientRect().height || 1), { start: (e, d) => {
+    el.focus({ preventScroll: true }); e.preventDefault();
+    const r = rail.getBoundingClientRect(), py = r.bottom - r.height * Math.min(o.get(), o.max) / o.max;
+    if (Math.abs(e.clientY - py) > 6) { d.acc = Math.max(0, Math.min(o.max, (r.bottom - e.clientY) / r.height * o.max)); put(d.acc); }
+  } });
+  return { el, draw };
+}
+// a knob over any value: o = { max, get, set, show, dflt, changed }
+function dialKnob(label, o) {
+  const el = document.createElement('div'); el.className = 'knob';
+  const id = 'k' + (++dialKnob.n);
+  // optional detents ([value, major]): tick marks beside the slider, and a drag catches on them
+  const det = (o.detents || []).map(([v]) => v).sort((a, b) => a - b);
+  const CATCH = Math.max(1, o.max * 0.008);
+  const snap = (v) => { for (const d of det) if (Math.abs(v - d) <= CATCH) return d; return v; };
+  const nextDetent = (dir) => {
+    const v = o.get();
+    return dir > 0 ? (det.find((d) => d > v) ?? o.max) : ([...det].reverse().find((d) => d < v) ?? 0);
+  };
+  const s = slider(label, { max: o.max, get: o.get, show: o.show, center: o.center, detents: o.detents, snap, put: (v) => set(v) });
+  const dial = s.el; dial.id = id;
+  el.innerHTML = `<label for="${id}">${label}</label><output></output>`;
+  const out = el.querySelector('output');
+  el.insertBefore(dial, out);
+  const draw = () => {
+    s.draw(); out.textContent = o.show(Math.min(o.get(), o.max));
+    el.classList.toggle('changed', !!(o.changed && o.changed()));
+  };
+  const set = (v) => {
+    v = Math.max(0, Math.min(o.max, Math.round(v)));
+    if (v === o.get()) return;
+    o.set(v); draw();
+    detail(`${label} <em>${o.show(v)}</em>`);
+  };
+  // with detents, the wheel and arrow keys step from one to the next (Shift + arrow: fine steps)
+  const step = (dir, fine) => set(det.length && o.jump !== false && !fine ? nextDetent(dir) : o.get() + dir);
+  dial.addEventListener('wheel', (e) => { e.preventDefault(); step(e.deltaY < 0 ? 1 : -1, false); }, { passive: false });
+  dial.addEventListener('keydown', (e) => {
+    const big = o.max > 20 ? 8 : 1;
+    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { step(1, e.shiftKey); e.preventDefault(); }
+    else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { step(-1, e.shiftKey); e.preventDefault(); }
+    else if (e.key === 'PageUp') { set(o.get() + big); e.preventDefault(); }
+    else if (e.key === 'PageDown') { set(o.get() - big); e.preventDefault(); }
+  });
+  dial.addEventListener('dblclick', () => set(o.dflt()));
+  dial.addEventListener('focus', () => detail(`${label} <em>${o.show(o.get())}</em>`));
+  draw();
+  el.draw = draw;
+  return el;
+}
+dialKnob.n = 0;
+// a knob over one of the voice's parameters
+function knob(label, par, quiet) {
+  const sp = spec(par);
+  return dialKnob(label, { max: sp.max, show: sp.show, get: () => values[par], set: (v) => setValue(par, v, quiet),
+    dflt: () => initValues[par], changed: () => values[par] !== initValues[par] });
+}
+

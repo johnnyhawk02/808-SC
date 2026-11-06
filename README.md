@@ -3,6 +3,10 @@
 Each TR-808 voice circuit from the 1981 service notes, rebuilt as plain JS DSP
 that runs in an AudioWorklet (with a ScriptProcessor fallback) or in Node.
 
+`elixir/` is Elixir 808: a copy of Elixir Desktop (the LXR-02 drum machine) with these voices on its tracks, built
+from `dsp/` and `voices/` by `node elixir/build.mjs` (rebuild it after changing them). See `elixir/README.md`;
+live at https://johnnyhawk02.github.io/Tr808/elixir/.
+
 ## Layout
 
 Every voice exists in four versions, and the bench switches between them per card:
