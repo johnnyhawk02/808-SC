@@ -47,3 +47,12 @@
 .m-g8-foot { display: flex; align-items: center; gap: 12px; font-size: var(--fs-xs); white-space: nowrap; }
 .m .m-g8-foot .m-toggle { min-height: 34px; padding: 0 12px; font-size: var(--fs-xs) !important; text-transform: uppercase; }
 .m-g8-key { margin-left: auto; opacity: .6; }
+
+/* ---- no left side on the laptop: the perform knobs, the sends and levels, and the step sequencer under them are
+   gone; the page buttons and the page chosen take the full width under the title line (tempo is on the beat page,
+   levels and sends on the mix page) ---- */
+@media (min-width: 1000px) {
+  .m .m-play-card, .m .m-seq, .m .m-seq[hidden] { display: none !important; }
+  .m > .m-tabs { grid-area: 2 / 1 / 3 / 3; padding-left: 4px; border-left: 0; }
+  .m .m-panel:not([data-m-panel="play"]) { grid-area: 3 / 1 / 5 / 3; padding-left: 4px; border-left: 0; }
+}
