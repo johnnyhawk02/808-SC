@@ -33,7 +33,7 @@
 .m-g8-presets { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
 .m .m-g8-presets .m-toggle:not(.used):not([aria-pressed="true"]) { opacity: .5; }
 .m .m-g8-presets .m-toggle { min-width: 0; min-height: 34px; padding: 0 2px; font-size: var(--fs-xs) !important; text-transform: uppercase; }
-.m-g8-grid { display: grid; grid-template-columns: 48px repeat(16, minmax(0, 1fr)); grid-template-rows: repeat(16, minmax(0, 1fr)); gap: 2px; min-height: 0; }
+.m-g8-grid { display: grid; grid-template-columns: 40px repeat(16, minmax(0, 1fr)) 40px; grid-template-rows: repeat(16, minmax(0, 1fr)); gap: 2px; min-height: 0; }
 .m .m-g8-lab { min-width: 0; min-height: 0; padding: 0 0 0 2px; border: 0 !important; background: none !important; box-shadow: none !important; color: var(--ink);
   font-size: var(--fs-xs) !important; line-height: 1; text-align: left; text-transform: uppercase; opacity: .55; cursor: pointer; }
 .m .m-g8-lab.used { opacity: 1; }
@@ -108,3 +108,5 @@
 .m .m-g8-side .m-808-set .m-knob .m-flab, .m .m-g8-side .m-808-set .m-knob output { font-size: 13px; }
 .m .m-g8-side .m-808-models .m-toggle { min-height: 32px; font-size: 14px !important; }
 .m .m-g8-side .m-808-vname { font-size: var(--fs-l) !important; }
+
+.m .m-g8-lab.right { padding: 0 2px 0 6px; }
