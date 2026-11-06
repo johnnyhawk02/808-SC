@@ -29,8 +29,8 @@
 }
 
 /* ---- the grid page: presets, then seven rows of sixteen steps, a beat a column group ---- */
-.m-g8-card { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px; min-height: 0; padding: 10px 2px; }
-.m-g8-presets { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; }
+.m-g8-card { display: grid; grid-template-columns: minmax(0, 1fr) 170px; grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px 14px; min-height: 0; padding: 10px 2px; }
+.m-g8-presets { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
 .m .m-g8-presets .m-toggle { min-width: 0; min-height: 34px; padding: 0 2px; font-size: var(--fs-xs) !important; text-transform: uppercase; }
 .m-g8-grid { display: grid; grid-template-columns: 48px repeat(16, minmax(0, 1fr)); grid-template-rows: repeat(16, minmax(0, 1fr)); gap: 2px; min-height: 0; }
 .m .m-g8-lab { min-width: 0; min-height: 0; padding: 0 0 0 2px; border: 0 !important; background: none !important; box-shadow: none !important; color: var(--ink);
@@ -71,3 +71,21 @@
   linear-gradient(90deg, rgba(255, 79, 191, 0) 88%, rgba(255, 79, 191, .2) 97%, rgba(255, 79, 191, .1)); }
 .m-card { background-color: var(--panel); }
 .fit .m-turn > div { background: #ff4fbf; color: #1d0019; }
+
+/* the grid page's side panel: the controls of the sound last put on a lane, beside the grid */
+.m-g8-presets, .m-g8-grid, .m-g8-foot { grid-column: 1; }
+.m-g8-side { grid-area: 1 / 2 / 4 / 3; display: grid; min-height: 0; }
+.m-g8-side > [hidden] { display: none; }
+.m-g8-side .m-808-v { grid-template-rows: auto auto minmax(0, 1fr) auto auto auto; }
+.m .m-g8-side .m-808-set .m-knob .m-vtrack { max-height: 90px; }
+.m .m-g8-lab.sel { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---- the mix page: a strip a sound, sixteen across: name, echo, reverb and pan knobs, then the level fader ---- */
+.m-mix-card[hidden] { display: none !important; }
+.m-808-mixer { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 4px; min-height: 0; padding: 8px 2px; }
+.m-808-strip { display: grid; grid-template-rows: auto repeat(3, minmax(0, .7fr)) minmax(0, 2fr); gap: 4px; min-width: 0; min-height: 0; padding: 4px 2px; border: 1.5px solid var(--ink); border-radius: 6px; }
+.m .m-808-strip .m-knob { display: flex; flex-direction: column; align-items: center; min-height: 0; gap: 1px; }
+.m .m-808-strip .m-knob .m-vtrack { container-type: size; flex: 1; width: 100%; min-height: 20px; background: none; overflow: visible; border-radius: 0; }
+.m .m-808-strip output, .m .m-808-strip .m-flab { font-size: 13px !important; line-height: 1; height: auto !important; }
+.m .m-g8-grid > * { grid-column: auto !important; grid-row: auto !important; }
+.m .m-g8-grid > .m-g8-lab { grid-column: 1 !important; }

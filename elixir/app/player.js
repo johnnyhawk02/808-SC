@@ -89,6 +89,9 @@ class Player {
     this.events = [];
     // the TR-808 voices (app/tr808.js): a track set to one plays it instead of its LXR voice
     this.k808 = null; this.t808 = new Array(7).fill(null); this.want808 = {}; this.b808 = {}; this.lanes = null;
+    // each 808 sound's own mix (the mix page, app/tr808-mix.js): level, pan, echo and reverb sends; its dry signal this
+    // block (int16 scale, at its level) and peak
+    this.vmix = {}; this.vbuf = {}; this.vpk = {}; this.fxExtra = new Float32Array(128);
     this._render(this.A); this._render(this.B);
   }
   msg(m) {
@@ -249,7 +252,10 @@ class Player {
     if (!this.k808) {
       if (typeof TR808 === 'undefined') return;
       this.k808 = new TR808.Kit(LXR.REAL_FS); this.k808.setAllModels('cached'); this.k808.master = 1;
-      for (const [id] of TR808.VOICES) this.b808[id] = new Float32Array(64);
+      for (const [id] of TR808.VOICES) {
+        this.b808[id] = new Float32Array(64); this.vbuf[id] = new Float32Array(64); this.vpk[id] = 0;
+        this.vmix[id] ??= { vol: 1, pl: Math.sqrt(64 / 127), pr: Math.sqrt(63 / 127), echo: 0, verb: 0 };
+      }
       this.k808.split = this.b808; this.mix808 = new Float32Array(64);
     }
     const K = this.k808;
@@ -259,6 +265,7 @@ class Player {
     // a tap on a voice's name on the 808 page: play it now
     else if (m.type === 'hit808') { const t = this.t808.includes(m.id) ? this.t808.indexOf(m.id) : BUS808[m.id] ?? 3; this.hit(t, 127, m.acc, m.id); this.gainTo[Math.min(t, 5)] = 1; }
     else if (m.type === 'set808') K.set(m.id, m.param, m.value);
+    else if (m.type === 'vmix808') this.vmix[m.id] = { vol: m.vol / 127, pl: Math.sqrt((127 - m.pan) / 127), pr: Math.sqrt(m.pan / 127), echo: m.echo / 100, verb: m.verb / 100 };
     else if (m.type === 'model808') { this.want808[m.id] = m.model; K.setModel(m.id, m.model); }
     else if (m.type === 'cache808') { K.loadCache(m.id, m.info, new Int16Array(m.pcm)); K.setModel(m.id, this.want808[m.id] || 'cached'); }
   }
@@ -273,23 +280,24 @@ class Player {
     v.triggeredPanL = Math.fround(Math.sqrt(Math.fround((127 - v.pan) / 127)));
     v.triggeredPanR = Math.fround(Math.sqrt(Math.fround(v.pan / 127)));
   }
-  // each 808 voice renders on its own (kit.split) and takes its track's place in the engine's output (int16, as the
-  // engine gives it; the LXR voices are silent) at the track's level, so the mixer, sends, sidechain, meters and recorder
-  // take it like any voice
+  // each 808 sound renders on its own (kit.split), at its own level, into vbuf (int16 scale); the engine's channels stay
+  // silent (no LXR voices) and _render mixes the sounds itself: each at its own pan and sends, ducked (all but the kick)
+  // and turned down with its track (sw, the rush's swell; its channel for the meters and mutes)
   render808(out) {
-    const K = this.k808, B = this.b808, e = this.e, T = this.t808;
+    const K = this.k808, B = this.b808, V = this.vbuf;
     for (const id in B) B[id].fill(0);
     for (let c = 0; c < 6; c++) out[c].fill(0);
     K.render(this.mix808, 64);
-    const vols = [e.drums[0], e.drums[1], e.drums[2], e.snare, e.cymbal, e.hat];
-    // (with the grid's lanes, each voice on its own track, BUS808; else the tracks' voices, a voice on two playing out
-    // of the first, and any other (a tap on the 808 page) on its own track)
+    const g = TR808.VOLT_SCALE * G808 * 32768;
     for (const id in B) {
-      const t = !this.lanes && T.includes(id) ? T.indexOf(id) : BUS808[id];
-      const c = Math.min(t, 5), o = out[c], b = B[id], g = TR808.VOLT_SCALE * G808 * 32768 * vols[c].vol;
-      for (let i = 0; i < 64; i++) { const x = Math.round(o[i] + b[i] * g); o[i] = x > 32767 ? 32767 : x < -32768 ? -32768 : x; }
+      const b = B[id], v = V[id], gv = g * this.vmix[id].vol;
+      let pk = 0;
+      for (let i = 0; i < 64; i++) { const x = b[i] * gv; v[i] = x; const a = x < 0 ? -x : x; if (a > pk) pk = a; }
+      this.vpk[id] = pk;
     }
   }
+  // a sound's track: the grid's lanes put each on its own (BUS808), the generator's tracks one each
+  track808(id) { return !this.lanes && this.t808.includes(id) ? this.t808.indexOf(id) : BUS808[id]; }
   clickAt(hi) { this.clk = { n: 0, ph: 0, w: 2 * Math.PI * (hi ? 1760 : 880) / LXR.REAL_FS }; }
   _render(dst) {
     const rc = this.rec;
@@ -374,8 +382,9 @@ class Player {
     const eTime = this.echoSync ? delaySamples(this.delayPos, this.bpm) : (1 + 1999 * this.echoFree) / 1000 * LXR.REAL_FS;
     e.fx.setDelaySync(isDelay ? eTime * (1 + this.echoFine / 10000) : null);
     let pk = 0;
-    for (let i = 0; i < 64; i++) pk = Math.max(pk, Math.abs(k[i]));
-    pk = pk / 32768 * this.gainTo[0];
+    if (this.k808) pk = this.vpk.bd * this.gainTo[this.track808('bd')]; // (the kick keys it)
+    else for (let i = 0; i < 64; i++) pk = Math.max(pk, Math.abs(k[i]));
+    pk = pk / 32768 * (this.k808 ? 1 : this.gainTo[0]);
     this.duckEnv = Math.max(pk, this.duckEnv * Math.exp(-64000 / (M.duckRelease * LXR.REAL_FS)));
     const duck0 = this.duckAt, duck1 = 1 - (M.duckOn ? M.duck : 0) * Math.min(1, this.duckEnv / 0.3);
     this.duckAt = duck1; this.duckMin = Math.min(this.duckMin, duck1);
@@ -398,6 +407,24 @@ class Player {
       this.fxGain[n] = g1 * fa;
       this.gain[n] = this.gainTo[n];
     }
+    // the 808 sounds: each at its pan into the mix (the kick with drum 1, the rest ducked) and its echo send
+    const fe = this.k808 ? this.fxExtra : null;
+    if (fe) {
+      fe.fill(0);
+      for (const id in this.vbuf) {
+        if (!this.vpk[id]) continue;
+        const b = this.vbuf[id], M8 = this.vmix[id], t = this.track808(id), c = Math.min(t, 5), kick = id === 'bd';
+        const a0 = this.gainTo[c] * (kick ? 1 : duck0), a1 = this.gainTo[c] * (kick ? 1 : duck1), da = (a1 - a0) / 64;
+        const OL = kick ? L : XL, OR = kick ? R : XR, pl = M8.pl / 32768, pr = M8.pr / 32768, el = M8.pl * M8.echo, er = M8.pr * M8.echo;
+        let lv = 0;
+        for (let i = 0; i < 64; i++) {
+          const v = b[i] * (a0 + da * i); OL[i] += v * pl; OR[i] += v * pr;
+          if (el + er) { fe[2 * i] += v * el; fe[2 * i + 1] += v * er; }
+          const a = v < 0 ? -v : v; if (a > lv) lv = a;
+        }
+        lv *= Math.max(pl, pr); if (lv > this.lvl[c]) this.lvl[c] = lv;
+      }
+    }
     if (sp) {
       // L and R hold drum 1 alone here: its mono is the key
       const key = this.spKey;
@@ -412,7 +439,7 @@ class Player {
       this.lvlOn = on; this.lvl.fill(0);
     }
     // the firmware's FX bus (distortion, ring mod, compressor or delay), sample-exact
-    const fx = e.renderFx(this.fxGain, this.echoWidth);
+    const fx = e.renderFx(this.fxGain, this.echoWidth, fe);
     // with duck fx on, the three FX returns are ducked too (all of them, drum 1's sends included), ramped over the block
     const fd0 = M.duckFx ? duck0 : 1, fdd = M.duckFx ? (duck1 - duck0) / 64 : 0;
     // the reverb's bus: each voice panned in at its send, saturated to int16
@@ -425,6 +452,13 @@ class Player {
         any = true;
         const o = out[n], pl = pans[n].triggeredPanL * g, pr = pans[n].triggeredPanR * g;
         for (let i = 0; i < 64; i++) { bi[2 * i] += o[i] * pl; bi[2 * i + 1] += o[i] * pr; }
+      }
+      // (and each 808 sound at its reverb send)
+      if (this.k808) for (const id in this.vbuf) {
+        const M8 = this.vmix[id]; if (!M8.verb || !this.vpk[id]) continue;
+        any = true;
+        const b = this.vbuf[id], g = M8.verb * this.gainTo[Math.min(this.track808(id), 5)] * (id === 'bd' ? 1 : duck1), pl = M8.pl * g, pr = M8.pr * g;
+        for (let i = 0; i < 64; i++) { bi[2 * i] += b[i] * pl; bi[2 * i + 1] += b[i] * pr; }
       }
       for (let i = 0; i < 128; i++) bus.input[i] = Math.max(-32768, Math.min(32767, Math.round(bi[i])));
       const bo = this.busOut; bo.fill(0);

@@ -85,6 +85,7 @@
       <div class="m-g8-presets" id="m-g8-presets" role="group" aria-label="pattern presets"></div>
       <div class="m-g8-grid" id="m-grid"></div>
       <div class="m-g8-foot"><button class="m-toggle" id="m-g8-gen" type="button" title="Play the generator's pattern again (genre, beat, energy, fills on the beat page)">generator</button><span>playing: <b id="m-g8-what"></b></span><span class="m-g8-key">tap a step: on, accent, off</span></div>
+      <div class="m-g8-side" id="m-g8-side" aria-label="the sound's controls"></div>
     </section>
   </div>
 
@@ -107,7 +108,8 @@
   </div>
 
   <div class="m-panel" data-m-panel="mix">
-    <section class="m-card m-fx-card m-mix-card">
+    <section class="m-card m-808-mixer" id="m-808-mixer" aria-label="mixer: every 808 sound"></section>
+    <section class="m-card m-fx-card m-mix-card" hidden>
       <div class="m-fx-row"><b>echo send</b><div class="m-faders" id="m-mix-echo"></div></div>
       <div class="m-fx-row"><b>reverb send</b><div class="m-faders" id="m-mix-ring"></div></div>
       <div class="m-fx-row m-mix-pan"><b>pan</b><div class="m-faders" id="m-mix-pan"></div></div>
