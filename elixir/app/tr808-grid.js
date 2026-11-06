@@ -89,7 +89,7 @@ const g8Cells = {}, g8Labs = {};
   }
   for (let i = 0; i < G8_N; i++) {
     const b = document.createElement('button');
-    b.type = 'button'; b.className = 'm-toggle'; b.textContent = String(i + 1); b.title = `pattern ${i + 1}`;
+    b.type = 'button'; b.className = 'm-toggle'; b.textContent = String(i + 1); b.title = `pattern ${i + 1} (key ${i + 1})`;
     b.addEventListener('click', () => g8Pick(i));
     $('m-g8-presets').append(b);
   }

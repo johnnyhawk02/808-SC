@@ -1,11 +1,10 @@
 // ---- the keyboard (laptop): one key for each thing played often. It listens before anything else on the page, so the
 // hidden desktop panels' own keys (space and 1..7 sound a drum, r randomises) never fire; typing in a box, and keys
 // with cmd, ctrl or alt, are left alone ----
-// (the randomisers on 1..7 in the bar's order; enter records, l records a loop even where rec is set to free; the
+// (1..8 the grid's eight patterns; enter records, l records a loop even where rec is set to free; the
 // letter rows are the mutes: z..n the drums, a..h their echo sends, q..y their reverb sends)
-// (Elixir 808: no kit, alter or crossfeed randomisers, which only moved the LXR voices)
-const KEYS = { ' ': 'm-play', Enter: 'm-rec', l: 'm-loop', 1: 'm-everything', 4: 'm-pattern',
-  6: 'm-fx-rand', 7: 'm-fx-alter', u: 'm-undo' };
+// (Elixir 808: 1..8 pick the grid's patterns, so the randomisers have no keys)
+const KEYS = { ' ': 'm-play', Enter: 'm-rec', l: 'm-loop', u: 'm-undo' };
 // (the open pop-up, if any: Escape presses its done button; on the laptop the step sequencer is a strip under the knobs,
 // not a pop-up, so the keys still play while it's open)
 const mOpenPop = () => [...document.querySelectorAll(mWide.matches ? '.m-rs' : '.m-rs, .m-seq')].find((el) => !el.hidden);
@@ -22,7 +21,8 @@ addEventListener('keydown', (e) => {
   }
   if (pop) return; // (the other keys wait until the pop-up is closed)
   // (arrows and enter stay with a focused control, so a fader still steps with the arrows)
-  if (KEYS[k]) { e.preventDefault(); const b = $(KEYS[k]); if (!b.disabled) b.click(); }
+  if (/^[1-8]$/.test(k)) { e.preventDefault(); g8Pick(Number(k) - 1); }
+  else if (KEYS[k]) { e.preventDefault(); const b = $(KEYS[k]); if (!b.disabled) b.click(); }
   else if (k === 'm') { e.preventDefault(); $('m-nextbar').click(); }
   else if (MUTE_KEYS.includes(k)) { e.preventDefault(); mMuteToggle(MUTE_KEYS.indexOf(k)); }
   else if (SEND_KEYS.fx.includes(k)) { e.preventDefault(); mSendToggle('fx', SEND_KEYS.fx.indexOf(k)); }
