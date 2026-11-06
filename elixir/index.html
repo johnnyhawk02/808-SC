@@ -1626,7 +1626,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m-g8-presets { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
 .m .m-g8-presets .m-toggle:not(.used):not([aria-pressed="true"]) { opacity: .5; }
 .m .m-g8-presets .m-toggle { min-width: 0; min-height: 34px; padding: 0 2px; font-size: var(--fs-xs) !important; text-transform: uppercase; }
-.m-g8-grid { display: grid; grid-template-columns: 48px repeat(16, minmax(0, 1fr)); grid-template-rows: repeat(16, minmax(0, 1fr)); gap: 2px; min-height: 0; }
+.m-g8-grid { display: grid; grid-template-columns: 40px repeat(16, minmax(0, 1fr)) 40px; grid-template-rows: repeat(16, minmax(0, 1fr)); gap: 2px; min-height: 0; }
 .m .m-g8-lab { min-width: 0; min-height: 0; padding: 0 0 0 2px; border: 0 !important; background: none !important; box-shadow: none !important; color: var(--ink);
   font-size: var(--fs-xs) !important; line-height: 1; text-align: left; text-transform: uppercase; opacity: .55; cursor: pointer; }
 .m .m-g8-lab.used { opacity: 1; }
@@ -1701,11 +1701,13 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m .m-g8-side .m-808-set .m-knob .m-flab, .m .m-g8-side .m-808-set .m-knob output { font-size: 13px; }
 .m .m-g8-side .m-808-models .m-toggle { min-height: 32px; font-size: 14px !important; }
 .m .m-g8-side .m-808-vname { font-size: var(--fs-l) !important; }
+
+.m .m-g8-lab.right { padding: 0 2px 0 6px; }
 </style>
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.24<!--/v--></small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.25<!--/v--></small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1802,7 +1804,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.24<!--/v-->, 6 Nov, 19:58</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.25<!--/v-->, 6 Nov, 19:59</footer>
     </section>
   </div>
   </div>
@@ -14404,13 +14406,13 @@ function g8Take() {
   if (g8.mode === 'lanes') return;
   g8.lanes = g8FromTracks(); g8.mode = 'lanes';
 }
-const g8Cells = {}, g8Labs = {};
+const g8Cells = {}, g8Labs = {}, g8LabsR = {};
 {
   const box = $('m-grid');
   for (const id of G8_IDS) {
     const lab = document.createElement('button');
-    lab.type = 'button'; lab.className = 'm-g8-lab'; lab.textContent = id; lab.title = `${T8_NAME[id]}: tap to hear it`;
-    lab.addEventListener('click', () => { t8Audition(id); g8Select(id); });
+    lab.type = 'button'; lab.className = 'm-g8-lab'; lab.textContent = id; lab.title = `${T8_NAME[id]}: tap for its controls`;
+    lab.addEventListener('click', () => g8Select(id));
     box.append(lab); g8Labs[id] = lab;
     g8Cells[id] = [];
     for (let s = 0; s < 16; s++) {
@@ -14425,6 +14427,11 @@ const g8Cells = {}, g8Labs = {};
       });
       box.append(c); g8Cells[id].push(c);
     }
+  }
+  // the names again on the right (after the lanes, so the beat-gap rules' child counts stay as they are)
+  for (const id of G8_IDS) {
+    const lab = g8Labs[id].cloneNode(true); lab.classList.add('right'); lab.addEventListener('click', () => g8Select(id));
+    box.append(lab); g8LabsR[id] = lab;
   }
   for (let i = 0; i < G8_N; i++) {
     const b = document.createElement('button');
@@ -14475,6 +14482,7 @@ function g8Order() {
   G8_IDS.forEach((id, i) => {
     const row = String(g8.bdTop ? i + 1 : G8_IDS.length - i);
     g8Labs[id].style.gridRow = row; g8Labs[id].style.gridColumn = '1';
+    g8LabsR[id].style.gridRow = row; g8LabsR[id].style.gridColumn = '18';
     g8Cells[id].forEach((c, s) => { c.style.gridRow = row; c.style.gridColumn = String(s + 2); });
   });
 }
@@ -14488,7 +14496,7 @@ function g8Draw() {
   const L = g8Shown(), lanes = g8.mode === 'lanes';
   [...$('m-g8-side').children].forEach((c, i) => { c.hidden = T8_ORDER[i] !== g8.sel; });
   for (const id of G8_IDS) {
-    g8Labs[id].classList.toggle('used', L[id].on.some(Boolean)); g8Labs[id].classList.toggle('sel', id === g8.sel);
+    for (const lab of [g8Labs[id], g8LabsR[id]]) { lab.classList.toggle('used', L[id].on.some(Boolean)); lab.classList.toggle('sel', id === g8.sel); }
     g8Cells[id].forEach((c, s) => {
       const on = !!L[id].on[s], acc = on && !!L[id].acc[s];
       c.classList.toggle('on', on); c.classList.toggle('acc', acc); c.classList.toggle('now', s === g8Now);

@@ -65,13 +65,13 @@ function g8Take() {
   if (g8.mode === 'lanes') return;
   g8.lanes = g8FromTracks(); g8.mode = 'lanes';
 }
-const g8Cells = {}, g8Labs = {};
+const g8Cells = {}, g8Labs = {}, g8LabsR = {};
 {
   const box = $('m-grid');
   for (const id of G8_IDS) {
     const lab = document.createElement('button');
-    lab.type = 'button'; lab.className = 'm-g8-lab'; lab.textContent = id; lab.title = `${T8_NAME[id]}: tap to hear it`;
-    lab.addEventListener('click', () => { t8Audition(id); g8Select(id); });
+    lab.type = 'button'; lab.className = 'm-g8-lab'; lab.textContent = id; lab.title = `${T8_NAME[id]}: tap for its controls`;
+    lab.addEventListener('click', () => g8Select(id));
     box.append(lab); g8Labs[id] = lab;
     g8Cells[id] = [];
     for (let s = 0; s < 16; s++) {
@@ -86,6 +86,11 @@ const g8Cells = {}, g8Labs = {};
       });
       box.append(c); g8Cells[id].push(c);
     }
+  }
+  // the names again on the right (after the lanes, so the beat-gap rules' child counts stay as they are)
+  for (const id of G8_IDS) {
+    const lab = g8Labs[id].cloneNode(true); lab.classList.add('right'); lab.addEventListener('click', () => g8Select(id));
+    box.append(lab); g8LabsR[id] = lab;
   }
   for (let i = 0; i < G8_N; i++) {
     const b = document.createElement('button');
@@ -136,6 +141,7 @@ function g8Order() {
   G8_IDS.forEach((id, i) => {
     const row = String(g8.bdTop ? i + 1 : G8_IDS.length - i);
     g8Labs[id].style.gridRow = row; g8Labs[id].style.gridColumn = '1';
+    g8LabsR[id].style.gridRow = row; g8LabsR[id].style.gridColumn = '18';
     g8Cells[id].forEach((c, s) => { c.style.gridRow = row; c.style.gridColumn = String(s + 2); });
   });
 }
@@ -149,7 +155,7 @@ function g8Draw() {
   const L = g8Shown(), lanes = g8.mode === 'lanes';
   [...$('m-g8-side').children].forEach((c, i) => { c.hidden = T8_ORDER[i] !== g8.sel; });
   for (const id of G8_IDS) {
-    g8Labs[id].classList.toggle('used', L[id].on.some(Boolean)); g8Labs[id].classList.toggle('sel', id === g8.sel);
+    for (const lab of [g8Labs[id], g8LabsR[id]]) { lab.classList.toggle('used', L[id].on.some(Boolean)); lab.classList.toggle('sel', id === g8.sel); }
     g8Cells[id].forEach((c, s) => {
       const on = !!L[id].on[s], acc = on && !!L[id].acc[s];
       c.classList.toggle('on', on); c.classList.toggle('acc', acc); c.classList.toggle('now', s === g8Now);
