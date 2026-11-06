@@ -1,0 +1,6 @@
+ref/ref_strict
+ref/ref_fx
+node_modules/
+.DS_Store
+# test screenshots never belong in the repo
+/*.png

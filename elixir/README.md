@@ -1,0 +1,105 @@
+# Elixir 808
+
+A copy of [Elixir Desktop](https://github.com/johnnyhawk02/elixir-desktop) (commit 8f45f44) with the TR-808 voices from
+this repo on its tracks. **Play it: https://johnnyhawk02.github.io/Tr808/elixir/**
+
+- **808 page** (the `808` button over the right-hand pages): each of the seven tracks (dr1, dr2, dr3, sn, cy, cl, op)
+  plays its LXR voice or any of the sixteen 808 voices. `808 kit` puts BD, LT, HT, SD, CY, CH, OH on them; `all lxr`
+  puts every track back on the LXR engine.
+- Each 808 voice plays as the **circuit** simulation (every knob works, costs CPU) or **cached** hits (16 normal + 16
+  accented hits rendered by the circuit; level, decay and the clap's snap stay live; almost no CPU), with its own knobs.
+- **Cache** renders the voice's hits through the circuit at its current knobs in a worker (a few seconds to a minute,
+  the cymbal longest) and plays them as cached; **revert** goes back to the shipped hits (`../cache/`). They're kept in
+  this browser under the bench's own IndexedDB store, so a cache made on the bench shows up here and the other way round.
+- An 808 voice takes the track's place in the engine's output, so the sequencer, accents (the circuit's own accent, not
+  the accent fader's turn-down), level, pan, echo and reverb sends, drum 1 sidechain, master chain, meters and the
+  recorder all work on it. Crossfeed doesn't reach the 808 voices.
+- The 808 setup (voice per track, models, knobs) is kept in this browser, not in presets. Presets, settings and
+  favourites are kept apart from Elixir Desktop's (keys start `elixir808-`); on first run its saved presets are copied in.
+
+The 808 code is not copied: `tr808-bundle.mjs` bundles `../dsp` and `../voices` into the page at build time
+(`node elixir/build.mjs`), so it is always the bench's current code. Changes from Elixir Desktop: `app/tr808.js`,
+`app/tr808.css`, the 808 hooks in `app/player.js` (`hit`, `render808`), the tab in `index.src.html`, `build.mjs`, storage keys.
+
+Elixir Desktop's own README follows.
+
+---
+
+## Elixir Desktop
+
+A six-voice drum machine in the browser, a desktop layout grown from [Elixir Mobile](https://github.com/johnnyhawk02/elixir-mobile). **Play it: https://johnnyhawk02.github.io/elixir-desktop/**
+
+This repo holds the app and its full source, published with GitHub Pages.
+
+Elixir's sound engine is a JavaScript port of the drum voices and FX bus in the Erica Synths LXR-02
+firmware ([erica-synths/lxr-desktop-app](https://github.com/erica-synths/lxr-desktop-app),
+GPL-3.0, commit a43cd4f). Elixir is unofficial: it is not made, approved or endorsed by
+Erica Synths.
+
+- **Six voices** from the firmware: three drum/tom voices, snare/clap, cymbal and a closed/open
+  hi-hat, with their oscillators, FM, transients, filters, envelopes, LFOs and velocity
+  modulation, and every sound parameter on knobs.
+- **Everything** builds a new sound from voices of the bundled kits (the 16 free Hrtl LXR-02 DLC
+  kits, by Hrtl, distributed free by Erica Synths, credited here, plus 12 generated kits), with new
+  crossfeed, delay and pattern. Any LXR kit file (`.SND`) can be opened too.
+- **Perform**: energy, beat and fills dials build electro patterns while it plays; a step editor
+  with accents and bar conditions sits behind it.
+- **Randomise** a voice or the whole kit within drum-safe ranges (or wild).
+- **Presets** keep everything (sound, pattern, tempo, mixer, FX, master) under a two-word alien
+  name in the browser. The preset manager stars favourites and exports them; favourites dropped
+  into `src/presets/*.json` are built into the page as built-in presets. A sound can also be
+  exported as an LXR `.SND`.
+- **FX bus** from the firmware: distortion (tube, fold, rat), ring mod, compressor and delay
+  (normal or ping-pong). Each voice can be routed through it, and kits load their own settings.
+- **Mixer** with level, pan, mute and solo, and echo, distortion and ring mod sends per voice, using the firmware's FX code; a master compressor with a drum 1 sidechain duck.
+- **Crossfeed**: a 6 × 6 patchbay that feeds any voice into the FM, filter or ring modulation of
+  any other, with a depth control and a randomiser.
+
+## The engine is exact
+
+`src/lxr.js` follows the firmware's C line by line, including its float32 rounding and ARM
+integer behaviour. `src/verify.mjs` runs the same parameter edits and triggers through the
+port and through the firmware's own engine code (cross-compiled for the Cortex-M7 FPU and run
+under qemu) and compares every sample of all six voices and of the FX bus output. Over 700 random
+scenarios (176 million samples) they are identical. The compressor calls the C library's `logf`
+and `expf`, so those are ported too (glibc's and newlib's share the same algorithm). The mixer, FX sends, crossfeed and pattern generator are new and
+sit outside that comparison; with crossfeed at zero the engine runs exactly as verified.
+
+The shipped firmware is built with `-O3 -ffast-math`, which rounds slightly differently: with
+the init kit the largest difference is 9 LSB (−77 dB).
+
+Not ported: the firmware's reverb (compiled out of the firmware, `USE_REVERB 0`), user samples
+and the hardware sequencer. Only the stereo outputs are modelled.
+
+## Files
+
+| Path | What it is |
+|---|---|
+| `index.html` | the whole app in one file, built by `src/build.mjs` |
+| `src/lxr.js` | the engine (ES module, no dependencies) |
+| `src/lxr-tables.js`, `src/lxr-ui-data.js` | wavetables, init kit, parameter and menu data from the firmware |
+| `src/index.src.html` | the page's markup; `src/build.mjs` bundles it with the code in `src/app/`, the engine and kits |
+| `src/app/` | the page's code: `style.css`, the audio thread (`player.js`) and the app's files, run in the order `build.mjs` lists them |
+| `src/test/smoke.mjs` | loads every built-in preset, older preset shapes and saved ones, and checks the state and audio against `baseline.json` |
+| `src/kits/` | the generator's source kits (`.SND`): Hrtl DLC kits and generated E01–E12 |
+| `src/presets/` | built-in presets: favourites exported from the preset manager (`.json`) |
+| `src/verify.mjs` | the sample-for-sample comparison |
+| `ref/` | the C harness and build script for the reference |
+
+## Build and verify
+
+```sh
+node src/build.mjs --out index.html          # rebuild the page
+node src/test/smoke.mjs index.html --check src/test/baseline.json   # nothing changed (needs Playwright)
+
+# reference (Debian/Ubuntu): qemu-user-static gcc-arm-linux-gnueabihf libc6-dev-armhf-cross
+git clone https://github.com/erica-synths/lxr-desktop-app
+ref/build.sh lxr-desktop-app
+node src/verify.mjs ref/ref_strict 40        # 0 mismatches
+```
+
+## Licence
+
+GPL-3.0-only, like the firmware it is derived from (see [LICENSE](LICENSE)). "Erica Synths",
+"LXR" and "LXR-02" are trademarks of Erica Synths; they are used here only to say where the
+engine comes from.
