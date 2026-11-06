@@ -168,7 +168,21 @@ function g8Draw() {
 }
 // the playhead, and redraws when the generator changes the pattern
 const g8Mark = markStep;
-markStep = (s) => { g8Mark(s); g8Now = s; if ($('m').dataset.page === 'grid' || !mWide.matches) g8Draw(); };
+markStep = (s) => { g8Mark(s); g8Now = s; g8Flash(s); if ($('m').dataset.page === 'grid' || !mWide.matches) g8Draw(); };
+// each sound's name, in its controls box (here and on the 808 page), lights for a moment as its step plays
+function g8Flash(s) {
+  if (s < 0) return;
+  const L = g8Shown();
+  for (const id of G8_IDS) {
+    if (!L[id].on[s % 16]) continue;
+    for (const card of t8Cards[id] || []) {
+      const n = card.querySelector('.m-808-vname'); if (!n) continue;
+      n.classList.add('hit'); clearTimeout(n._hit); n._hit = setTimeout(() => n.classList.remove('hit'), 110);
+    }
+  }
+}
+// (a drag that wanders off a knob mustn't start selecting the page's text; the help's text still selects)
+document.addEventListener('selectstart', (e) => { const t = e.target.nodeType === 1 ? e.target : e.target.parentElement; if (!t?.closest('.m-help-text, input, textarea')) e.preventDefault(); });
 const g8Gen = generate;
 generate = function () { const r = g8Gen.apply(this, arguments); if (g8.mode === 'gen') g8Draw(); return r; };
 perfDraws.push(g8Draw);
