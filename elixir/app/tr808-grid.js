@@ -1,28 +1,46 @@
-// ---- the grid page: a lane for each of the sixteen 808 sounds, sixteen steps, and 808 pattern presets over it ----
-// A tap steps a cell through off, on, accent, off. The lanes play instead of the tracks' pattern (app/player.js:
-// lanes808), each sound on its own track for the mixer (BUS808 there). "generator" hands back to the beat page's
-// generated pattern on the tracks (one 808 sound a track, t8.map); the grid shows it in the sounds' lanes, and the
-// first edit copies it into the lanes. The lanes are kept in this browser.
-// Presets: each lane's 16 steps as a string, '.' off, 'x' on, 'X' accent, plus the tempo
-const G8_PRESETS = [
-  { name: 'trap', bpm: 140, l: { bd: 'X......x..X.....', sd: '........X.......', cp: '........X.......', ch: 'x.x.xxx.x.x.xxxx' } },
-  { name: 'miami', bpm: 130, l: { bd: 'X..x..X...X..x..', sd: '....X.......X...', cp: '....x.......x...', ch: 'x.xxx.xxx.xxx.xx' } },
-  { name: 'breaks', bpm: 128, l: { bd: 'X.x.......x.....', sd: '....X..x.x..X...', ch: 'x.x.x.x.x.x.x...', oh: '..............X.' } },
-  { name: 'toms', bpm: 116, l: { bd: 'X.......X.......', lt: '......x.....x.x.', mt: '.....x.....x....', ht: '..x.......x.....', sd: '....X.......X...', cb: 'x..x..x...x.....', ch: 'x.x.x.x.x.x.x.x.' } },
-  { name: 'congas', bpm: 112, l: { bd: 'X.......X.......', lc: '...x..x....x..x.', mc: '.x.......x......', hc: 'x.....x.x...x...', rs: '....x.......x...', cl: 'x..x..x...x.x...', ma: 'x.xxx.xxx.xxx.xx' } },
-  { name: 'cowbell', bpm: 120, l: { bd: 'X...X...X...X...', cp: '....X.......X...', cb: 'x..x..x...x..x..', ch: '..x...x...x...x.', cy: 'X...............' } },
-  { name: 'empty', bpm: null, l: {} },
+// ---- the grid page: eight patterns, a lane for each of the sixteen 808 sounds, sixteen steps ----
+// A tap steps a cell through off, on, accent, off. The pattern buttons over the grid pick which of the eight patterns
+// plays and is edited (straight away, also while playing). The lanes play instead of the tracks' pattern
+// (app/player.js: lanes808), each sound on its own track for the mixer (BUS808 there). "generator" hands back to the
+// beat page's generated pattern on the tracks (one 808 sound a track, t8.map); the grid shows it in the sounds' lanes,
+// and the first edit copies it into the pattern picked. The patterns are kept in this browser.
+// The patterns start as these (each lane's 16 steps, '.' off, 'x' on, 'X' accent); 7 and 8 start empty
+const G8_SEEDS = [
+  { bd: 'X......x..X.....', sd: '........X.......', cp: '........X.......', ch: 'x.x.xxx.x.x.xxxx' },
+  { bd: 'X..x..X...X..x..', sd: '....X.......X...', cp: '....x.......x...', ch: 'x.xxx.xxx.xxx.xx' },
+  { bd: 'X.x.......x.....', sd: '....X..x.x..X...', ch: 'x.x.x.x.x.x.x...', oh: '..............X.' },
+  { bd: 'X.......X.......', lt: '......x.....x.x.', mt: '.....x.....x....', ht: '..x.......x.....', sd: '....X.......X...', cb: 'x..x..x...x.....', ch: 'x.x.x.x.x.x.x.x.' },
+  { bd: 'X.......X.......', lc: '...x..x....x..x.', mc: '.x.......x......', hc: 'x.....x.x...x...', rs: '....x.......x...', cl: 'x..x..x...x.x...', ma: 'x.xxx.xxx.xxx.xx' },
+  { bd: 'X...X...X...X...', cp: '....X.......X...', cb: 'x..x..x...x..x..', ch: '..x...x...x...x.', cy: 'X...............' },
+  {}, {},
 ];
+const G8_N = 8;
 const G8_IDS = T8_ORDER;
-const G8_KEY = 'elixir808-lanes';
+const G8_KEY = 'elixir808-pats';
 const g8Empty = () => Object.fromEntries(G8_IDS.map((id) => [id, { on: new Array(16).fill(0), acc: new Array(16).fill(0) }]));
-const g8 = { mode: 'lanes', lanes: null, preset: null, sel: 'bd' };
+const g8FromText = (l) => {
+  const L = g8Empty();
+  for (const id in l) for (let s = 0; s < 16; s++) { const ch = l[id][s] || '.'; L[id].on[s] = ch === '.' ? 0 : 1; L[id].acc[s] = ch === 'X' ? 1 : 0; }
+  return L;
+};
+const g8Clean = (src) => {
+  const L = g8Empty();
+  for (const id of G8_IDS) for (let i = 0; i < 16; i++) { L[id].on[i] = src?.[id]?.on?.[i] ? 1 : 0; L[id].acc[i] = src?.[id]?.acc?.[i] ? 1 : 0; }
+  return L;
+};
+const g8 = { mode: 'lanes', pats: G8_SEEDS.map(g8FromText), cur: 0, sel: 'bd' };
+// (the pattern picked: g8.lanes)
+Object.defineProperty(g8, 'lanes', { get: () => g8.pats[g8.cur], set: (L) => { g8.pats[g8.cur] = L; }, enumerable: false });
 try {
   const s = JSON.parse(localStorage.getItem(G8_KEY));
-  if (s && s.lanes) {
-    g8.lanes = g8Empty();
-    for (const id of G8_IDS) for (let i = 0; i < 16; i++) { g8.lanes[id].on[i] = s.lanes[id]?.on?.[i] ? 1 : 0; g8.lanes[id].acc[i] = s.lanes[id]?.acc?.[i] ? 1 : 0; }
-    g8.mode = s.mode === 'gen' ? 'gen' : 'lanes'; g8.preset = s.preset ?? null; if (T8_ORDER.includes(s.sel)) g8.sel = s.sel;
+  if (s && Array.isArray(s.pats)) {
+    for (let i = 0; i < G8_N; i++) if (s.pats[i]) g8.pats[i] = g8Clean(s.pats[i]);
+    if (s.cur >= 0 && s.cur < G8_N) g8.cur = s.cur;
+    g8.mode = s.mode === 'gen' ? 'gen' : 'lanes'; if (T8_ORDER.includes(s.sel)) g8.sel = s.sel;
+  } else {
+    // (from before the eight patterns: the one pattern becomes pattern 1)
+    const o = JSON.parse(localStorage.getItem('elixir808-lanes'));
+    if (o?.lanes) { g8.pats[0] = g8Clean(o.lanes); if (T8_ORDER.includes(o.sel)) g8.sel = o.sel; }
   }
 } catch (e) {}
 const g8Save = () => { try { localStorage.setItem(G8_KEY, JSON.stringify(g8)); } catch (e) {} };
@@ -45,7 +63,7 @@ function g8Send() {
 // first edit: what plays becomes the lanes
 function g8Take() {
   if (g8.mode === 'lanes') return;
-  g8.lanes = g8FromTracks(); g8.mode = 'lanes'; g8.preset = null;
+  g8.lanes = g8FromTracks(); g8.mode = 'lanes';
 }
 const g8Cells = {}, g8Labs = {};
 {
@@ -69,12 +87,12 @@ const g8Cells = {}, g8Labs = {};
       box.append(c); g8Cells[id].push(c);
     }
   }
-  G8_PRESETS.forEach((pr) => {
+  for (let i = 0; i < G8_N; i++) {
     const b = document.createElement('button');
-    b.type = 'button'; b.className = 'm-toggle'; b.textContent = pr.name;
-    b.addEventListener('click', () => g8Load(pr));
+    b.type = 'button'; b.className = 'm-toggle'; b.textContent = String(i + 1); b.title = `pattern ${i + 1}`;
+    b.addEventListener('click', () => g8Pick(i));
     $('m-g8-presets').append(b);
-  });
+  }
   $('m-g8-gen').addEventListener('click', () => { g8.mode = 'gen'; setSource('perform'); generate(); sendSeq(); g8Send(); g8Draw(); });
 }
 // the side panel: the controls of the sound last put on a lane (or whose name was tapped)
@@ -112,15 +130,9 @@ t8SetModel = function (id, m) { if (m === 'circuit' && g8Auto?.id === id) g8Auto
 const g8Revert = t8Revert;
 t8Revert = async function (id) { if (g8Auto?.id === id) g8Auto = null; g8Quiet++; try { return await g8Revert(id); } finally { g8Quiet--; } };
 new MutationObserver(() => g8Unauto()).observe($('m'), { attributes: true, attributeFilter: ['data-page'] });
-function g8Load(pr) {
-  g8.lanes = g8Empty();
-  for (const id in pr.l) for (let s = 0; s < 16; s++) {
-    const ch = pr.l[id][s] || '.';
-    g8.lanes[id].on[s] = ch === '.' ? 0 : 1; g8.lanes[id].acc[s] = ch === 'X' ? 1 : 0;
-  }
-  g8.mode = 'lanes'; g8.preset = pr.name;
-  if (pr.bpm) { setPerf('tempo', pr.bpm); drawPerf(); sendSeq(); }
-  g8Send(); mDrawAll(); g8Draw();
+function g8Pick(i) {
+  g8.cur = i; g8.mode = 'lanes';
+  g8Send(); g8Draw();
 }
 let g8Now = -1;
 function g8Draw() {
@@ -134,9 +146,9 @@ function g8Draw() {
       c.setAttribute('aria-label', `${T8_NAME[id]} step ${s + 1}${on ? acc ? ', accent' : ', on' : ''}`);
     });
   }
-  [...$('m-g8-presets').children].forEach((b) => b.setAttribute('aria-pressed', lanes && b.textContent === g8.preset));
+  [...$('m-g8-presets').children].forEach((b, i) => { b.setAttribute('aria-pressed', lanes && i === g8.cur); b.classList.toggle('used', G8_IDS.some((id) => g8.pats[i][id].on.some(Boolean))); });
   $('m-g8-gen').setAttribute('aria-pressed', !lanes);
-  $('m-g8-what').textContent = lanes ? g8.preset || 'your pattern' : 'generator';
+  $('m-g8-what').textContent = lanes ? `pattern ${g8.cur + 1}` : 'generator';
 }
 // the playhead, and redraws when the generator changes the pattern
 const g8Mark = markStep;
@@ -145,6 +157,5 @@ const g8Gen = generate;
 generate = function () { const r = g8Gen.apply(this, arguments); if (g8.mode === 'gen') g8Draw(); return r; };
 perfDraws.push(g8Draw);
 M_PAGE_NAMES.grid = 'grid';
-// first run: the first preset (its tempo too)
-if (!g8.lanes) g8Load(G8_PRESETS[0]); else g8Send();
+g8Send();
 g8Draw();
