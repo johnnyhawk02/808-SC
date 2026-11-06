@@ -1668,7 +1668,11 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 
 /* the grid page's side panel: the controls of the sound last put on a lane, beside the grid */
 .m-g8-presets, .m-g8-grid, .m-g8-foot { grid-column: 1; }
-.m-g8-side { grid-area: 1 / 2 / 4 / 3; display: grid; min-height: 0; }
+.m-g8-side { grid-area: 1 / 2 / 4 / 3; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 6px; min-height: 0; }
+/* the sound pickers over the controls: two rows of eight; sounds with no steps in the pattern dimmed */
+.m-g8-picks { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; }
+.m .m-g8-picks .m-toggle { min-width: 0; min-height: 26px; padding: 0; font-size: 14px !important; letter-spacing: 0; text-transform: uppercase; opacity: .55; }
+.m .m-g8-picks .m-toggle.used, .m .m-g8-picks .m-toggle[aria-pressed="true"] { opacity: 1; }
 .m-g8-side > [hidden] { display: none; }
 .m-g8-side .m-808-v { grid-template-rows: auto auto minmax(0, 1fr) auto auto auto; }
 .m .m-g8-side .m-808-set .m-knob .m-vtrack { max-height: 90px; }
@@ -1716,7 +1720,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.27<!--/v--></small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.28<!--/v--></small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1813,7 +1817,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.27<!--/v-->, 6 Nov, 23:47</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.28<!--/v-->, 6 Nov, 23:53</footer>
     </section>
   </div>
   </div>
@@ -14451,6 +14455,18 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
   $('m-g8-gen').addEventListener('click', () => { g8.mode = 'gen'; setSource('perform'); generate(); sendSeq(); g8Send(); g8Draw(); });
 }
 // the side panel: the controls of the sound last put on a lane (or whose name was tapped)
+// (over them, a button for each sound picks which one's controls show; picking doesn't play it)
+const g8Picks = {};
+{
+  const row = document.createElement('div'); row.className = 'm-g8-picks'; row.setAttribute('aria-label', 'sound to edit');
+  for (const id of T8_ORDER) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'm-toggle'; b.textContent = id; b.title = `${T8_NAME[id]}: its controls`;
+    b.addEventListener('click', () => g8Select(id));
+    row.append(b); g8Picks[id] = b;
+  }
+  $('m-g8-side').append(row);
+}
 for (const id of T8_ORDER) t8Card(id, $('m-g8-side'));
 // Autocache: everything plays cached except the sound being edited. Picking a sound on the grid, or moving one of its
 // knobs (here or on the 808 page), plays it on the circuit, so its knobs are heard as they move; moving away (another
@@ -14503,7 +14519,8 @@ function g8Pick(i) {
 let g8Now = -1;
 function g8Draw() {
   const L = g8Shown(), lanes = g8.mode === 'lanes';
-  [...$('m-g8-side').children].forEach((c, i) => { c.hidden = T8_ORDER[i] !== g8.sel; });
+  [...$('m-g8-side').querySelectorAll(':scope > .m-808-v')].forEach((c, i) => { c.hidden = T8_ORDER[i] !== g8.sel; });
+  for (const id of T8_ORDER) { g8Picks[id].setAttribute('aria-pressed', id === g8.sel); g8Picks[id].classList.toggle('used', L[id].on.some(Boolean)); }
   for (const id of G8_IDS) {
     for (const lab of [g8Labs[id], g8LabsR[id]]) { lab.classList.toggle('used', L[id].on.some(Boolean)); lab.classList.toggle('sel', id === g8.sel); }
     g8Cells[id].forEach((c, s) => {
