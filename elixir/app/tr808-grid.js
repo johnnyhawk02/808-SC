@@ -177,7 +177,7 @@ function g8Flash(s) {
     if (!L[id].on[s % 16]) continue;
     for (const card of t8Cards[id] || []) {
       const n = card.querySelector('.m-808-vname'); if (!n) continue;
-      n.classList.add('hit'); clearTimeout(n._hit); n._hit = setTimeout(() => n.classList.remove('hit'), 110);
+      n.classList.add('hit'); clearTimeout(n._hit); n._hit = setTimeout(() => n.classList.remove('hit'), 60);
     }
   }
 }
