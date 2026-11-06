@@ -3,7 +3,8 @@
 // with cmd, ctrl or alt, are left alone ----
 // (the randomisers on 1..7 in the bar's order; enter records, l records a loop even where rec is set to free; the
 // letter rows are the mutes: z..n the drums, a..h their echo sends, q..y their reverb sends)
-const KEYS = { ' ': 'm-play', Enter: 'm-rec', l: 'm-loop', 1: 'm-everything', 2: 'm-kit', 3: 'm-alter', 4: 'm-pattern', 5: 'm-xrand',
+// (Elixir 808: no kit, alter or crossfeed randomisers, which only moved the LXR voices)
+const KEYS = { ' ': 'm-play', Enter: 'm-rec', l: 'm-loop', 1: 'm-everything', 4: 'm-pattern',
   6: 'm-fx-rand', 7: 'm-fx-alter', u: 'm-undo' };
 // (the open pop-up, if any: Escape presses its done button; on the laptop the step sequencer is a strip under the knobs,
 // not a pop-up, so the keys still play while it's open)
@@ -21,10 +22,9 @@ addEventListener('keydown', (e) => {
   }
   if (pop) return; // (the other keys wait until the pop-up is closed)
   // (arrows and enter stay with a focused control, so a fader still steps with the arrows)
-  // (shift with 1..6: the voice page with that drum)
-  if (e.shiftKey && /^Digit[1-6]$/.test(e.code)) { e.preventDefault(); mTab('dice'); $('m-voice').children[Number(e.code[5]) - 1].click(); }
+  // (shift with 1..7: the 808 page with that track)
+  if (e.shiftKey && /^Digit[1-7]$/.test(e.code)) { e.preventDefault(); mTab('t808'); $('m-808-tracks').children[Number(e.code[5]) - 1].click(); }
   else if (KEYS[k]) { e.preventDefault(); const b = $(KEYS[k]); if (!b.disabled) b.click(); }
-  else if (k === '[' || k === ']') { e.preventDefault(); mTab('dice'); const n = $('m-vsec').children.length; $('m-vsec').children[(mVSec + (k === ']' ? 1 : n - 1)) % n].click(); }
   else if (k === 'm') { e.preventDefault(); $('m-nextbar').click(); }
   else if (MUTE_KEYS.includes(k)) { e.preventDefault(); mMuteToggle(MUTE_KEYS.indexOf(k)); }
   else if (SEND_KEYS.fx.includes(k)) { e.preventDefault(); mSendToggle('fx', SEND_KEYS.fx.indexOf(k)); }

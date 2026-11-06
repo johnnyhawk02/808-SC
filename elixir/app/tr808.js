@@ -1,6 +1,6 @@
 // ---- the 808 page: the TR-808 voices (the bench's own code, bundled as TR808 by tr808-bundle.mjs) on Elixir's tracks ----
-// Each of the seven tracks plays its LXR voice or one of the sixteen 808 voices, which then takes the track's place in
-// the engine's output (app/player.js: hit, render808), so the sequencer, accents, mixer, sends, sidechain and recorder
+// Each of the seven tracks plays one of the sixteen 808 voices (no LXR voices: the LXR-02 engine is only the effects and
+// the mix now), which takes the track's place in the engine's output (app/player.js: hit, render808), so the sequencer, accents, mixer, sends, sidechain and recorder
 // work on it as on any voice. Each 808 voice plays as the circuit simulation or as cached hits, with its own knobs; the
 // cache button renders a voice's hits at its current knobs in a worker, as on the bench, kept in this browser
 // (IndexedDB tr808-cache, the bench's own, so caches made on either show up in both); revert brings the shipped ones back.
@@ -13,6 +13,9 @@ const T8_LIVE = ['level', 'snap']; // knobs cached plays live; the cache button 
 const T8_TRACKS = ['dr1', 'dr2', 'dr3', 'sn', 'cy', 'cl', 'op'];
 const T8_KIT = ['bd', 'lt', 'ht', 'sd', 'cy', 'ch', 'oh'];
 const T8_KEY = 'elixir808-tr808';
+// the cache button records this many hits a voice, plain and accented each, played in random order, never the same one
+// twice running (the shipped cache has 16)
+const T8_HITS = 4;
 // shipped cached hits: the bench's cache/ folder, beside this app's folder
 const T8_CACHE_URL = new URL('../cache/', location.href);
 
@@ -21,7 +24,7 @@ const t8 = { map: T8_KIT.slice(), models: Object.fromEntries(T8_IDS.map((id) => 
 try {
   const s = JSON.parse(localStorage.getItem(T8_KEY));
   if (s) {
-    if (Array.isArray(s.map) && s.map.length === 7) t8.map = s.map.map((id) => (T8_IDS.includes(id) ? id : null));
+    if (Array.isArray(s.map) && s.map.length === 7) t8.map = s.map.map((id, t) => (T8_IDS.includes(id) ? id : T8_KIT[t]));
     for (const id of T8_IDS) {
       if (s.models?.[id] === 'circuit' || s.models?.[id] === 'cached') t8.models[id] = s.models[id];
       for (const p of T8_PARAMS[id]) if (typeof s.values?.[id]?.[p.id] === 'number') t8.values[id][p.id] = s.values[id][p.id];
@@ -106,13 +109,13 @@ function t8SetKnob(id, p, x, save = true) {
 let t8WorkerUrl = null;
 function t8Worker() {
   t8WorkerUrl ??= URL.createObjectURL(new Blob([document.getElementById('engine').textContent, `
-self.onmessage = ({ data: { id, values } }) => {
+self.onmessage = ({ data: { id, values, variants } }) => {
   try {
     let last = 0;
     const { info, pcm } = TR808.buildCache(id, values, (done, total) => {
       const now = Date.now();
       if (now - last > 150 || done === total) { last = now; self.postMessage({ t: 'progress', id, done, total }); }
-    });
+    }, variants);
     self.postMessage({ t: 'done', id, info, pcm: pcm.buffer }, [pcm.buffer]);
   } catch (err) { self.postMessage({ t: 'error', id, message: String(err && err.message || err) }); }
 };`], { type: 'text/javascript' }));
@@ -139,7 +142,7 @@ function t8MakeCache(id) {
     t8Sent.delete(id); delete t8Loading[id];
     t8SetModel(id, 'cached');
   };
-  w.postMessage({ id, values: { ...t8.values[id] } });
+  w.postMessage({ id, values: { ...t8.values[id] }, variants: T8_HITS });
 }
 async function t8Revert(id) {
   if (!t8Custom[id]) return;
@@ -160,10 +163,10 @@ const t8TrackBtns = T8_TRACKS.map((name, t) => {
   $('m-808-tracks').append(b);
   return b;
 });
-const t8PickBtns = [null, ...T8_IDS].map((id) => {
+const t8PickBtns = T8_IDS.map((id) => {
   const b = document.createElement('button');
-  b.type = 'button'; b.className = 'm-toggle'; b.textContent = id || 'lxr';
-  b.title = id ? T8_NAME[id] : 'the LXR voice';
+  b.type = 'button'; b.className = 'm-toggle'; b.textContent = id;
+  b.title = T8_NAME[id];
   b.addEventListener('click', () => {
     t8.map[t8.track] = id; t8Save(); t8SendMap();
     if (id && t8.models[id] === 'cached') t8LoadCached(id);
@@ -194,28 +197,26 @@ $('m-808-kit').addEventListener('click', () => {
   for (const id of T8_KIT) if (t8.models[id] === 'cached') t8LoadCached(id);
   t8Draw();
 });
-$('m-808-alllxr').addEventListener('click', () => { t8.map.fill(null); t8Save(); t8SendMap(); t8Draw(); });
 
 const t8KnobText = (id, knobs) => T8_PARAMS[id].filter((p) => knobs?.[p.id] !== undefined).map((p) => `${p.name.toLowerCase()} ${Math.round(knobs[p.id] * 100)}`).join(' · ');
 function t8Draw() {
   const id = t8.map[t8.track];
-  t8TrackBtns.forEach((b, t) => { b.setAttribute('aria-selected', t === t8.track); b.textContent = `${T8_TRACKS[t]} ${t8.map[t] || 'lxr'}`; });
-  t8PickBtns.forEach((b, i) => b.setAttribute('aria-pressed', (i ? T8_IDS[i - 1] : null) === id));
-  $('m-808-body').hidden = !id; $('m-808-lxr').hidden = !!id;
+  t8TrackBtns.forEach((b, t) => { b.setAttribute('aria-selected', t === t8.track); b.textContent = `${T8_TRACKS[t]} ${t8.map[t]}`; });
+  t8PickBtns.forEach((b, i) => b.setAttribute('aria-pressed', T8_IDS[i] === id));
   for (const k in t8KnobBoxes) t8KnobBoxes[k].hidden = k !== id;
-  if (!id) return;
   $('m-808-name').textContent = T8_NAME[id];
   document.querySelectorAll('[data-m808]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.m808 === t8.models[id]));
-  // the cache row: only for voices with knobs the cache bakes in (not rim shot, claves, maracas, cowbell, closed hat)
+  // the cache row, on every voice (one with only a level knob just gets new hits)
   const bake = T8_PARAMS[id].some((p) => !T8_LIVE.includes(p.id)), j = t8Jobs[id], c = t8Custom[id], st = $('m-808-status');
-  $('m-808-cache-go').hidden = !bake; $('m-808-cache-go').disabled = !!j && !j.error;
+  $('m-808-cache-go').disabled = !!j && !j.error;
   $('m-808-revert').hidden = !c || !!j;
   if (j) st.textContent = j.error ? `failed: ${j.error}` : j.total ? `rendering ${Math.round(100 * j.done / j.total)}%…` : 'starting…';
   else if (t8Missing.has(id) && !c) st.textContent = 'shipped hits not found: cached plays the synth model';
-  else if (!c) st.textContent = bake ? 'shipped hits (default knobs)' : 'shipped hits';
+  else if (!c) st.textContent = bake ? 'shipped hits, 16 (default knobs)' : 'shipped hits, 16';
   else {
     const k = c.info.knobs ?? {}, moved = Object.keys(k).some((p) => Math.abs((t8.values[id][p] ?? k[p]) - k[p]) > 1e-9);
-    st.textContent = moved ? 'your hits (knobs moved since)' : 'your hits';
+    const n = c.info.normal.length;
+    st.textContent = moved ? `your ${n} hits (knobs moved since)` : `your ${n} hits, random robin`;
     st.title = `cached plays your hits: ${t8KnobText(id, k)}`;
   }
 }

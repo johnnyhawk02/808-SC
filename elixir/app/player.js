@@ -245,22 +245,24 @@ class Player {
     else if (m.type === 'model808') { this.want808[m.id] = m.model; K.setModel(m.id, m.model); }
     else if (m.type === 'cache808') { K.loadCache(m.id, m.info, new Int16Array(m.pcm)); K.setModel(m.id, this.want808[m.id] || 'cached'); }
   }
-  // a hit on track t: its 808 voice if it has one (accented or not), else the LXR voice at the velocity. (An 808 voice
-  // takes the accent in its circuit, as the TR-808 does, so the accent fader's turn-down of unaccented hits skips it)
+  // a hit on track t: its 808 voice, accented or not (Elixir 808 plays no LXR voices). (The 808 voice takes the accent in
+  // its circuit, as the TR-808 does, so the accent fader's turn-down of unaccented hits skips it)
   hit(t, vel, acc) {
     const id = this.k808 && this.t808[t];
-    if (!id) { this.e.trigger(t, vel, 60); return; }
+    if (!id) return;
     this.k808._fire(id, acc ? 1 : 0);
     // the 808 voice takes the track's pan as the LXR voice would on its trigger
     const e = this.e, v = [e.drums[0], e.drums[1], e.drums[2], e.snare, e.cymbal, e.hat][Math.min(t, 5)];
     v.triggeredPanL = Math.fround(Math.sqrt(Math.fround((127 - v.pan) / 127)));
     v.triggeredPanR = Math.fround(Math.sqrt(Math.fround(v.pan / 127)));
   }
-  // each 808 voice renders on its own (kit.split), then joins its track's LXR output (int16, as the engine gives it) at
-  // the track's level, so the mixer, sends, sidechain, meters and recorder take it like any voice
+  // each 808 voice renders on its own (kit.split) and takes its track's place in the engine's output (int16, as the
+  // engine gives it; the LXR voices are silent) at the track's level, so the mixer, sends, sidechain, meters and recorder
+  // take it like any voice
   render808(out) {
     const K = this.k808, B = this.b808, e = this.e, T = this.t808;
     for (const id in B) B[id].fill(0);
+    for (let c = 0; c < 6; c++) out[c].fill(0);
     K.render(this.mix808, 64);
     const vols = [e.drums[0], e.drums[1], e.drums[2], e.snare, e.cymbal, e.hat];
     for (let t = 0; t < 7; t++) {
@@ -342,7 +344,7 @@ class Player {
     }
     this.clock += 64;
     const out = this.e.renderBlock(), e = this.e;
-    if (this.k808) this.render808(out);
+    if (this.k808) this.render808(out); else for (let c = 0; c < 6; c++) out[c].fill(0);
     const pans = [e.drums[0], e.drums[1], e.drums[2], e.snare, e.cymbal, e.hat];
     const [L, R] = dst;
     L.fill(0); R.fill(0);

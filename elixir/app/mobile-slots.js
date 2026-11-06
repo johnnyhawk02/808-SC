@@ -2,11 +2,12 @@
 // (1..12 unless changed in the user settings; any channel) move knobs 1..12. The ASSIGN box (in the randomise column) turns on assign mode, where tapping a fader opens a chooser of where (a drum, beat, perf, fx, mix, master) and then what,
 // grouped as on that page. The picks are kept in this browser, as [place, group, name], so they survive list changes ----
 // (the picks are kept under a new key when the defaults are remade, so everyone gets the new ones; the old key is cleared)
-const SLOT_KEY = 'elixir808-perfmap2';
-try { localStorage.removeItem('elixir808-perfmap'); } catch (e) {}
+const SLOT_KEY = 'elixir808-perfmap3';
+try { localStorage.removeItem('elixir808-perfmap'); localStorage.removeItem('elixir808-perfmap2'); } catch (e) {}
 // the defaults, four a row: the perform controls and energy, then the best of the beat page
-const SLOT0 = [['perf', 'perf', 'tempo'], ['perf', 'perf', 'sidechain'], ['perf', 'perf', 'pitch'], ['perf', 'perf', 'decay'],
-  ['perf', 'perf', 'filter'], ['perf', 'perf', 'fm'], ['perf', 'perf', 'crossfeed'], ['beat', 'beat', 'energy'],
+// (Elixir 808: no LXR sound macros, so the beat page and the two sends fill their places)
+const SLOT0 = [['perf', 'perf', 'tempo'], ['perf', 'perf', 'sidechain'], ['beat', 'beat', 'energy'], ['beat', 'beat', 'velocity'],
+  ['beat', 'beat', 'groove'], ['beat', 'beat', 'accent'], ['fx', 'echo', 'send'], ['fx', 'reverb', 'send'],
   ['beat', 'beat', 'genre'], ['beat', 'beat', 'beat'], ['beat', 'beat', 'fills'], ['beat', 'beat', 'rush']];
 let mSlots = (() => { try { const v = JSON.parse(localStorage.getItem(SLOT_KEY)); return Array.isArray(v) && v.length >= 7 ? v : null; } catch (e) { return null; } })() || SLOT0.map((x) => x.slice());
 while (mSlots.length < SLOT0.length) mSlots.push(SLOT0[mSlots.length].slice());
