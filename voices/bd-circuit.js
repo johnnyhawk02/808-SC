@@ -17,7 +17,12 @@
 //    are treated as a unity-gain buffer with a ~2 Hz high-pass.
 //  * Tolerances, temperature and op-amp slew/bandwidth are not modelled.
 import { Circuit, busVoltage, TRIG_WIDTH } from '../dsp/mna.js';
-import { Voice, OnePole, lerp, clamp } from '../dsp/core.js';
+import { Voice, OnePole, lerp, clamp, PITCH, pitchMul, knob, amtMul, spanMul } from '../dsp/core.js';
+
+// extra knobs: CLICK is C40, the trigger's feed into IC12 (0 = none, centre
+// stock, full 2x); ATTACK is C38, the Q42 mono-stable that holds the start of
+// the note at the higher pitch (x1/3 .. x3 its 4 ms)
+export const BD_EXTRA = [knob('click', 'Click'), knob('attack', 'Attack')];
 
 export const meta = { id: 'bd', name: 'Bass Drum (circuit)', short: 'BD' };
 
@@ -31,6 +36,7 @@ export class BDCircuit extends Voice {
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'tone', name: 'Tone', def: 0.5 },
       { id: 'decay', name: 'Decay', def: 0.5 },
+      PITCH, ...BD_EXTRA,
     ]);
     this.vppNormal = 3.5; this.vppAccent = 10;
     this.oversample = globalThis.BD_OS ?? 1;
@@ -42,7 +48,7 @@ export class BDCircuit extends Voice {
     c.R('T', 'B41', 8.2e3); c.R('B41', 'gnd', 2.7e3);
     c.NPN('B41', 'C41n', 'gnd');
     // Q42: 4 ms mono-stable (R156 1M, C38 .1u)
-    c.Rsrc('C41n', 1e6, V15); c.C('C41n', 'gnd', 0.1e-6);
+    c.Rsrc('C41n', 1e6, V15); this.c38 = c.C('C41n', 'gnd', 0.1e-6);
     c.NPN('C41n', 'N42', 'gnd');
     c.Rsrc('N42', 22e3, V15);
     // re-trigger pulse: C39 .033u, D52, R161 1M into the network
@@ -51,12 +57,13 @@ export class BDCircuit extends Voice {
     c.R('N42', 'B43', 100e3);
     c.NPN('B43', 'K', 'gnd');
     // input coupling into IC12a (+): C40/R163, R162, D53
-    c.C('T', 'X', 0.015e-6); c.R('T', 'X', 100e3); c.R('X', 'gnd', 4.7e3); c.D('gnd', 'X');
+    this.c40 = c.C('T', 'X', 0.015e-6); c.R('T', 'X', 100e3); c.R('X', 'gnd', 4.7e3); c.D('gnd', 'X');
     // IC12a with the bridged-T network
     c.OpAmp('X', 'P', 'Q');
     c.R('P', 'Q', 1e6);                 // R167
-    c.C('P', 'M', 0.015e-6);            // C41
-    c.C('M', 'Q', 0.015e-6);            // C42
+    // C41, C42: PITCH scales both by 1/m, which moves the bridged-T's
+    // f = 1/(2 pi sqrt(R1 R2 C1 C2)) by m and leaves its Q alone
+    this.cT = [c.C('P', 'M', 0.015e-6), c.C('M', 'Q', 0.015e-6)];
     c.R('M', 'K', 6.8e3);               // R166
     c.R('K', 'gnd', 47e3);              // R165
     // IC12b: inverting amp whose gain VR6 sets, fed back through R170
@@ -85,6 +92,9 @@ export class BDCircuit extends Voice {
     // VR5 (C taper) in parallel with R172: more resistance = darker.
     const vr5 = 10e3 * Math.pow(1 - clamp(this.p.tone, 0, 1), 2) + 1;
     this.vr5.g = 1 / ((vr5 * 10e3) / (vr5 + 10e3));
+    for (const cap of this.cT) cap.c = 0.015e-6 / pitchMul(this.p.pitch);
+    this.c40.c = Math.max(1e-12, 0.015e-6 * amtMul(this.p.click));
+    this.c38.c = 0.1e-6 * spanMul(this.p.attack, 3);
     this.ckt.touch();
   }
   _settle() { this.ckt.settle(2000); }

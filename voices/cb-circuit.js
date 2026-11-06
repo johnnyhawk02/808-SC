@@ -15,6 +15,12 @@
 // below). Assumed: a 100k leak on the Q5 collector (only for the solver).
 import { CircuitVoice, aTaper } from './circuit-voice.js';
 import { busVoltage } from '../dsp/mna.js';
+import { PITCH, DECAY, pitchMul, decayMul, knob, spreadExp, spanMul } from '../dsp/core.js';
+
+// extra knobs: DETUNE spreads the two oscillators apart or together (their
+// C5 / C6), RING is the IC2b band-pass's Q (R25 up, R24 down by the same
+// factor, so its centre stays put)
+export const CB_EXTRA = [knob('detune', 'Detune'), knob('ring', 'Ring')];
 
 // Voicing-board trigger buffer IC2a (schematic p.13): TRIG -> R19 100k -> (+),
 // TRIG -> R18 3.3k -> D1 clamp -> R20 15k -> (+), R21 3.3k to gnd; gain
@@ -35,13 +41,15 @@ export function voicingTrigger(accent) {
 
 export class CBCircuit extends CircuitVoice {
   constructor(sr, shared) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }], shared);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY, ...CB_EXTRA], shared);
     const a = (this.s1 = this.stage(['T5', 'N122', 'E9', 'N82', 'N3', 'N4', 'N62', 'B15', 'C15', 'E15',
       'N64', 'B14', 'C14', 'E14', 'K30', 'K31', 'A', 'Pm', 'O2']));
     this.addTrigger(a, 'T5');
     a.R('T5', 'gnd', 100e3);
-    a.R('T5', 'N122', 1e3); a.D('N122', 'E9'); a.C('E9', 'gnd', 0.47e-6);   // R122, D2, C9
-    a.R('E9', 'N82', 33e3); a.C('N82', 'gnd', 1e-6);                          // R82, C34
+    // DECAY scales the envelope capacitors C9 and C34; PITCH retunes a
+    // private copy of the two cowbell oscillators (their C5/C6)
+    a.R('T5', 'N122', 1e3); a.D('N122', 'E9'); this.part(a, a.C('E9', 'gnd', 0.47e-6), 'env'); // R122, D2, C9
+    a.R('E9', 'N82', 33e3); this.part(a, a.C('N82', 'gnd', 1e-6), 'env');     // R82, C34
     a.R('E9', 'N3', 100e3); a.R('E9', 'N4', 100e3);                           // R28, R29
     // Q15 (540 Hz) and Q14 (800 Hz)
     this.feed(a, 'N62', 33e3, (i) => this.mc.v[4][i]); a.R('N62', 'gnd', 2.2e3);   // R62, R63
@@ -53,8 +61,8 @@ export class CBCircuit extends CircuitVoice {
     a.D('N3', 'C15'); a.D('N4', 'C14');                                       // D3, D4
     a.R('N3', 'K30', 10e3); a.C('K30', 'A', 0.0022e-6);                       // R26, C30
     a.R('N4', 'K31', 10e3); a.C('K31', 'A', 0.0022e-6);                       // R27, C31
-    a.R('A', 'gnd', 2.2e3); a.C('A', 'Pm', 0.01e-6); a.C('A', 'O2', 0.0033e-6); // R24, C28, C29
-    a.R('Pm', 'O2', 470e3); a.OpAmp('gnd', 'Pm', 'O2');                       // R25, IC2b
+    this.part(a, a.R('A', 'gnd', 2.2e3), 'ringDn'); a.C('A', 'Pm', 0.01e-6); a.C('A', 'O2', 0.0033e-6); // R24, C28, C29
+    this.part(a, a.R('Pm', 'O2', 470e3), 'ringUp'); a.OpAmp('gnd', 'Pm', 'O2');                      // R25, IC2b
     const m = (this.s2 = this.stage(['Oc', 'N75', 'VT', 'W5', 'BP', 'OUT']));
     this.link(m, 'Oc', 1, a, 'O2');
     m.C('Oc', 'N75', 1e-6); m.R('N75', 'VT', 8.2e3);                          // C75, R116
@@ -66,6 +74,8 @@ export class CBCircuit extends CircuitVoice {
   }
   triggerVolts(accent) { return voicingTrigger(accent); }
   onParam() {
+    this.pitchMetal(pitchMul(this.p.pitch), false, spreadExp(this.p.detune), [4, 5]);
+    const q = spanMul(this.p.ring, 3); this.scale('ringUp', q); this.scale('ringDn', 1 / q); this.scale('env', decayMul(this.p.decay));
     if (!this.vrT) return;
     const r = 5e3 * aTaper(this.p.level);
     this.vrT.g = 1 / Math.max(1, 5e3 - r); this.vrB.g = 1 / Math.max(1, r); this.s2.touch();

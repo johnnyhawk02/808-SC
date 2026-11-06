@@ -2,6 +2,7 @@
 // accurate trigger queue and the master bus. Host-agnostic (worklet,
 // ScriptProcessor or Node).
 import { MetalBank } from './metal.js';
+import { KNOB_TRIM } from './knob-trim.js';
 import { CALIBRATION, LEVEL } from './calibration.js';
 import { SampleVoice } from './sampler.js';
 import { BD } from '../voices/bd.js';
@@ -30,6 +31,22 @@ export const VOICES = [
   ['oh', 'Open Hi-Hat', OH], ['ch', 'Closed Hi-Hat', CH],
 ];
 export const VOLT_SCALE = 1 / 24;
+// Knobs every voice gets from the kit, on top of its own (same in all three
+// versions). Both are neutral at their defaults.
+//   ACCENT: how much of the accent level this voice takes (1 = stock; the
+//           circuit models see it as a lower accent bus voltage)
+//   DRIVE:  soft clipping after the voice, from warm to crushed; the curve is
+//           scaled so a 6 V peak comes out at about the same peak, so it
+//           thickens rather than just getting louder
+export const COMMON = [
+  { id: 'accent', name: 'Accent', def: 1, kit: true },
+  { id: 'drive', name: 'Drive', def: 0, kit: true },
+];
+const DRIVE_PEAK = 6; // V
+export function driveCurve(drive) {
+  const k = (8 * drive * drive) / DRIVE_PEAK; // 1/V
+  return k <= 0 ? null : { k, m: (k * DRIVE_PEAK) / Math.tanh(k * DRIVE_PEAK) / k };
+}
 const NOISE_IDS = ['sd', 'lt', 'mt', 'ht', 'cp', 'ma'];
 const METAL_IDS = ['cb', 'cy', 'oh', 'ch'];
 // CH renders before OH so the circuit OH can read CH's envelope (choke)
@@ -46,6 +63,7 @@ export class Kit {
       const c = CALIBRATION[id];
       if (c) { v.trimN = c[0]; v.trimA = c[1]; }
       v.levelPts = LEVEL[id];
+      v.knobTrim = KNOB_TRIM[id];
     }
     // Every voice exists twice: the behavioural model above and the
     // component-level circuit simulation. `model[id]` picks which one plays.
@@ -72,11 +90,22 @@ export class Kit {
     this.mix = new Float32Array(128);
     this.solo = null;    // render a single voice (tests)
     this.split = null;   // per-voice outputs, see _renderChunk
+    this.fx = {};        // per voice: kit-level knobs (COMMON) + drive buffer
+    for (const [id] of VOICES) this.fx[id] = { accent: 1, drive: 0, curve: null, buf: new Float32Array(128) };
   }
   spec() {
-    return VOICES.map(([id, name]) => ({ id, name, params: this.voices[id].params, values: { ...this.voices[id].p } }));
+    return VOICES.map(([id, name]) => ({
+      id, name, params: [...this.voices[id].params, ...COMMON],
+      values: { ...this.voices[id].p, accent: this.fx[id].accent, drive: this.fx[id].drive },
+    }));
   }
   set(id, param, value) {
+    const fx = this.fx[id];
+    if (fx && (param === 'accent' || param === 'drive')) {
+      fx[param] = Math.max(0, Math.min(1, value));
+      if (param === 'drive') fx.curve = driveCurve(fx.drive);
+      return;
+    }
     this.behavioural[id]?.set(param, value);
     this.sampled[id]?.set(param, value);
     this.circuit[id]?.set(param, value);
@@ -111,7 +140,17 @@ export class Kit {
       this.cached.oh?.choke();
       if (this.model.ch !== 'circuit') this.circuit.oh?.choke?.();
     }
-    v.trigger(accent);
+    v.trigger(accent * (this.fx[id]?.accent ?? 1));
+  }
+  // one voice model into mix, through its DRIVE if that is up
+  _voiceOut(id, v, mix, n) {
+    const fx = this.fx[id], c = fx?.curve;
+    if (!c) { v.render(mix, n); return; }
+    if (fx.buf.length < n) fx.buf = new Float32Array(n);
+    const b = fx.buf; b.fill(0, 0, n);
+    v.render(b, n);
+    const { k, m } = c;
+    for (let i = 0; i < n; i++) mix[i] += Math.tanh(k * b[i]) * m;
   }
   _usesCircuit(ids) { return ids.some((id) => this.model[id] === 'circuit' || this.circuit[id]?.awake); }
   // Render n frames of mono, digital scale, into dst (overwrites).
@@ -140,12 +179,12 @@ export class Kit {
     const ids = this.solo ? [this.solo] : ORDER;
     // split (optional, { id: Float32Array }): those voices render into their own buffer, not the mix (Elixir 808)
     const sp = this.split, to = sp ? (id) => (sp[id] ? (off ? sp[id].subarray(off, off + n) : sp[id]) : mix) : () => mix;
-    for (const id of ids) this.voices[id].render(to(id), n);
+    for (const id of ids) this._voiceOut(id, this.voices[id], to(id), n);
     // the models that aren't selected finish any tail they were playing
     if (!this.solo) for (const [id] of VOICES) for (const m of ['behavioural', 'circuit', 'cached', 'sampled']) {
       const other = this[m][id];
       if (!other || other === this.voices[id]) continue;
-      if (m === 'behavioural' || (other.awake ?? true)) other.render(to(id), n);
+      if (m === 'behavioural' || (other.awake ?? true)) this._voiceOut(id, other, to(id), n);
     }
     const g = this.master * VOLT_SCALE;
     for (let i = 0; i < n; i++) {

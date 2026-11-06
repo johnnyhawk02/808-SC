@@ -71,8 +71,8 @@ export class BridgedT {
   }
   // Pulse height that makes a rectangular pulse of width w (s) leave the
   // resonator ringing with peak amplitude `amp`.
-  pulseHeight(amp, w) {
-    const s = Math.abs(Math.sin(Math.PI * this.f * w));
+  pulseHeight(amp, w, f = this.f) {
+    const s = Math.abs(Math.sin(Math.PI * f * w));
     return amp / (2 * this.k * Math.max(s, 0.05));
   }
   reset() { this.ic1 = this.ic2 = 0; }
@@ -203,6 +203,32 @@ function blep(t, dt) {
   return 0;
 }
 
+// ---------------------------------------------------------------------------
+// Extra knobs beyond the original panel. Each one is neutral at its default,
+// so a voice at defaults still sounds like a stock 808.
+//   PITCH: +-12 semitones around the stock tuning (resonator / oscillator
+//          capacitors in the circuit models)
+//   DECAY: x1/3 .. x3 the stock ring time (envelope capacitors or the
+//          resonator's damping resistors), only on voices whose panel had none
+export const PITCH_SEMIS = 12, DECAY_SPAN = 3;
+export const PITCH = { id: 'pitch', name: 'Pitch', def: 0.5, extra: true, fmt: (v) => { const s = Math.round((v - 0.5) * 2 * PITCH_SEMIS); return s > 0 ? `+${s}` : `${s}`; } };
+export const DECAY = { id: 'decay', name: 'Decay', def: 0.5, extra: true, fmt: (v) => `x${decayMul(v).toFixed(v < 0.5 ? 2 : 1)}` };
+export const pitchMul = (v) => 2 ** (((clamp(v ?? 0.5, 0, 1) - 0.5) * 2 * PITCH_SEMIS) / 12);
+export const decayMul = (v) => DECAY_SPAN ** ((clamp(v ?? 0.5, 0, 1) - 0.5) * 2);
+// amount knobs: 0 = none, centre = stock, full = twice the stock value
+export const amtMul = (v) => 2 * clamp(v ?? 0.5, 0, 1);
+// span knobs: x span^-1 .. x span around stock
+export const spanMul = (v, span) => span ** ((clamp(v ?? 0.5, 0, 1) - 0.5) * 2);
+// spread exponent for the metal oscillators: 0.25 (nearly unison) .. 1 .. 2.5
+export const spreadExp = (v) => { v = clamp(v ?? 0.5, 0, 1); return v < 0.5 ? lerp(0.25, 1, v * 2) : lerp(1, 2.5, v * 2 - 1); };
+export const knob = (id, name, fmt) => ({ id, name, def: 0.5, extra: true, ...(fmt ? { fmt } : {}) });
+// Metal spread: each oscillator's frequency ratio to the group's geometric
+// mean raised to the power s (1 = stock, <1 closer together, >1 further apart)
+export function spreadFactors(freqs, s, idx = freqs.map((_, i) => i)) {
+  const gm = Math.exp(idx.reduce((a, i) => a + Math.log(freqs[i]), 0) / idx.length);
+  return freqs.map((f, i) => (idx.includes(i) ? (f / gm) ** (s - 1) : 1));
+}
+
 // Small helper for voices: each exposes `params` (spec list) and `p` values.
 export class Voice {
   constructor(sr, spec) {
@@ -213,8 +239,27 @@ export class Voice {
     this.trimN = 1; this.trimA = 1; // output calibration, see dsp/calibration.js
   }
   set(id, v) { this.p[id] = v; this.onParam?.(id, v); }
+  // Metal voices (this.metal = the shared oscillator bank): PITCH off centre
+  // gives the voice a private, retuned bank so the others keep stock tuning.
+  pitchBank(m, spread = 1, idx) {
+    if (Math.abs(m - 1) < 1e-6 && Math.abs(spread - 1) < 1e-6) { this.own = null; return; }
+    if (!this.own) this.own = new this.metal.constructor(this.sr);
+    this.own.setPitch(m, spread, idx);
+  }
+  // the bank to read for this block (renders the private one)
+  bank(n) { if (this.own) { this.own.render(n); return this.own; } return this.metal; }
   // LEVEL knob gain, following the circuit's pot taper (dsp/calibration.js)
-  levelGain() { return levelLaw(this.levelPts, this.p.level); }
+  levelGain() { return levelLaw(this.levelPts, this.p.level) * this.knobGain(); }
+  // Synth voices: the circuit's level change on the extra knobs (a part
+  // change often makes the circuit louder or quieter), measured by
+  // test/knob-trim.mjs into dsp/knob-trim.js: [dB at knob 0, dB at knob 1],
+  // interpolated in dB from the centre (0 dB)
+  knobGain() {
+    const T = this.knobTrim; if (!T) return 1;
+    let db = 0;
+    for (const k in T) { const v = clamp(this.p[k] ?? 0.5, 0, 1); db += v < 0.5 ? T[k][0] * (1 - 2 * v) : T[k][1] * (2 * v - 1); }
+    return 10 ** (db / 20);
+  }
   // accent: 0 = normal hit, 1 = full accent (ACCENT knob fully up).
   // Peak-to-peak target in volts for this hit, from the manual's table.
   vpp(accent) {

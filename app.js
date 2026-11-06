@@ -24,7 +24,22 @@ const INFO = {
   ch: ['Q28–Q31', '6 osc · 50 ms'],
 };
 const KEYS = '1234567890qwerty';
-const LIVE = ['level', 'snap']; // knobs Cached plays live; the rest the Cache button bakes in
+const LIVE = ['level', 'snap', 'accent', 'drive']; // knobs Cached plays live; the rest the Cache button bakes in
+const HELP = {
+  pitch: 'Extra: ±12 semitones around the stock tuning (double-click to reset)',
+  decay: 'Decay time (an extra on voices whose panel had none: ×1/3 to ×3; the 808 recordings can only get shorter)',
+  accent: 'Extra: how much of the accent level this voice takes (10 = stock)',
+  drive: 'Extra: soft clipping after the voice, from warm to crushed (0 = off)',
+  click: 'Extra: attack click (BD: C40, the trigger feed; RS: R317, the drive into Q62)',
+  attack: 'Extra: how long the note starts at the higher pitch (C38, the 4 ms mono-stable)',
+  wires: 'Extra: snare wires darker or brighter (C66/C67, the noise high-pass)',
+  snapdec: 'Extra: length of the snare wires (C51, the snappy envelope)',
+  noise: 'Extra: how much of the noise burst joins the tom (R232)',
+  spacing: 'Extra: time between the claps (R365, which charges C144)',
+  detune: 'Extra: the two cowbell oscillators pulled together or pushed apart',
+  ring: 'Extra: how long the cowbell filter rings (IC2b band-pass Q)',
+  spread: 'Extra: the six metal oscillators pulled together (bell) or pushed apart (trashy)',
+};
 
 const specKit = new Kit(48000, { circuits: false }); // main-thread copy, only for the knob specs
 const spec = specKit.spec();
@@ -129,10 +144,17 @@ for (const [i, v] of spec.entries()) {
     const id = `k-${v.id}-${p.id}`;
     const wrap = document.createElement('label');
     wrap.className = 'knob'; wrap.htmlFor = id;
-    wrap.innerHTML = `<span>${p.name}</span><input type="range" id="${id}" min="0" max="1" step="0.01" value="${v.values[p.id]}"><output>${Math.round(v.values[p.id] * 10)}</output>`;
+    const show = (x) => (p.fmt ? p.fmt(x) : Math.round(x * 10));
+    if (p.kit && !knobs.querySelector('.knob.kit')) knobs.insertAdjacentHTML('beforeend', '<span class="kit-sep" aria-hidden="true"></span>');
+    if (p.kit || p.extra) wrap.classList.add('extra');
+    if (p.kit) wrap.classList.add('kit');
+    wrap.title = HELP[p.id] ?? '';
+    wrap.innerHTML = `<span>${p.name}</span><input type="range" id="${id}" min="0" max="1" step="0.01" value="${v.values[p.id]}"><output>${show(v.values[p.id])}</output>`;
     const input = wrap.querySelector('input'), out = wrap.querySelector('output');
     input.addEventListener('input', () => setKnob(v.id, p.id, +input.value));
     knobs.append(wrap);
+    // double-click a knob to put it back to its default
+    input.addEventListener('dblclick', () => { input.value = p.def; input.dispatchEvent(new Event('input')); });
   }
   card.querySelector(`#hit-${v.id}`).addEventListener('pointerdown', (e) => { e.preventDefault(); hit(v.id, false); });
   card.querySelector(`#acc-${v.id}`).addEventListener('pointerdown', (e) => { e.preventDefault(); hit(v.id, true); });
@@ -147,7 +169,8 @@ for (const [i, v] of spec.entries()) {
 function setKnob(id, param, value) {
   state.values[id][param] = value;
   const input = document.getElementById(`k-${id}-${param}`);
-  if (input) { input.value = value; input.nextElementSibling.textContent = Math.round(value * 10); }
+  const p = spec.find((v) => v.id === id)?.params.find((q) => q.id === param);
+  if (input) { input.value = value; input.nextElementSibling.textContent = p?.fmt ? p.fmt(value) : Math.round(value * 10); }
   send({ t: 'set', id, param, value });
   showCache(id);
 }

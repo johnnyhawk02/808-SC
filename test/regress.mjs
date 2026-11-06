@@ -31,7 +31,7 @@ if (tolScale !== 1) { const s0 = Circuit.prototype.step; Circuit.prototype.step 
 function cases(id) {
   const spec = new Kit(SR, { circuits: false }).spec().find((s) => s.id === id), secs = LONG[id] ?? 1.2;
   const out = [{ name: 'n', accent: 0, knobs: {} }, { name: 'a', accent: 1, knobs: {} }];
-  for (const p of spec.params) if (p.id !== 'level') for (const v of [0, 1]) out.push({ name: p.id + v, accent: 0, knobs: { [p.id]: v } });
+  for (const p of spec.params) if (p.id !== 'level' && !p.kit) for (const v of [0, 1]) out.push({ name: p.id + v, accent: 0, knobs: { [p.id]: v } });
   return out.map((c) => ({ ...c, secs }));
 }
 function render(id, cs) {

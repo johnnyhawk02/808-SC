@@ -1687,7 +1687,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i>34</small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i>35</small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1784,7 +1784,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v34, 6 Nov, 19:37</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v35, 6 Nov, 19:38</footer>
     </section>
   </div>
   </div>
@@ -5852,8 +5852,8 @@ class BridgedT {
   }
   // Pulse height that makes a rectangular pulse of width w (s) leave the
   // resonator ringing with peak amplitude `amp`.
-  pulseHeight(amp, w) {
-    const s = Math.abs(Math.sin(Math.PI * this.f * w));
+  pulseHeight(amp, w, f = this.f) {
+    const s = Math.abs(Math.sin(Math.PI * f * w));
     return amp / (2 * this.k * Math.max(s, 0.05));
   }
   reset() { this.ic1 = this.ic2 = 0; }
@@ -5984,6 +5984,32 @@ function blep(t, dt) {
   return 0;
 }
 
+// ---------------------------------------------------------------------------
+// Extra knobs beyond the original panel. Each one is neutral at its default,
+// so a voice at defaults still sounds like a stock 808.
+//   PITCH: +-12 semitones around the stock tuning (resonator / oscillator
+//          capacitors in the circuit models)
+//   DECAY: x1/3 .. x3 the stock ring time (envelope capacitors or the
+//          resonator's damping resistors), only on voices whose panel had none
+const PITCH_SEMIS = 12, DECAY_SPAN = 3;
+const PITCH = { id: 'pitch', name: 'Pitch', def: 0.5, extra: true, fmt: (v) => { const s = Math.round((v - 0.5) * 2 * PITCH_SEMIS); return s > 0 ? `+${s}` : `${s}`; } };
+const DECAY = { id: 'decay', name: 'Decay', def: 0.5, extra: true, fmt: (v) => `x${decayMul(v).toFixed(v < 0.5 ? 2 : 1)}` };
+const pitchMul = (v) => 2 ** (((clamp(v ?? 0.5, 0, 1) - 0.5) * 2 * PITCH_SEMIS) / 12);
+const decayMul = (v) => DECAY_SPAN ** ((clamp(v ?? 0.5, 0, 1) - 0.5) * 2);
+// amount knobs: 0 = none, centre = stock, full = twice the stock value
+const amtMul = (v) => 2 * clamp(v ?? 0.5, 0, 1);
+// span knobs: x span^-1 .. x span around stock
+const spanMul = (v, span) => span ** ((clamp(v ?? 0.5, 0, 1) - 0.5) * 2);
+// spread exponent for the metal oscillators: 0.25 (nearly unison) .. 1 .. 2.5
+const spreadExp = (v) => { v = clamp(v ?? 0.5, 0, 1); return v < 0.5 ? lerp(0.25, 1, v * 2) : lerp(1, 2.5, v * 2 - 1); };
+const knob = (id, name, fmt) => ({ id, name, def: 0.5, extra: true, ...(fmt ? { fmt } : {}) });
+// Metal spread: each oscillator's frequency ratio to the group's geometric
+// mean raised to the power s (1 = stock, <1 closer together, >1 further apart)
+function spreadFactors(freqs, s, idx = freqs.map((_, i) => i)) {
+  const gm = Math.exp(idx.reduce((a, i) => a + Math.log(freqs[i]), 0) / idx.length);
+  return freqs.map((f, i) => (idx.includes(i) ? (f / gm) ** (s - 1) : 1));
+}
+
 // Small helper for voices: each exposes `params` (spec list) and `p` values.
 class Voice {
   constructor(sr, spec) {
@@ -5994,8 +6020,27 @@ class Voice {
     this.trimN = 1; this.trimA = 1; // output calibration, see dsp/calibration.js
   }
   set(id, v) { this.p[id] = v; this.onParam?.(id, v); }
+  // Metal voices (this.metal = the shared oscillator bank): PITCH off centre
+  // gives the voice a private, retuned bank so the others keep stock tuning.
+  pitchBank(m, spread = 1, idx) {
+    if (Math.abs(m - 1) < 1e-6 && Math.abs(spread - 1) < 1e-6) { this.own = null; return; }
+    if (!this.own) this.own = new this.metal.constructor(this.sr);
+    this.own.setPitch(m, spread, idx);
+  }
+  // the bank to read for this block (renders the private one)
+  bank(n) { if (this.own) { this.own.render(n); return this.own; } return this.metal; }
   // LEVEL knob gain, following the circuit's pot taper (dsp/calibration.js)
-  levelGain() { return levelLaw(this.levelPts, this.p.level); }
+  levelGain() { return levelLaw(this.levelPts, this.p.level) * this.knobGain(); }
+  // Synth voices: the circuit's level change on the extra knobs (a part
+  // change often makes the circuit louder or quieter), measured by
+  // test/knob-trim.mjs into dsp/knob-trim.js: [dB at knob 0, dB at knob 1],
+  // interpolated in dB from the centre (0 dB)
+  knobGain() {
+    const T = this.knobTrim; if (!T) return 1;
+    let db = 0;
+    for (const k in T) { const v = clamp(this.p[k] ?? 0.5, 0, 1); db += v < 0.5 ? T[k][0] * (1 - 2 * v) : T[k][1] * (2 * v - 1); }
+    return 10 ** (db / 20);
+  }
   // accent: 0 = normal hit, 1 = full accent (ACCENT knob fully up).
   // Peak-to-peak target in volts for this hit, from the manual's table.
   vpp(accent) {
@@ -6015,7 +6060,7 @@ function levelLaw(pts, l) {
   return g50 * Math.pow(1 / g50, (l - 0.5) / 0.5);
 }
 
-return { LN10: typeof LN10 === 'undefined' ? undefined : LN10, tauFromDecay: typeof tauFromDecay === 'undefined' ? undefined : tauFromDecay, decayCoef: typeof decayCoef === 'undefined' ? undefined : decayCoef, qFromDecay: typeof qFromDecay === 'undefined' ? undefined : qFromDecay, lerp: typeof lerp === 'undefined' ? undefined : lerp, clamp: typeof clamp === 'undefined' ? undefined : clamp, map3: typeof map3 === 'undefined' ? undefined : map3, BridgedT: typeof BridgedT === 'undefined' ? undefined : BridgedT, Pulse: typeof Pulse === 'undefined' ? undefined : Pulse, Biquad: typeof Biquad === 'undefined' ? undefined : Biquad, OnePole: typeof OnePole === 'undefined' ? undefined : OnePole, RCEnv: typeof RCEnv === 'undefined' ? undefined : RCEnv, swingVCA: typeof swingVCA === 'undefined' ? undefined : swingVCA, Noise: typeof Noise === 'undefined' ? undefined : Noise, PinkNoise: typeof PinkNoise === 'undefined' ? undefined : PinkNoise, rail: typeof rail === 'undefined' ? undefined : rail, v: typeof v === 'undefined' ? undefined : v, SchmittOsc: typeof SchmittOsc === 'undefined' ? undefined : SchmittOsc, Voice: typeof Voice === 'undefined' ? undefined : Voice, levelLaw: typeof levelLaw === 'undefined' ? undefined : levelLaw };
+return { LN10: typeof LN10 === 'undefined' ? undefined : LN10, tauFromDecay: typeof tauFromDecay === 'undefined' ? undefined : tauFromDecay, decayCoef: typeof decayCoef === 'undefined' ? undefined : decayCoef, qFromDecay: typeof qFromDecay === 'undefined' ? undefined : qFromDecay, lerp: typeof lerp === 'undefined' ? undefined : lerp, clamp: typeof clamp === 'undefined' ? undefined : clamp, map3: typeof map3 === 'undefined' ? undefined : map3, BridgedT: typeof BridgedT === 'undefined' ? undefined : BridgedT, Pulse: typeof Pulse === 'undefined' ? undefined : Pulse, Biquad: typeof Biquad === 'undefined' ? undefined : Biquad, OnePole: typeof OnePole === 'undefined' ? undefined : OnePole, RCEnv: typeof RCEnv === 'undefined' ? undefined : RCEnv, swingVCA: typeof swingVCA === 'undefined' ? undefined : swingVCA, Noise: typeof Noise === 'undefined' ? undefined : Noise, PinkNoise: typeof PinkNoise === 'undefined' ? undefined : PinkNoise, rail: typeof rail === 'undefined' ? undefined : rail, v: typeof v === 'undefined' ? undefined : v, SchmittOsc: typeof SchmittOsc === 'undefined' ? undefined : SchmittOsc, PITCH_SEMIS: typeof PITCH_SEMIS === 'undefined' ? undefined : PITCH_SEMIS, DECAY_SPAN: typeof DECAY_SPAN === 'undefined' ? undefined : DECAY_SPAN, PITCH: typeof PITCH === 'undefined' ? undefined : PITCH, DECAY: typeof DECAY === 'undefined' ? undefined : DECAY, pitchMul: typeof pitchMul === 'undefined' ? undefined : pitchMul, decayMul: typeof decayMul === 'undefined' ? undefined : decayMul, amtMul: typeof amtMul === 'undefined' ? undefined : amtMul, spanMul: typeof spanMul === 'undefined' ? undefined : spanMul, spreadExp: typeof spreadExp === 'undefined' ? undefined : spreadExp, knob: typeof knob === 'undefined' ? undefined : knob, spreadFactors: typeof spreadFactors === 'undefined' ? undefined : spreadFactors, Voice: typeof Voice === 'undefined' ? undefined : Voice, levelLaw: typeof levelLaw === 'undefined' ? undefined : levelLaw };
 })();
 // ---- dsp/metal.js
 __m["dsp/metal.js"] = (() => {
@@ -6023,7 +6068,7 @@ __m["dsp/metal.js"] = (() => {
 // board (HD14584 / IC1, schematic p.13). CB uses two of them; CY, OH and CH
 // use the sum of all six. They run continuously, so the phase relationship
 // differs on every hit, exactly like the hardware.
-const { SchmittOsc } = __m["dsp/core.js"];
+const { SchmittOsc, spreadFactors } = __m["dsp/core.js"];
 
 // Period of an RC Schmitt oscillator is roughly K*R*C. K is calibrated so the
 // cowbell pair lands on the manual's trimmed values (1.85 ms / 1.25 ms).
@@ -6047,6 +6092,13 @@ class MetalBank {
     this.cbLo = new Float32Array(0);
     this.cbHi = new Float32Array(0);
   }
+  // Retune every oscillator by a factor (a private bank for a voice whose
+  // PITCH knob is off centre; the shared bank stays at the stock tuning).
+  // spread (and idx, which oscillators it applies to) see spreadFactors
+  setPitch(m, spread = 1, idx) {
+    const k = spreadFactors(METAL_OSC.map((o) => o.f), spread, idx);
+    METAL_OSC.forEach((o, i) => this.osc[i].setFreq(o.f * m * k[i]));
+  }
   // Render one block: the 6-oscillator mix (each through 120k into a 1k node)
   // plus the two cowbell oscillators individually.
   render(n) {
@@ -6064,6 +6116,31 @@ class MetalBank {
 }
 
 return { METAL_OSC: typeof METAL_OSC === 'undefined' ? undefined : METAL_OSC, MetalBank: typeof MetalBank === 'undefined' ? undefined : MetalBank };
+})();
+// ---- dsp/knob-trim.js
+__m["dsp/knob-trim.js"] = (() => {
+// Generated by test/knob-trim.mjs: the circuit's level change on each extra
+// knob that the synth voice doesn't reproduce by itself, [dB at 0, dB at 1].
+const KNOB_TRIM = {
+  bd: { pitch: [-4.9, 7.2], click: [0, 0.1], attack: [-3.9, -0.5] },
+  sd: { pitch: [-3.2, 2.6], decay: [0.4, -0.7], wires: [-0.6, -1], snapdec: [0.3, -0.6] },
+  lt: { pitch: [-7.4, 6.8], decay: [0.9, -1], noise: [1.3, -5.7] },
+  mt: { pitch: [-7.1, 7.1], decay: [0.4, -0.7], noise: [0.6, -1.9] },
+  ht: { pitch: [-7, 7.5], decay: [0.5, -0.4], noise: [0.6, -1.9] },
+  lc: { pitch: [-7.3, 7.7], decay: [0.5, -0.5] },
+  mc: { pitch: [-7.7, 6.8], decay: [0.3, -0.5] },
+  hc: { pitch: [-8.2, 4.8], decay: [1, -0.9] },
+  rs: { pitch: [0.3, -2], decay: [1.1, -5.2], click: [-2.2, 0.8] },
+  cl: { pitch: [-2.1, 10.5], decay: [0.2, 0.5] },
+  cp: { pitch: [-0.3, 0.8], decay: [-0.1, 0], spacing: [-2.5, 0.3] },
+  ma: { pitch: [-0.1, 4], decay: [0.1, 0.1] },
+  cb: { pitch: [-5.4, -4.4], decay: [1.7, -5.9], detune: [-0.8, -5.2], ring: [-7.9, 7.6] },
+  cy: { pitch: [-1.6, 0.5], spread: [-0.1, 1.7] },
+  oh: { pitch: [0.7, 1], spread: [0.9, 2.2], tone: [0.9, 7] },
+  ch: { pitch: [-0.1, -0.3], decay: [0.8, -1.7], spread: [-3.8, 0.4], tone: [-4.9, 6.7] },
+};
+
+return { KNOB_TRIM: typeof KNOB_TRIM === 'undefined' ? undefined : KNOB_TRIM };
 })();
 // ---- dsp/calibration.js
 __m["dsp/calibration.js"] = (() => {
@@ -6140,7 +6217,13 @@ __m["dsp/sampler.js"] = (() => {
 // settings. The set has no accented hits, so accent scales the level by the
 // circuit model's accent/normal ratio; output is scaled to volts so the
 // default-knob hit matches the circuit model's level.
-const { Voice, clamp, decayCoef } = __m["dsp/core.js"];
+//
+// The extra knobs: PITCH resamples the recording (so a higher pitch is also
+// shorter, like a tape speed-up); DECAY, on voices whose panel had no decay
+// knob, can only shorten: below centre an extra exponential fade brings the
+// recording's own decay time down by the knob's factor, above centre the
+// recording plays as it is.
+const { Voice, clamp, decayCoef, pitchMul, decayMul, LN10 } = __m["dsp/core.js"];
 const { SAMPLE_CAL } = __m["dsp/calibration.js"];
 
 const POS = { '00': 0, 25: 0.25, 50: 0.5, 75: 0.75, 10: 1 };
@@ -6168,9 +6251,17 @@ class SampleVoice extends Voice {
     this.id = id; this.knobs = SAMPLE_KNOBS[id];
     this.bank = {};   // key -> { sr, data }
     this.cur = null; this.pos = 0; this.step = 1; this.gain = 0; this.fade = 1; this.fadeK = 1;
+    this.env = 1; this.dK = 1;
     this.isSample = true;
   }
-  add(key, s) { this.bank[key] = s; }
+  add(key, s) {
+    // the recording's own decay: last point above 1/10 of its peak
+    const x = s.data; let pk = 0, last = 0;
+    for (let i = 0; i < x.length; i++) pk = Math.max(pk, Math.abs(x[i]));
+    for (let i = 0; i < x.length; i++) if (Math.abs(x[i]) > pk * 0.1) last = i;
+    s.t10 = Math.max(0.005, last / s.sr);
+    this.bank[key] = s;
+  }
   get loaded() { return Object.keys(this.bank).length > 0; }
   get awake() { return !!this.cur; }
   pick() {
@@ -6186,7 +6277,13 @@ class SampleVoice extends Voice {
     const key = this.pick();
     if (key == null) return;
     const c = SAMPLE_CAL[this.id] ?? [1, 1];
-    this.cur = this.bank[key]; this.pos = 0; this.step = this.cur.sr / this.sr;
+    const m = pitchMul(this.p.pitch);
+    this.cur = this.bank[key]; this.pos = 0; this.step = (this.cur.sr / this.sr) * m;
+    // DECAY below centre: fade so the decay time becomes d x the recording's
+    // (after the pitch change); exp(-t/tau) on top of exp(-t/tau0) gives tau0*d
+    const d = this.knobs.includes('decay') ? 1 : Math.min(1, decayMul(this.p.decay));
+    const tau0 = (this.cur.t10 ?? 0.1) / m / LN10;
+    this.dK = d < 1 ? decayCoef((tau0 * d) / (1 - d), this.sr) : 1; this.env = 1;
     this.gain = c[0] * (1 + (c[1] - 1) * clamp(accent, 0, 1));
     this.fade = 1; this.fadeK = 1;
   }
@@ -6198,103 +6295,14 @@ class SampleVoice extends Voice {
       const p = this.pos, k = p | 0;
       if (k >= len) { this.cur = null; return; }
       const f = p - k;
-      out[i] += (x[k] + (x[k + 1] - x[k]) * f) * g * this.fade;
-      this.fade *= this.fadeK;
+      out[i] += (x[k] + (x[k + 1] - x[k]) * f) * g * this.fade * this.env;
+      this.fade *= this.fadeK; this.env *= this.dK;
       this.pos = p + this.step;
     }
   }
 }
 
 return { SAMPLE_KNOBS: typeof SAMPLE_KNOBS === 'undefined' ? undefined : SAMPLE_KNOBS, sampleFiles: typeof sampleFiles === 'undefined' ? undefined : sampleFiles, SampleVoice: typeof SampleVoice === 'undefined' ? undefined : SampleVoice };
-})();
-// ---- voices/bd.js
-__m["voices/bd.js"] = (() => {
-// BD — Bass Drum, behavioural model (manual p.5, schematic p.9 "BASS DRUM").
-//
-// A cheap stand-in for voices/bd-circuit.js, fitted to its output
-// (test/fit.mjs): one zero-delay state-variable resonator plus a few
-// envelopes, instead of solving the network every sample.
-//
-//  * The bridged-T around IC12a rings as a damped sine. For the first few ms
-//    after the trigger Q43 shorts R165, so the first half-cycle runs at about
-//    twice the frequency; then C39/R161 give it a second, smaller kick.
-//  * After that the pitch slides down from ~58 Hz to the network's resting
-//    ~49 Hz as C43 recovers; the slide is quicker at short DECAY settings.
-//  * VR6 (DECAY) sets the ring time; VR5 (TONE) with R171/C45 is a one-pole
-//    low-pass whose corner is computed from the parts, as in the circuit.
-//  * The trigger edge leaks through C40 into IC12 and gives the click.
-const { Voice, BridgedT, Pulse, OnePole, map3, qFromDecay, rail, clamp, lerp } = __m["dsp/core.js"];
-
-const meta = { id: 'bd', name: 'Bass Drum', short: 'BD' };
-
-// Fitted to the circuit model (node test/fit.mjs bd ...).
-const FIT = {
-  f0: 48.42,        // resting pitch, Hz
-  glide: 0.2355,   // extra pitch at the start, fraction of f0
-  glideK: 0.2073,  // glide time constant as a fraction of the decay time
-  d0: 0.04829, d5: 0.3033, d1: 0.8946, // ring time to 1/10 at DECAY 0 / mid / max, s
-  fast: 3.185,       // pitch multiple while Q43 shorts R165
-  seg: 0.00368,    // how long it lasts, s
-  kick1: 1.527,    // first pulse, x peak amplitude
-  kick2: 0.3734,    // C39 re-trigger pulse
-  click: 0.3478,    // C40 trigger feed-through
-  aN: 1.662, aA: 3.434,  // ring amplitude, normal / full accent, V
-};
-
-class BD extends Voice {
-  constructor(sr) {
-    super(sr, [
-      { id: 'level', name: 'Level', def: 0.8 },
-      { id: 'tone', name: 'Tone', def: 0.5 },
-      { id: 'decay', name: 'Decay', def: 0.5 },
-    ]);
-    this.vppNormal = 3.5; this.vppAccent = 10;
-    this.res = new BridgedT(sr);
-    this.pulse = new Pulse(sr);
-    this.tone = new OnePole(sr, 1000, 'lp');
-    this.click = new OnePole(sr, 400, 'hp');
-    this.t = 1e9; // samples since trigger
-    this.amp = 0;
-    this.onParam();
-  }
-  onParam() {
-    const F = FIT;
-    this.t10 = map3(this.p.decay, F.d0, F.d5, F.d1);
-    this.q = qFromDecay(F.f0, this.t10);
-    this.gCoef = Math.exp(-1 / (F.glideK * this.t10 * this.sr));
-    // VR5 10k C-taper || R172 10k, in series with R171 220R, into C45 .1u
-    const vr5 = 10e3 * (1 - clamp(this.p.tone, 0, 1)) ** 2 + 1;
-    const R = 220 + (vr5 * 10e3) / (vr5 + 10e3);
-    this.tone.set(1 / (2 * Math.PI * R * 0.1e-6));
-  }
-  trigger(accent = 0) {
-    const F = FIT;
-    this.amp = lerp(F.aN * this.trimN, F.aA * this.trimA, clamp(accent, 0, 1));
-    this.t = 0;
-    this.g = 1;
-    this.res.set(F.f0 * (1 + F.glide) * F.fast, this.q);
-    this.pulse.fire(this.res.pulseHeight(this.amp * F.kick1, 1e-3), 1e-3);
-    this.segN = Math.max(1, Math.round(F.seg * this.sr));
-  }
-  render(out, n) {
-    const F = FIT, sr = this.sr, lvl = this.levelGain(), clickN = sr * 0.001;
-    for (let i = 0; i < n; i++) {
-      if (this.t === this.segN) {
-        this.res.set(F.f0 * (1 + F.glide * this.g), this.q);
-        this.pulse.fire(this.res.pulseHeight(this.amp * F.kick2, 1e-3), 1e-3);
-      } else if (this.t > this.segN && (this.t & 15) === 0) {
-        this.res.set(F.f0 * (1 + F.glide * this.g), this.q);
-      }
-      this.g *= this.gCoef;
-      let y = rail(this.res.tick(this.pulse.tick()));
-      y += this.click.tick(this.t < clickN ? this.amp * F.click : 0);
-      out[i] += this.tone.tick(y) * lvl;
-      this.t++;
-    }
-  }
-}
-
-return { meta: typeof meta === 'undefined' ? undefined : meta, FIT: typeof FIT === 'undefined' ? undefined : FIT, BD: typeof BD === 'undefined' ? undefined : BD };
 })();
 // ---- dsp/mna.js
 __m["dsp/mna.js"] = (() => {
@@ -6816,6 +6824,230 @@ const TRIG_WIDTH = 1e-3; // instrument trigger pulse
 
 return { PARTS: typeof PARTS === 'undefined' ? undefined : PARTS, Circuit: typeof Circuit === 'undefined' ? undefined : Circuit, busVoltage: typeof busVoltage === 'undefined' ? undefined : busVoltage, TRIG_WIDTH: typeof TRIG_WIDTH === 'undefined' ? undefined : TRIG_WIDTH };
 })();
+// ---- voices/bd-circuit.js
+__m["voices/bd-circuit.js"] = (() => {
+// BD — Bass Drum, component-level version.
+//
+// Every part from the schematic (p.9, "BASS DRUM") between the trigger
+// transistor Q40 and the BD LEVEL pot is simulated as a circuit: resistors,
+// capacitors, the 1S1588-type diodes D52/D53, transistors Q41-Q43 (Ebers-Moll)
+// and both halves of IC12 (finite-gain op-amps that saturate near the
+// +-15 V rails). Nothing about the sound is scripted: the 4 ms
+// double-frequency start, the re-trigger pulse and the decay all come out of
+// the network.
+//
+// Simplifications:
+//  * Q39/Q40 (the trigger switch) are an ideal switch that connects the
+//    common-trigger bus to node T through 100 R for 1 ms. The bus voltage
+//    comes from the main board's accent circuit (busVoltage in dsp/mna.js).
+//  * VR4 (BD LEVEL) is a 50k load and a scale; after it C49 couples into the
+//    R177 82k / R176 100k divider (x0.55). The Q44 emitter follower and C50
+//    are treated as a unity-gain buffer with a ~2 Hz high-pass.
+//  * Tolerances, temperature and op-amp slew/bandwidth are not modelled.
+const { Circuit, busVoltage, TRIG_WIDTH } = __m["dsp/mna.js"];
+const { Voice, OnePole, lerp, clamp, PITCH, pitchMul, knob, amtMul, spanMul } = __m["dsp/core.js"];
+
+// extra knobs: CLICK is C40, the trigger's feed into IC12 (0 = none, centre
+// stock, full 2x); ATTACK is C38, the Q42 mono-stable that holds the start of
+// the note at the higher pitch (x1/3 .. x3 its 4 ms)
+const BD_EXTRA = [knob('click', 'Click'), knob('attack', 'Attack')];
+
+const meta = { id: 'bd', name: 'Bass Drum (circuit)', short: 'BD' };
+
+const DIVIDER = 100e3 / (82e3 + 100e3); // R176 / (R177 + R176)
+
+const NODES = ['T', 'B41', 'C41n', 'N42', 'N39', 'B43', 'X', 'P', 'Q', 'M', 'K', 'S', 'O2', 'N6', 'V3', 'Tn', 'L1'];
+
+class BDCircuit extends Voice {
+  constructor(sr) {
+    super(sr, [
+      { id: 'level', name: 'Level', def: 0.8 },
+      { id: 'tone', name: 'Tone', def: 0.5 },
+      { id: 'decay', name: 'Decay', def: 0.5 },
+      PITCH, ...BD_EXTRA,
+    ]);
+    this.vppNormal = 3.5; this.vppAccent = 10;
+    this.oversample = globalThis.BD_OS ?? 1;
+    const c = (this.ckt = new Circuit(NODES));
+    const V15 = 15;
+    // trigger switch (Q40 collector)
+    this.sw = c.Rsrc('T', 100, 0); this.sw.on = false;
+    // Q41: trigger detector
+    c.R('T', 'B41', 8.2e3); c.R('B41', 'gnd', 2.7e3);
+    c.NPN('B41', 'C41n', 'gnd');
+    // Q42: 4 ms mono-stable (R156 1M, C38 .1u)
+    c.Rsrc('C41n', 1e6, V15); this.c38 = c.C('C41n', 'gnd', 0.1e-6);
+    c.NPN('C41n', 'N42', 'gnd');
+    c.Rsrc('N42', 22e3, V15);
+    // re-trigger pulse: C39 .033u, D52, R161 1M into the network
+    c.C('N42', 'N39', 0.033e-6); c.D('N39', 'gnd'); c.R('N39', 'M', 1e6);
+    // Q43 shorts R165 while Q42 is off
+    c.R('N42', 'B43', 100e3);
+    c.NPN('B43', 'K', 'gnd');
+    // input coupling into IC12a (+): C40/R163, R162, D53
+    this.c40 = c.C('T', 'X', 0.015e-6); c.R('T', 'X', 100e3); c.R('X', 'gnd', 4.7e3); c.D('gnd', 'X');
+    // IC12a with the bridged-T network
+    c.OpAmp('X', 'P', 'Q');
+    c.R('P', 'Q', 1e6);                 // R167
+    // C41, C42: PITCH scales both by 1/m, which moves the bridged-T's
+    // f = 1/(2 pi sqrt(R1 R2 C1 C2)) by m and leaves its Q alone
+    this.cT = [c.C('P', 'M', 0.015e-6), c.C('M', 'Q', 0.015e-6)];
+    c.R('M', 'K', 6.8e3);               // R166
+    c.R('K', 'gnd', 47e3);              // R165
+    // IC12b: inverting amp whose gain VR6 sets, fed back through R170
+    c.R('Q', 'S', 47e3);                // R164
+    c.OpAmp('gnd', 'S', 'O2');          // (+) via R168 22k, no current
+    c.R('S', 'O2', 47e3);               // R169
+    this.vr6 = c.R('S', 'N6', 250e3);   // VR6 500k (B)
+    c.C('N6', 'O2', 33e-6);             // C43
+    c.R('M', 'O2', 470e3);              // R170
+    // tone: R171, VR5 10k (C) || R172 10k, C45 .1u; level pot as load
+    c.R('Q', 'V3', 220);
+    this.vr5 = c.R('V3', 'Tn', 5e3);
+    c.C('Tn', 'gnd', 0.1e-6);
+    c.C('Tn', 'L1', 0.47e-6);           // C47
+    c.R('L1', 'gnd', 50e3);             // VR4 50k (assumed value)
+    this.hp = new OnePole(sr, 2, 'hp');
+    this.pulseLeft = 0;
+    this.idle = 1e9;
+    c.setTimestep(1 / (sr * this.oversample));
+    this.onParam();
+    this._settle();
+  }
+  onParam() {
+    // VR6: wiper resistance; decay grows with feedback gain (R169 || VR6)/R164.
+    this.vr6.g = 1 / Math.max(50, 500e3 * clamp(this.p.decay, 0, 1));
+    // VR5 (C taper) in parallel with R172: more resistance = darker.
+    const vr5 = 10e3 * Math.pow(1 - clamp(this.p.tone, 0, 1), 2) + 1;
+    this.vr5.g = 1 / ((vr5 * 10e3) / (vr5 + 10e3));
+    for (const cap of this.cT) cap.c = 0.015e-6 / pitchMul(this.p.pitch);
+    this.c40.c = Math.max(1e-12, 0.015e-6 * amtMul(this.p.click));
+    this.c38.c = 0.1e-6 * spanMul(this.p.attack, 3);
+    this.ckt.touch();
+  }
+  _settle() { this.ckt.settle(2000); }
+  trigger(accent = 0) {
+    this.sw.v = busVoltage(accent);
+    this.sw.on = true; this.ckt.touch();
+    this.pulseLeft = Math.round(TRIG_WIDTH * this.sr * this.oversample);
+    this.idle = 0;
+  }
+  render(out, n) {
+    const c = this.ckt, L1 = c.idx.L1, os = this.oversample, lvl = this.p.level;
+    // Stop simulating ~3 s after the last hit: the circuit is back at rest,
+    // and resumes from that state on the next trigger.
+    if (this.idle > 3 * this.sr) return;
+    this.idle += n;
+    for (let i = 0; i < n; i++) {
+      let y = 0;
+      for (let k = 0; k < os; k++) {
+        if (this.pulseLeft > 0 && --this.pulseLeft === 0) { this.sw.on = false; c.touch(); }
+        c.step();
+        y += c.v[L1];
+      }
+      out[i] += this.hp.tick(y / os) * lvl * DIVIDER;
+    }
+  }
+}
+
+return { BD_EXTRA: typeof BD_EXTRA === 'undefined' ? undefined : BD_EXTRA, meta: typeof meta === 'undefined' ? undefined : meta, BDCircuit: typeof BDCircuit === 'undefined' ? undefined : BDCircuit };
+})();
+// ---- voices/bd.js
+__m["voices/bd.js"] = (() => {
+// BD — Bass Drum, behavioural model (manual p.5, schematic p.9 "BASS DRUM").
+//
+// A cheap stand-in for voices/bd-circuit.js, fitted to its output
+// (test/fit.mjs): one zero-delay state-variable resonator plus a few
+// envelopes, instead of solving the network every sample.
+//
+//  * The bridged-T around IC12a rings as a damped sine. For the first few ms
+//    after the trigger Q43 shorts R165, so the first half-cycle runs at about
+//    twice the frequency; then C39/R161 give it a second, smaller kick.
+//  * After that the pitch slides down from ~58 Hz to the network's resting
+//    ~49 Hz as C43 recovers; the slide is quicker at short DECAY settings.
+//  * VR6 (DECAY) sets the ring time; VR5 (TONE) with R171/C45 is a one-pole
+//    low-pass whose corner is computed from the parts, as in the circuit.
+//  * The trigger edge leaks through C40 into IC12 and gives the click.
+const { Voice, BridgedT, Pulse, OnePole, map3, qFromDecay, rail, clamp, lerp, PITCH, pitchMul, amtMul, spanMul } = __m["dsp/core.js"];
+const { BD_EXTRA } = __m["voices/bd-circuit.js"];
+
+const meta = { id: 'bd', name: 'Bass Drum', short: 'BD' };
+
+// Fitted to the circuit model (node test/fit.mjs bd ...).
+const FIT = {
+  f0: 48.42,        // resting pitch, Hz
+  glide: 0.2355,   // extra pitch at the start, fraction of f0
+  glideK: 0.2073,  // glide time constant as a fraction of the decay time
+  d0: 0.04829, d5: 0.3033, d1: 0.8946, // ring time to 1/10 at DECAY 0 / mid / max, s
+  fast: 3.185,       // pitch multiple while Q43 shorts R165
+  seg: 0.00368,    // how long it lasts, s
+  kick1: 1.527,    // first pulse, x peak amplitude
+  kick2: 0.3734,    // C39 re-trigger pulse
+  click: 0.3478,    // C40 trigger feed-through
+  aN: 1.662, aA: 3.434,  // ring amplitude, normal / full accent, V
+};
+
+class BD extends Voice {
+  constructor(sr) {
+    super(sr, [
+      { id: 'level', name: 'Level', def: 0.8 },
+      { id: 'tone', name: 'Tone', def: 0.5 },
+      { id: 'decay', name: 'Decay', def: 0.5 },
+      PITCH, ...BD_EXTRA,
+    ]);
+    this.vppNormal = 3.5; this.vppAccent = 10;
+    this.res = new BridgedT(sr);
+    this.pulse = new Pulse(sr);
+    this.tone = new OnePole(sr, 1000, 'lp');
+    this.click = new OnePole(sr, 400, 'hp');
+    this.t = 1e9; // samples since trigger
+    this.amp = 0;
+    this.onParam();
+  }
+  onParam() {
+    const F = FIT;
+    this.t10 = map3(this.p.decay, F.d0, F.d5, F.d1);
+    this.q = qFromDecay(F.f0, this.t10); // Q, not ring time, stays put under PITCH (as in the circuit)
+    this.f0 = F.f0 * pitchMul(this.p.pitch);
+    this.gCoef = Math.exp(-1 / (F.glideK * this.t10 * this.sr));
+    // VR5 10k C-taper || R172 10k, in series with R171 220R, into C45 .1u
+    const vr5 = 10e3 * (1 - clamp(this.p.tone, 0, 1)) ** 2 + 1;
+    const R = 220 + (vr5 * 10e3) / (vr5 + 10e3);
+    this.tone.set(1 / (2 * Math.PI * R * 0.1e-6));
+  }
+  trigger(accent = 0) {
+    const F = FIT;
+    // CLICK (C40) also carries the trigger into the resonator: the circuit's
+    // ring is ~0.76x without it and ~1.6x at twice the part
+    const ck = clamp(this.p.click ?? 0.5, 0, 1), kAmp = ck < 0.5 ? lerp(0.76, 1, ck * 2) : lerp(1, 1.62, ck * 2 - 1);
+    this.amp = lerp(F.aN * this.trimN, F.aA * this.trimA, clamp(accent, 0, 1)) * kAmp;
+    this.clickK = F.click * amtMul(this.p.click) / kAmp;
+    this.t = 0;
+    this.g = 1;
+    this.res.set(this.f0 * (1 + F.glide) * F.fast, this.q);
+    this.pulse.fire(this.res.pulseHeight(this.amp * F.kick1, 1e-3), 1e-3);
+    this.segN = Math.max(1, Math.round(F.seg * spanMul(this.p.attack, 3) * this.sr)); // ATTACK: C38
+  }
+  render(out, n) {
+    const F = FIT, sr = this.sr, lvl = this.levelGain(), clickN = sr * 0.001;
+    for (let i = 0; i < n; i++) {
+      if (this.t === this.segN) {
+        this.res.set(this.f0 * (1 + F.glide * this.g), this.q);
+        this.pulse.fire(this.res.pulseHeight(this.amp * F.kick2, 1e-3), 1e-3);
+      } else if (this.t > this.segN && (this.t & 15) === 0) {
+        this.res.set(this.f0 * (1 + F.glide * this.g), this.q);
+      }
+      this.g *= this.gCoef;
+      let y = rail(this.res.tick(this.pulse.tick()));
+      y += this.click.tick(this.t < clickN ? this.amp * this.clickK : 0);
+      out[i] += this.tone.tick(y) * lvl;
+      this.t++;
+    }
+  }
+}
+
+return { meta: typeof meta === 'undefined' ? undefined : meta, FIT: typeof FIT === 'undefined' ? undefined : FIT, BD: typeof BD === 'undefined' ? undefined : BD };
+})();
 // ---- dsp/metal-circuit.js
 __m["dsp/metal-circuit.js"] = (() => {
 // Voicing-board metal source as a circuit (schematic p.13).
@@ -6846,6 +7078,7 @@ __m["dsp/metal-circuit.js"] = (() => {
 //              -> CY Q18
 // R53 1k loads the bus to ground (bottom of the IC1 column, next to R35).
 const { Circuit } = __m["dsp/mna.js"];
+const { spreadFactors } = __m["dsp/core.js"];
 
 const VDD = 5, VTH = 2.8, VTL = 2.2;
 const OSC = [
@@ -6903,6 +7136,13 @@ class MetalCircuit {
     this.iH = c.idx.H; this.iL = c.idx.L;
     this.active = () => true;
   }
+  // Retune: every timing capacitor C1-C6 scaled by 1/m (a private bank for a
+  // voice whose PITCH knob is off centre; the IC3 band-passes stay as built).
+  // spread (and idx) as in spreadFactors: each capacitor scaled on its own
+  setPitch(m, spread = 1, idx) {
+    const k = spreadFactors(OSC.map(([R, C]) => 1 / (R * C)), spread, idx);
+    OSC.forEach(([R, C], i) => { this.osc[i].tau = (R * C) / (m * k[i]); });
+  }
   render(n) {
     if (this.hi.length < n) {
       this.v = OSC.map(() => new Float32Array(n)); this.hi = new Float32Array(n); this.lo = new Float32Array(n);
@@ -6956,124 +7196,6 @@ class NoiseBus {
 }
 
 return { NoiseBus: typeof NoiseBus === 'undefined' ? undefined : NoiseBus };
-})();
-// ---- voices/bd-circuit.js
-__m["voices/bd-circuit.js"] = (() => {
-// BD — Bass Drum, component-level version.
-//
-// Every part from the schematic (p.9, "BASS DRUM") between the trigger
-// transistor Q40 and the BD LEVEL pot is simulated as a circuit: resistors,
-// capacitors, the 1S1588-type diodes D52/D53, transistors Q41-Q43 (Ebers-Moll)
-// and both halves of IC12 (finite-gain op-amps that saturate near the
-// +-15 V rails). Nothing about the sound is scripted: the 4 ms
-// double-frequency start, the re-trigger pulse and the decay all come out of
-// the network.
-//
-// Simplifications:
-//  * Q39/Q40 (the trigger switch) are an ideal switch that connects the
-//    common-trigger bus to node T through 100 R for 1 ms. The bus voltage
-//    comes from the main board's accent circuit (busVoltage in dsp/mna.js).
-//  * VR4 (BD LEVEL) is a 50k load and a scale; after it C49 couples into the
-//    R177 82k / R176 100k divider (x0.55). The Q44 emitter follower and C50
-//    are treated as a unity-gain buffer with a ~2 Hz high-pass.
-//  * Tolerances, temperature and op-amp slew/bandwidth are not modelled.
-const { Circuit, busVoltage, TRIG_WIDTH } = __m["dsp/mna.js"];
-const { Voice, OnePole, lerp, clamp } = __m["dsp/core.js"];
-
-const meta = { id: 'bd', name: 'Bass Drum (circuit)', short: 'BD' };
-
-const DIVIDER = 100e3 / (82e3 + 100e3); // R176 / (R177 + R176)
-
-const NODES = ['T', 'B41', 'C41n', 'N42', 'N39', 'B43', 'X', 'P', 'Q', 'M', 'K', 'S', 'O2', 'N6', 'V3', 'Tn', 'L1'];
-
-class BDCircuit extends Voice {
-  constructor(sr) {
-    super(sr, [
-      { id: 'level', name: 'Level', def: 0.8 },
-      { id: 'tone', name: 'Tone', def: 0.5 },
-      { id: 'decay', name: 'Decay', def: 0.5 },
-    ]);
-    this.vppNormal = 3.5; this.vppAccent = 10;
-    this.oversample = globalThis.BD_OS ?? 1;
-    const c = (this.ckt = new Circuit(NODES));
-    const V15 = 15;
-    // trigger switch (Q40 collector)
-    this.sw = c.Rsrc('T', 100, 0); this.sw.on = false;
-    // Q41: trigger detector
-    c.R('T', 'B41', 8.2e3); c.R('B41', 'gnd', 2.7e3);
-    c.NPN('B41', 'C41n', 'gnd');
-    // Q42: 4 ms mono-stable (R156 1M, C38 .1u)
-    c.Rsrc('C41n', 1e6, V15); c.C('C41n', 'gnd', 0.1e-6);
-    c.NPN('C41n', 'N42', 'gnd');
-    c.Rsrc('N42', 22e3, V15);
-    // re-trigger pulse: C39 .033u, D52, R161 1M into the network
-    c.C('N42', 'N39', 0.033e-6); c.D('N39', 'gnd'); c.R('N39', 'M', 1e6);
-    // Q43 shorts R165 while Q42 is off
-    c.R('N42', 'B43', 100e3);
-    c.NPN('B43', 'K', 'gnd');
-    // input coupling into IC12a (+): C40/R163, R162, D53
-    c.C('T', 'X', 0.015e-6); c.R('T', 'X', 100e3); c.R('X', 'gnd', 4.7e3); c.D('gnd', 'X');
-    // IC12a with the bridged-T network
-    c.OpAmp('X', 'P', 'Q');
-    c.R('P', 'Q', 1e6);                 // R167
-    c.C('P', 'M', 0.015e-6);            // C41
-    c.C('M', 'Q', 0.015e-6);            // C42
-    c.R('M', 'K', 6.8e3);               // R166
-    c.R('K', 'gnd', 47e3);              // R165
-    // IC12b: inverting amp whose gain VR6 sets, fed back through R170
-    c.R('Q', 'S', 47e3);                // R164
-    c.OpAmp('gnd', 'S', 'O2');          // (+) via R168 22k, no current
-    c.R('S', 'O2', 47e3);               // R169
-    this.vr6 = c.R('S', 'N6', 250e3);   // VR6 500k (B)
-    c.C('N6', 'O2', 33e-6);             // C43
-    c.R('M', 'O2', 470e3);              // R170
-    // tone: R171, VR5 10k (C) || R172 10k, C45 .1u; level pot as load
-    c.R('Q', 'V3', 220);
-    this.vr5 = c.R('V3', 'Tn', 5e3);
-    c.C('Tn', 'gnd', 0.1e-6);
-    c.C('Tn', 'L1', 0.47e-6);           // C47
-    c.R('L1', 'gnd', 50e3);             // VR4 50k (assumed value)
-    this.hp = new OnePole(sr, 2, 'hp');
-    this.pulseLeft = 0;
-    this.idle = 1e9;
-    c.setTimestep(1 / (sr * this.oversample));
-    this.onParam();
-    this._settle();
-  }
-  onParam() {
-    // VR6: wiper resistance; decay grows with feedback gain (R169 || VR6)/R164.
-    this.vr6.g = 1 / Math.max(50, 500e3 * clamp(this.p.decay, 0, 1));
-    // VR5 (C taper) in parallel with R172: more resistance = darker.
-    const vr5 = 10e3 * Math.pow(1 - clamp(this.p.tone, 0, 1), 2) + 1;
-    this.vr5.g = 1 / ((vr5 * 10e3) / (vr5 + 10e3));
-    this.ckt.touch();
-  }
-  _settle() { this.ckt.settle(2000); }
-  trigger(accent = 0) {
-    this.sw.v = busVoltage(accent);
-    this.sw.on = true; this.ckt.touch();
-    this.pulseLeft = Math.round(TRIG_WIDTH * this.sr * this.oversample);
-    this.idle = 0;
-  }
-  render(out, n) {
-    const c = this.ckt, L1 = c.idx.L1, os = this.oversample, lvl = this.p.level;
-    // Stop simulating ~3 s after the last hit: the circuit is back at rest,
-    // and resumes from that state on the next trigger.
-    if (this.idle > 3 * this.sr) return;
-    this.idle += n;
-    for (let i = 0; i < n; i++) {
-      let y = 0;
-      for (let k = 0; k < os; k++) {
-        if (this.pulseLeft > 0 && --this.pulseLeft === 0) { this.sw.on = false; c.touch(); }
-        c.step();
-        y += c.v[L1];
-      }
-      out[i] += this.hp.tick(y / os) * lvl * DIVIDER;
-    }
-  }
-}
-
-return { meta: typeof meta === 'undefined' ? undefined : meta, BDCircuit: typeof BDCircuit === 'undefined' ? undefined : BDCircuit };
 })();
 // ---- voices/circuit-voice.js
 __m["voices/circuit-voice.js"] = (() => {
@@ -7132,6 +7254,36 @@ class CircuitVoice extends Voice {
     this.minAwake = 0.25;   // s after a trigger before sleeping is allowed
     this.dcBlock = new OnePole(sr, 2, 'hp'); // output jack coupling
     this.isCircuit = true;
+    this.parts = {};        // knob group -> parts scaled from their schematic value
+    this.ownMetal = null;   // private, retuned metal bank (PITCH off centre)
+  }
+  // Remember a part (resistor or capacitor of stage c) so a knob can scale
+  // it: scale(group, k) sets every part in the group to k x its value on the
+  // schematic. The stage re-factors its matrix once, on the next sample, so
+  // a knob that is not moving costs nothing.
+  part(c, el, group) {
+    (this.parts[group] ??= []).push({ c, el, v0: 'c' in el ? el.c : 1 / el.g });
+    return el;
+  }
+  scale(group, k) {
+    for (const q of this.parts[group] ?? []) {
+      if ('c' in q.el) q.el.c = q.v0 * k; else q.el.g = 1 / (q.v0 * k);
+      q.c.touch();
+    }
+  }
+  // Metal voices: PITCH retunes a private copy of the six-oscillator bank
+  // (its timing capacitors scaled), so the other metal voices keep the
+  // stock tuning. Costs one extra bank while the voice plays, and only when
+  // the knob is off centre. ic3 = false skips the IC3 band-pass solve when
+  // the voice only uses the raw oscillators (cowbell).
+  pitchMetal(m, ic3 = true, spread = 1, idx) {
+    if (Math.abs(m - 1) < 1e-6 && Math.abs(spread - 1) < 1e-6) { this.ownMetal = null; return; }
+    if (!this.ownMetal) {
+      const Bank = this.shared.metal.constructor;
+      this.ownMetal = new Bank(this.sr);
+      this.ownMetal.active = () => ic3;
+    }
+    this.ownMetal.setPitch(m, spread, idx);
   }
   stage(nodes) {
     const c = new Circuit(nodes);
@@ -7158,7 +7310,7 @@ class CircuitVoice extends Voice {
   triggerVolts(accent) { return busVoltage(accent); }
   // metal-board voices read the oscillators/IC3 through this.mc, so the
   // warm-up below can drive them from a private copy of the bank
-  get mc() { return this._mc ?? this.shared.metal; }
+  get mc() { return this._mc ?? this.ownMetal ?? this.shared.metal; }
   finish(steps = 3000, warmSecs = 0) {
     this.onParam?.();
     // DC operating point stage by stage (feeds follow), then let it run
@@ -7195,6 +7347,7 @@ class CircuitVoice extends Voice {
   render(out, n) {
     this.preRender?.(n);
     if (!this.awake) { this.post?.(0, n, false); return; }
+    this.ownMetal?.render(n);
     for (let i = 0; i < n; i++) {
       this._tick(i);
       const y = this.dcBlock.tick(this.output());
@@ -7231,6 +7384,12 @@ __m["voices/sd-circuit.js"] = (() => {
 // The stage-1 -> stage-2 cut is the VR9 wiper, passed as its Thevenin
 // equivalent (TS is driven from 100 R during the hit).
 const { CircuitVoice, Pot, aTaper } = __m["voices/circuit-voice.js"];
+const { PITCH, DECAY, pitchMul, decayMul, knob, spanMul } = __m["dsp/core.js"];
+
+// extra knobs: WIRES is the snare noise's Sallen-Key high-pass (C66/C67
+// scaled by 1/m, +-1 octave: brighter or darker wires); SNAP DEC is C51, the
+// snappy envelope (x1/3 .. x3). DECAY is the drum body only.
+const SD_EXTRA = [knob('wires', 'Wires'), knob('snapdec', 'Snap dec')];
 
 // The schematic's "PORTION CHANGED" box (p.9): later boards use C58 .056u,
 // C61 .015u, R191 10k and R200 shorted. The manual's voice-check table
@@ -7250,6 +7409,7 @@ class SDCircuit extends CircuitVoice {
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'tone', name: 'Tone', def: 0.5 },
       { id: 'snappy', name: 'Snappy', def: 0.5 },
+      PITCH, DECAY, ...SD_EXTRA,
     ], shared);
     // ---- stage 1: drum
     const P = SD_PARTS[SD_REVISION];
@@ -7257,12 +7417,18 @@ class SDCircuit extends CircuitVoice {
     this.addTrigger(a, 'TS');
     // VR9 10k + R199 1k load TS (wiper current to Q47 is negligible)
     a.R('TS', 'gnd', 11e3);
-    a.R('TS', 'X1', 100e3); a.C('TS', 'X1', 0.0068e-6); a.R('X1', 'gnd', 680);
+    a.R('TS', 'X1', 100e3); a.C('TS', 'X1', 0.0068e-6); this.part(a, a.R('X1', 'gnd', 680), 'inDiv'); // R189, C57, R190
     a.OpAmp('X1', 'P1', 'O1');
-    a.C('P1', 'M1', P.c58); a.C('M1', 'O1', 0.027e-6); a.R('M1', 'gnd', 680); a.R('P1', 'O1', 820e3); // C58, C59, R196, R197
-    a.R('TS', 'X2', P.r191); a.R('X2', 'gnd', 220);
+    // PITCH scales the bridged-T capacitors (C58-C61) by 1/m; DECAY raises
+    // the feedback resistor (R197 / R198) and lowers the shunt (R196 / R195)
+    // by the same factor, so the product (pitch) stays and Q grows with it;
+    // the input dividers' lower legs (R190 / R192) drop by it too, because the
+    // drums' gain rises with Q and the ring would otherwise get ~d x louder
+    const pt = (el) => this.part(a, el, 'pitch'), up = (el) => this.part(a, el, 'qUp'), dn = (el) => this.part(a, el, 'qDn');
+    pt(a.C('P1', 'M1', P.c58)); pt(a.C('M1', 'O1', 0.027e-6)); dn(a.R('M1', 'gnd', 680)); up(a.R('P1', 'O1', 820e3)); // C58, C59, R196, R197
+    a.R('TS', 'X2', P.r191); this.part(a, a.R('X2', 'gnd', 220), 'inDiv'); // R191, R192
     a.OpAmp('X2', 'P2', 'O2');
-    a.C('P2', 'M2', 0.0068e-6); a.C('M2', 'O2', P.c61); a.R('M2', 'gnd', 2.2e3); a.R('P2', 'O2', 1e6); // C60, C61, R195, R198
+    pt(a.C('P2', 'M2', 0.0068e-6)); pt(a.C('M2', 'O2', P.c61)); dn(a.R('M2', 'gnd', 2.2e3)); up(a.R('P2', 'O2', 1e6)); // C60, C61, R195, R198
     // ---- stage 2: snappy envelope + noise VCA + high-pass
     const b = (this.s2 = this.stage(['B47', 'VC', 'C47', 'P15', 'E47', 'N52', 'NE', 'W', 'B48', 'E48', 'C48', 'F1', 'B49', 'E49']));
     b.tol = 1e-3; // noise-driven: 1 mV / 0.1 uA junction tolerance is inaudible
@@ -7271,7 +7437,7 @@ class SDCircuit extends CircuitVoice {
     b.Rsrc('VC', 100, 15); b.C('VC', 'gnd', 47e-6);           // R193, C55
     b.R('C47', 'VC', 330); b.NPN('B47', 'C47', 'E47');       // R187, Q47
     this.rail(b, 'P15', 15);
-    b.C('E47', 'gnd', 0.47e-6);                               // C51
+    this.part(b, b.C('E47', 'gnd', 0.47e-6), 'env');          // C51 (SNAP DEC scales it)
     b.R('E47', 'N52', 15e3); b.C('N52', 'gnd', 0.1e-6);       // R184, C52
     b.R('N52', 'NE', 15e3); b.C('NE', 'gnd', 0.001e-6);       // R185, C53
     b.D('NE', 'C48');                                         // D54
@@ -7280,7 +7446,7 @@ class SDCircuit extends CircuitVoice {
     b.C('W', 'B48', 0.022e-6); b.Rsrc('B48', 2.2e6, 15);      // C56, R194
     b.NPN('B48', 'C48', 'E48');                               // Q48
     b.R('E48', 'gnd', 100); b.C('C48', 'gnd', 0.0027e-6);     // R188, C54 (collector to gnd)
-    b.C('NE', 'F1', 0.0018e-6); b.C('F1', 'B49', 0.0018e-6);  // C66, C67
+    this.part(b, b.C('NE', 'F1', 0.0018e-6), 'wires'); this.part(b, b.C('F1', 'B49', 0.0018e-6), 'wires'); // C66, C67
     b.R('B49', 'gnd', 47e3); b.R('F1', 'E49', 22e3);          // R202, R201
     b.NPN('B49', 'P15', 'E49');                               // Q49 follower
     b.Rsrc('E49', 22e3, -15);                                 // R203
@@ -7304,12 +7470,16 @@ class SDCircuit extends CircuitVoice {
     this.k9 = lo / 11e3;
     if (this.wiper) { this.wiper.g = 1 / (33e3 + (lo * hi) / 11e3); this.s2.touch(); }
     this.tone?.set(1 - this.p.tone);
+    const m = pitchMul(this.p.pitch), d = decayMul(this.p.decay);
+    this.scale('pitch', 1 / m); this.scale('qUp', d); this.scale('qDn', 1 / d);
+    this.scale('env', spanMul(this.p.snapdec, 3)); this.scale('wires', 1 / spanMul(this.p.wires, 2));
+    this.scale('inDiv', 1 / d);
     if (this.vr7) { this.vr7.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.s3.touch(); }
   }
   output() { return this.s3.v[this.iOut]; }
 }
 
-return { SD_PARTS: typeof SD_PARTS === 'undefined' ? undefined : SD_PARTS, SD_REVISION: typeof SD_REVISION === 'undefined' ? undefined : SD_REVISION, meta: typeof meta === 'undefined' ? undefined : meta, SDCircuit: typeof SDCircuit === 'undefined' ? undefined : SDCircuit };
+return { SD_EXTRA: typeof SD_EXTRA === 'undefined' ? undefined : SD_EXTRA, SD_PARTS: typeof SD_PARTS === 'undefined' ? undefined : SD_PARTS, SD_REVISION: typeof SD_REVISION === 'undefined' ? undefined : SD_REVISION, meta: typeof meta === 'undefined' ? undefined : meta, SDCircuit: typeof SDCircuit === 'undefined' ? undefined : SDCircuit };
 })();
 // ---- voices/rscl-circuit.js
 __m["voices/rscl-circuit.js"] = (() => {
@@ -7347,10 +7517,15 @@ __m["voices/rscl-circuit.js"] = (() => {
 // inside the 2SK30A's -0.4..-5 V spread, meets the table's 25 ms (-1 V gave
 // 42 ms). On-resistance |Vp| / (2 Idss), Idss 2 mA (Y rank) = 875 R.
 const { CircuitVoice, aTaper } = __m["voices/circuit-voice.js"];
+const { PITCH, DECAY, pitchMul, decayMul, knob, spanMul } = __m["dsp/core.js"];
+
+// extra knob, RS only: CLICK is R317, the load on the oscillator sum that
+// drives Q62 (x1/3 .. x3): more drive chops the tones harder
+const RS_EXTRA = [knob('click', 'Click')];
 
 class RSCLCircuit extends CircuitVoice {
   constructor(sr, shared, mode) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }], shared);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY, ...(mode === 'rs' ? RS_EXTRA : [])], shared);
     this.mode = mode;
     const a = (this.s1 = this.stage(['TR', 'N307', 'N301', 'X21', 'P21', 'M21', 'O21',
       'N306', 'N310', 'X20', 'P20', 'M20', 'O20a', 'I20b', 'O20b', 'B61', 'G61', 'M15']));
@@ -7359,29 +7534,32 @@ class RSCLCircuit extends CircuitVoice {
     a.C('TR', 'N307', 0.01e-6); a.R('N307', 'gnd', 100e3);      // C111, R307
     a.D('N307', 'N301'); a.R('N301', 'X21', 47e3); a.R('X21', 'gnd', 10e3); // D62, R301, R302
     a.OpAmp('X21', 'P21', 'O21');
-    a.C('P21', 'M21', 0.0047e-6); a.C('M21', 'O21', 0.0047e-6); // C116, C115
+    // PITCH scales the bridged-T capacitors by 1/m (C115-C119); DECAY scales
+    // the timing capacitors: C113 (Q61 mute timer) and, for RS, C24 (envelope)
+    const pt = (el) => this.part(a, el, 'pitch');
+    pt(a.C('P21', 'M21', 0.0047e-6)); pt(a.C('M21', 'O21', 0.0047e-6)); // C116, C115
     a.R('M21', 'gnd', 5.6e3); a.R('P21', 'O21', 1e6);           // R315, R316
     a.C('TR', 'N306', 0.001e-6); a.R('N306', 'gnd', 22e3);      // C114, R306
     a.D('N306', 'N310'); a.R('N310', 'X20', 33e3); a.R('X20', 'gnd', 10e3); // D64, R310, R311
     a.OpAmp('X20', 'P20', 'O20a');
-    a.C('P20', 'M20', 0.0022e-6); a.C('M20', 'O20a', 0.0022e-6); // C119, C117
+    pt(a.C('P20', 'M20', 0.0022e-6)); pt(a.C('M20', 'O20a', 0.0022e-6)); // C119, C117
     a.R('M20', 'gnd', 1e3); a.R('P20', 'O20a', 820e3);          // R312, R308
-    if (mode === 'rs') a.C('M20', 'O20a', 0.0022e-6);           // SW11: C118
+    if (mode === 'rs') pt(a.C('M20', 'O20a', 0.0022e-6));       // SW11: C118
     else a.R('M20', 'O20b', 390e3);                             // SW11: R313
     a.R('O20a', 'I20b', 33e3); a.R('I20b', 'O20b', 33e3); a.OpAmp('gnd', 'I20b', 'O20b');
     a.C('TR', 'B61', 0.022e-6); a.Rsrc('B61', 47e3, -15);       // C112, R304
     this.rail(a, 'M15', -15);
     a.NPN('B61', 'G61', 'M15');                                 // Q61
-    a.R('G61', 'gnd', 1e6); a.C('G61', 'gnd', 0.047e-6);        // R305, C113
+    a.R('G61', 'gnd', 1e6); this.part(a, a.C('G61', 'gnd', 0.047e-6), 'env'); // R305, C113
     let src;
     if (mode === 'rs') {
       const b = (this.s2 = this.stage(['TRc', 'N61', 'E24', 'N108', 'K62', 'B62', 'N317', 'N322', 'B63', 'E63', 'P15']));
       this.link(b, 'TRc', 1, a, 'TR');
-      b.D('TRc', 'N61'); b.R('N61', 'E24', 1e3); b.C('E24', 'gnd', 0.47e-6);   // D61, R107, C24
+      b.D('TRc', 'N61'); b.R('N61', 'E24', 1e3); this.part(b, b.C('E24', 'gnd', 0.47e-6), 'env'); // D61, R107, C24
       b.R('E24', 'N108', 10e3); b.D('N108', 'K62');                            // R108, D63
       b.NPN('B62', 'K62', 'gnd');                                              // Q62
       b.Rsrc('B62', 2.2e6, 15); b.C('B62', 'N317', 10e-6);                     // R321, C120
-      b.R('N317', 'gnd', 10e3);                                                // R317
+      this.part(b, b.R('N317', 'gnd', 10e3), 'click');                        // R317
       this.link(b, 'N317', 220e3, a, 'O21');                                   // R318
       this.link(b, 'N317', 22e3, a, 'O20b');                                   // R320
       b.C('K62', 'N322', 0.0047e-6); b.C('N322', 'B63', 0.0047e-6);            // C121, C122
@@ -7412,6 +7590,8 @@ class RSCLCircuit extends CircuitVoice {
     this.fet.g = (k * k) / 875 + 1e-9;
   }
   onParam() {
+    this.scale('pitch', 1 / pitchMul(this.p.pitch)); this.scale('env', decayMul(this.p.decay));
+    this.scale('click', spanMul(this.p.click, 3));
     if (this.vr16) { this.vr16.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.s3.touch(); }
   }
   output() { return this.s3.v[this.iOut]; }
@@ -7420,7 +7600,7 @@ class RSCLCircuit extends CircuitVoice {
 class RSCircuit extends RSCLCircuit { constructor(sr, sh) { super(sr, sh, 'rs'); } }
 class CLCircuit extends RSCLCircuit { constructor(sr, sh) { super(sr, sh, 'cl'); } }
 
-return { RSCircuit: typeof RSCircuit === 'undefined' ? undefined : RSCircuit, CLCircuit: typeof CLCircuit === 'undefined' ? undefined : CLCircuit };
+return { RS_EXTRA: typeof RS_EXTRA === 'undefined' ? undefined : RS_EXTRA, RSCircuit: typeof RSCircuit === 'undefined' ? undefined : RSCircuit, CLCircuit: typeof CLCircuit === 'undefined' ? undefined : CLCircuit };
 })();
 // ---- voices/cpma-circuit.js
 __m["voices/cpma-circuit.js"] = (() => {
@@ -7481,6 +7661,11 @@ __m["voices/cpma-circuit.js"] = (() => {
 // what the recording asks for, not readings.
 // The BA662's bias pin sits two diodes above -15 V.
 const { CircuitVoice, aTaper } = __m["voices/circuit-voice.js"];
+const { PITCH, DECAY, pitchMul, decayMul, knob, spanMul } = __m["dsp/core.js"];
+
+// extra knob, CP: SPACING is R365, which charges the C144 sawtooth, so it
+// sets the time between the claps (x1/2 .. x2)
+const CP_EXTRA = [knob('spacing', 'Spacing')];
 
 const VT = 0.02585;
 
@@ -7496,7 +7681,7 @@ function mixer(v, m, level) {
 
 class CPCircuit extends CircuitVoice {
   constructor(sr, shared) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, { id: 'snap', name: 'Snap', def: 0 }], shared);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, { id: 'snap', name: 'Snap', def: 0 }, PITCH, DECAY, ...CP_EXTRA], shared);
     this.accGain = 1;
     // C.P. OFFSET trimmer TM3 (see CP_PARTS)
     this.tm3 = CP_PARTS.TM3;
@@ -7504,8 +7689,10 @@ class CPCircuit extends CircuitVoice {
     // ---- S1: noise band-pass IC21
     const f = (this.s1 = this.stage(['WNc', 'L', 'Nm', 'B']));
     this.feed(f, 'WNc', 1, (i) => wn.wn[i]);
-    f.R('WNc', 'L', 27e3); f.C('WNc', 'L', CP_PARTS.C127); f.R('L', 'gnd', 10e3); // R332, C127, R333
-    f.C('L', 'Nm', CP_PARTS.C128); f.C('L', 'B', CP_PARTS.C128); f.R('Nm', 'B', 100e3); // C128, C129, R334
+    // PITCH: C127-C129 scaled by 1/m move the whole band-pass up by m
+    const pt = (el) => this.part(f, el, 'pitch');
+    f.R('WNc', 'L', 27e3); pt(f.C('WNc', 'L', CP_PARTS.C127)); f.R('L', 'gnd', 10e3); // R332, C127, R333
+    pt(f.C('L', 'Nm', CP_PARTS.C128)); pt(f.C('L', 'B', CP_PARTS.C128)); f.R('Nm', 'B', 100e3); // C128, C129, R334
     f.OpAmp('gnd', 'Nm', 'B');
     // ---- S2: CP line and envelopes
     const e = (this.s2 = this.stage(['CP', 'TH', 'P15', 'E69', 'N139', 'N138', 'N143']));
@@ -7513,7 +7700,7 @@ class CPCircuit extends CircuitVoice {
     e.R('CP', 'TH', 27e3); e.Rsrc('TH', 22e3, -15);              // R360, R361
     this.rail(e, 'P15', 15);
     e.NPN('CP', 'P15', 'E69');                                   // Q69
-    e.D('E69', 'N139'); e.C('N139', 'gnd', CP_PARTS.C139);            // D69, C139
+    e.D('E69', 'N139'); this.part(e, e.C('N139', 'gnd', CP_PARTS.C139), 'env'); // D69, C139 (DECAY: the reverb tail)
     e.R('N139', 'N138', 1e6); e.C('N138', 'gnd', CP_PARTS.C138); // R348, C138
     e.D('E69', 'N143'); e.C('N143', 'gnd', 1e-6);                // D68, C143
     // ---- S3: comparators, sawtooth and the exponential pair
@@ -7521,7 +7708,7 @@ class CPCircuit extends CircuitVoice {
     this.rail(c, 'M15', -15);
     c.R('OC', 'gnd', 1e6); c.C('OC', 'gnd', CP_PARTS.C140);           // R350, C140
     c.R('OB', 'Dm', 2.7e3); c.R('Dm', 'gnd', 5.6e3);             // R355, R354
-    c.R('OA', 'gnd', 82e3); c.D('OA', 'SAW');                    // R365, D71
+    this.part(c, c.R('OA', 'gnd', 82e3), 'spacing'); c.D('OA', 'SAW'); // R365, D71
     c.C('SAW', 'gnd', CP_PARTS.C144);                                  // C144
     c.R('SAW', 'Dp', 1e6); c.C('OD', 'Dp', 220e-12);             // R356, C142
     c.R('OD', 'gnd', 10e3); c.R('OD', 'B73', 68e3);              // R359, R358
@@ -7574,6 +7761,8 @@ class CPCircuit extends CircuitVoice {
     // SNAP (not on the 808): turns the Q70 "reverb" path down through R376,
     // 0 = as built, 1 = the claps alone
     if (this.r376) { this.r376.g = Math.max(1e-12, 1 - this.p.snap) / 47e3; this.mix.touch(); }
+    this.scale('pitch', 1 / pitchMul(this.p.pitch)); this.scale('env', decayMul(this.p.decay));
+    this.scale('spacing', spanMul(this.p.spacing, 2));
     if (this.tm) { this.tm.v = -15 * this.tm3; }
     if (this.vr17) { this.vr17.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.mix.touch(); }
   }
@@ -7588,16 +7777,17 @@ class CPCircuit extends CircuitVoice {
 
 class MACircuit extends CircuitVoice {
   constructor(sr, shared) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }], shared);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY], shared);
     const wn = this.shared.noise;
     // stage 1: select line and gate (Q67, Q66)
     const a = (this.s1 = this.stage(['MA', 'N135', 'B67', 'N67', 'N134', 'E66']));
     this.addTrigger(a, 'MA');
     a.R('MA', 'gnd', 1e6);                                        // line leakage (switch off)
-    a.D('MA', 'N135'); a.C('N135', 'gnd', 0.1e-6); a.R('N135', 'gnd', 150e3); // D67, C135, R345
+    // DECAY scales the gate's timing capacitors C135 and C134
+    a.D('MA', 'N135'); this.part(a, a.C('N135', 'gnd', 0.1e-6), 'env'); a.R('N135', 'gnd', 150e3); // D67, C135, R345
     a.R('N135', 'B67', 220e3); a.NPN('B67', 'N67', 'gnd');        // R344, Q67
     a.Rsrc('N67', 100e3, 15);                                     // R343
-    a.R('N67', 'N134', 470e3); a.D('N67', 'N134'); a.C('N134', 'gnd', 0.033e-6); // R341, D66, C134
+    a.R('N67', 'N134', 470e3); a.D('N67', 'N134'); this.part(a, a.C('N134', 'gnd', 0.033e-6), 'env'); // R341, D66, C134
     a.PNP('N134', 'gnd', 'E66');                                  // Q66
     // stage 2: noise transistor Q65 and the Q68 high-pass; R337 10k joins
     // the two stages (each side sees the other's previous-sample voltage)
@@ -7607,8 +7797,10 @@ class MACircuit extends CircuitVoice {
     this.feed(b, 'N335', 6.8e3, (i) => wn.wn[i]);                 // R335 from W.N.
     b.C('N335', 'B65', 0.047e-6); b.R('B65', 'gnd', 1e6);         // C130, R336
     b.PNP('B65', 'C65', 'P15'); b.D('C65', 'Z');                  // Q65, D65
-    b.C('Z', 'F', 0.01e-6); b.R('F', 'gnd', 15e3);                // C131, R338
-    b.C('F', 'F2', 0.001e-6); b.C('F2', 'B68', 0.001e-6);         // C132, C133
+    // PITCH: the high-pass capacitors C131-C133 scaled by 1/m
+    const pt = (el) => this.part(b, el, 'pitch');
+    pt(b.C('Z', 'F', 0.01e-6)); b.R('F', 'gnd', 15e3);            // C131, R338
+    pt(b.C('F', 'F2', 0.001e-6)); pt(b.C('F2', 'B68', 0.001e-6)); // C132, C133
     b.R('F2', 'E68', 3.3e3); b.R('B68', 'gnd', 68e3);             // R339, R340
     b.NPN('B68', 'P15', 'E68'); b.Rsrc('E68', 22e3, -15);         // Q68, R347
     b.tol = 1e-3; // noise-driven
@@ -7620,12 +7812,13 @@ class MACircuit extends CircuitVoice {
     this.finish();
   }
   onParam() {
+    this.scale('pitch', 1 / pitchMul(this.p.pitch)); this.scale('env', decayMul(this.p.decay));
     if (this.vr17) { this.vr17.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.mix.touch(); }
   }
   output() { return this.mix.v[this.iOut]; }
 }
 
-return { CP_PARTS: typeof CP_PARTS === 'undefined' ? undefined : CP_PARTS, CPCircuit: typeof CPCircuit === 'undefined' ? undefined : CPCircuit, MACircuit: typeof MACircuit === 'undefined' ? undefined : MACircuit };
+return { CP_EXTRA: typeof CP_EXTRA === 'undefined' ? undefined : CP_EXTRA, CP_PARTS: typeof CP_PARTS === 'undefined' ? undefined : CP_PARTS, CPCircuit: typeof CPCircuit === 'undefined' ? undefined : CPCircuit, MACircuit: typeof MACircuit === 'undefined' ? undefined : MACircuit };
 })();
 // ---- voices/cb-circuit.js
 __m["voices/cb-circuit.js"] = (() => {
@@ -7646,6 +7839,12 @@ __m["voices/cb-circuit.js"] = (() => {
 // below). Assumed: a 100k leak on the Q5 collector (only for the solver).
 const { CircuitVoice, aTaper } = __m["voices/circuit-voice.js"];
 const { busVoltage } = __m["dsp/mna.js"];
+const { PITCH, DECAY, pitchMul, decayMul, knob, spreadExp, spanMul } = __m["dsp/core.js"];
+
+// extra knobs: DETUNE spreads the two oscillators apart or together (their
+// C5 / C6), RING is the IC2b band-pass's Q (R25 up, R24 down by the same
+// factor, so its centre stays put)
+const CB_EXTRA = [knob('detune', 'Detune'), knob('ring', 'Ring')];
 
 // Voicing-board trigger buffer IC2a (schematic p.13): TRIG -> R19 100k -> (+),
 // TRIG -> R18 3.3k -> D1 clamp -> R20 15k -> (+), R21 3.3k to gnd; gain
@@ -7666,13 +7865,15 @@ function voicingTrigger(accent) {
 
 class CBCircuit extends CircuitVoice {
   constructor(sr, shared) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }], shared);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY, ...CB_EXTRA], shared);
     const a = (this.s1 = this.stage(['T5', 'N122', 'E9', 'N82', 'N3', 'N4', 'N62', 'B15', 'C15', 'E15',
       'N64', 'B14', 'C14', 'E14', 'K30', 'K31', 'A', 'Pm', 'O2']));
     this.addTrigger(a, 'T5');
     a.R('T5', 'gnd', 100e3);
-    a.R('T5', 'N122', 1e3); a.D('N122', 'E9'); a.C('E9', 'gnd', 0.47e-6);   // R122, D2, C9
-    a.R('E9', 'N82', 33e3); a.C('N82', 'gnd', 1e-6);                          // R82, C34
+    // DECAY scales the envelope capacitors C9 and C34; PITCH retunes a
+    // private copy of the two cowbell oscillators (their C5/C6)
+    a.R('T5', 'N122', 1e3); a.D('N122', 'E9'); this.part(a, a.C('E9', 'gnd', 0.47e-6), 'env'); // R122, D2, C9
+    a.R('E9', 'N82', 33e3); this.part(a, a.C('N82', 'gnd', 1e-6), 'env');     // R82, C34
     a.R('E9', 'N3', 100e3); a.R('E9', 'N4', 100e3);                           // R28, R29
     // Q15 (540 Hz) and Q14 (800 Hz)
     this.feed(a, 'N62', 33e3, (i) => this.mc.v[4][i]); a.R('N62', 'gnd', 2.2e3);   // R62, R63
@@ -7684,8 +7885,8 @@ class CBCircuit extends CircuitVoice {
     a.D('N3', 'C15'); a.D('N4', 'C14');                                       // D3, D4
     a.R('N3', 'K30', 10e3); a.C('K30', 'A', 0.0022e-6);                       // R26, C30
     a.R('N4', 'K31', 10e3); a.C('K31', 'A', 0.0022e-6);                       // R27, C31
-    a.R('A', 'gnd', 2.2e3); a.C('A', 'Pm', 0.01e-6); a.C('A', 'O2', 0.0033e-6); // R24, C28, C29
-    a.R('Pm', 'O2', 470e3); a.OpAmp('gnd', 'Pm', 'O2');                       // R25, IC2b
+    this.part(a, a.R('A', 'gnd', 2.2e3), 'ringDn'); a.C('A', 'Pm', 0.01e-6); a.C('A', 'O2', 0.0033e-6); // R24, C28, C29
+    this.part(a, a.R('Pm', 'O2', 470e3), 'ringUp'); a.OpAmp('gnd', 'Pm', 'O2');                      // R25, IC2b
     const m = (this.s2 = this.stage(['Oc', 'N75', 'VT', 'W5', 'BP', 'OUT']));
     this.link(m, 'Oc', 1, a, 'O2');
     m.C('Oc', 'N75', 1e-6); m.R('N75', 'VT', 8.2e3);                          // C75, R116
@@ -7697,6 +7898,8 @@ class CBCircuit extends CircuitVoice {
   }
   triggerVolts(accent) { return voicingTrigger(accent); }
   onParam() {
+    this.pitchMetal(pitchMul(this.p.pitch), false, spreadExp(this.p.detune), [4, 5]);
+    const q = spanMul(this.p.ring, 3); this.scale('ringUp', q); this.scale('ringDn', 1 / q); this.scale('env', decayMul(this.p.decay));
     if (!this.vrT) return;
     const r = 5e3 * aTaper(this.p.level);
     this.vrT.g = 1 / Math.max(1, 5e3 - r); this.vrB.g = 1 / Math.max(1, r); this.s2.touch();
@@ -7704,7 +7907,7 @@ class CBCircuit extends CircuitVoice {
   output() { return this.s2.v[this.iOut]; }
 }
 
-return { voicingTrigger: typeof voicingTrigger === 'undefined' ? undefined : voicingTrigger, CBCircuit: typeof CBCircuit === 'undefined' ? undefined : CBCircuit };
+return { CB_EXTRA: typeof CB_EXTRA === 'undefined' ? undefined : CB_EXTRA, voicingTrigger: typeof voicingTrigger === 'undefined' ? undefined : voicingTrigger, CBCircuit: typeof CBCircuit === 'undefined' ? undefined : CBCircuit };
 })();
 // ---- voices/cy-circuit.js
 __m["voices/cy-circuit.js"] = (() => {
@@ -7736,6 +7939,11 @@ __m["voices/cy-circuit.js"] = (() => {
 // parts copy Q16's.
 const { CircuitVoice, aTaper } = __m["voices/circuit-voice.js"];
 const { voicingTrigger } = __m["voices/cb-circuit.js"];
+const { PITCH, pitchMul, knob, spreadExp } = __m["dsp/core.js"];
+
+// extra knob: SPREAD pulls the six metal oscillators together or pushes them
+// apart (each timing capacitor on its own, in a private bank)
+const CY_EXTRA = [knob('spread', 'Spread')];
 
 function vca(v, c, src, tag, sNode) {
   // swing VCA transistor: base from IC3 via .022u, 1M + 1M bias, 100 R emitter
@@ -7753,6 +7961,7 @@ class CYCircuit extends CircuitVoice {
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'tone', name: 'Tone', def: 0.5 },
       { id: 'decay', name: 'Decay', def: 0.5 },
+      PITCH, ...CY_EXTRA,
     ], shared);
     this.sleepAfter = 0.3;
     // ---- envelopes
@@ -7814,6 +8023,7 @@ class CYCircuit extends CircuitVoice {
   }
   triggerVolts(accent) { return voicingTrigger(accent); }
   onParam() {
+    this.pitchMetal(pitchMul(this.p.pitch), true, spreadExp(this.p.spread)); // private six-oscillator bank, retuned
     if (!this.vr6) return;
     this.vr2.g = 1 / (470e3 + 2e6 * this.p.decay);
     // VR4 20k (B), wiper grounded: TONE up = less of the low node shunted
@@ -7825,7 +8035,7 @@ class CYCircuit extends CircuitVoice {
   output() { return this.s5.v[this.iOut]; }
 }
 
-return { CYCircuit: typeof CYCircuit === 'undefined' ? undefined : CYCircuit };
+return { CY_EXTRA: typeof CY_EXTRA === 'undefined' ? undefined : CY_EXTRA, CYCircuit: typeof CYCircuit === 'undefined' ? undefined : CYCircuit };
 })();
 // ---- voices/hats-circuit.js
 __m["voices/hats-circuit.js"] = (() => {
@@ -7852,6 +8062,12 @@ __m["voices/hats-circuit.js"] = (() => {
 //   VR8 + C83 33u). C63 also drives the OH choke (R173 330k -> Q23).
 const { CircuitVoice, aTaper } = __m["voices/circuit-voice.js"];
 const { voicingTrigger } = __m["voices/cb-circuit.js"];
+const { PITCH, DECAY, pitchMul, decayMul, knob, spreadExp, spanMul } = __m["dsp/core.js"];
+
+// extra knobs: SPREAD pulls the six metal oscillators together or pushes
+// them apart (each timing capacitor on its own, in a private bank), TONE is
+// the hat's Sallen-Key high-pass (C66/C68 or C72/C73 scaled by 1/m, +-1 oct)
+const HAT_EXTRA = [knob('spread', 'Spread'), knob('tone', 'Tone')];
 
 function swingHat(v, c, tag) {
   // IC3 high -> .022u -> VCA transistor (1M + 1M bias, 100 R emitter)
@@ -7873,6 +8089,7 @@ class OHCircuit extends CircuitVoice {
     super(sr, [
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'decay', name: 'Decay', def: 0.5 },
+      PITCH, ...HAT_EXTRA,
     ], shared);
     this.sleepAfter = 0.3;
     this.chokeFrom = null; // CH circuit voice (wired by the kit)
@@ -7896,7 +8113,7 @@ class OHCircuit extends CircuitVoice {
     const h = (this.s2 = this.stage(['IH', 'BQ', 'CQ', 'EQ', 'Y', 'N66', 'B26', 'E26', 'P15']));
     swingHat(this, h);
     this.link(h, 'Y', 33e3, e, 'E29'); this.link(e, 'E29', 33e3, h, 'Y');   // R144
-    h.C('Y', 'N66', 0.0015e-6); h.C('N66', 'B26', 0.0015e-6);               // C66, C68
+    this.part(h, h.C('Y', 'N66', 0.0015e-6), 'hp'); this.part(h, h.C('N66', 'B26', 0.0015e-6), 'hp');              // C66, C68
     h.R('N66', 'E26', 2.7e3); h.R('B26', 'gnd', 68e3);                      // R147, R146
     this.rail(h, 'P15', 15);
     h.NPN('B26', 'P15', 'E26'); h.Rsrc('E26', 22e3, -15);                   // Q26, R156
@@ -7912,6 +8129,8 @@ class OHCircuit extends CircuitVoice {
   choke() { if (this.awake) this.chokeHold = Math.round(0.01 * this.sr); }
   post(i, n) { if (this.chokeHold > 0) this.chokeHold -= n; }
   onParam() {
+    this.pitchMetal(pitchMul(this.p.pitch), true, spreadExp(this.p.spread)); // private six-oscillator bank, retuned
+    this.scale('hp', 1 / spanMul(this.p.tone, 2));
     if (!this.vrL) return;
     this.vr3.g = 1 / (100e3 + 2e6 * this.p.decay);
     this.vrL.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level));
@@ -7922,18 +8141,18 @@ class OHCircuit extends CircuitVoice {
 
 class CHCircuit extends CircuitVoice {
   constructor(sr, shared) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }], shared);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY, ...HAT_EXTRA], shared);
     this.e28 = new Float32Array(128);
     const e = (this.s1 = this.stage(['T8', 'B28', 'VC', 'C28', 'E28']));
     this.addTrigger(e, 'T8');
     e.R('T8', 'gnd', 22e3); e.R('T8', 'B28', 33e3);                         // R13, R141
     e.Rsrc('VC', 100, 15); e.C('VC', 'gnd', 47e-6); e.R('VC', 'C28', 470);   // R136, C61, R138
-    e.NPN('B28', 'C28', 'E28'); e.C('E28', 'gnd', 0.47e-6);                 // Q28, C63
+    e.NPN('B28', 'C28', 'E28'); this.part(e, e.C('E28', 'gnd', 0.47e-6), 'env'); // Q28, C63 (DECAY)
     e.R('E28', 'gnd', 330e3);                                               // R173 into Q23 (load)
     const h = (this.s2 = this.stage(['IH', 'BQ', 'CQ', 'EQ', 'Y', 'N72', 'B31', 'E31', 'P15']));
     swingHat(this, h);
     this.link(h, 'Y', 33e3, e, 'E28'); this.link(e, 'E28', 33e3, h, 'Y');   // R142
-    h.C('Y', 'N72', 0.001e-6); h.C('N72', 'B31', 0.001e-6);                 // C72, C73
+    this.part(h, h.C('Y', 'N72', 0.001e-6), 'hp'); this.part(h, h.C('N72', 'B31', 0.001e-6), 'hp');                // C72, C73
     h.R('N72', 'E31', 2.7e3); h.R('B31', 'gnd', 68e3);                      // R153, R155
     this.rail(h, 'P15', 15);
     h.NPN('B31', 'P15', 'E31'); h.Rsrc('E31', 22e3, -15);                   // Q31, R154
@@ -7952,6 +8171,8 @@ class CHCircuit extends CircuitVoice {
     if (awake) this.e28[i] = v; else this.e28.fill(v, 0, n);
   }
   onParam() {
+    this.pitchMetal(pitchMul(this.p.pitch), true, spreadExp(this.p.spread)); this.scale('env', decayMul(this.p.decay));
+    this.scale('hp', 1 / spanMul(this.p.tone, 2));
     if (!this.vrL) return;
     this.vrL.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level));
     this.mix.touch();
@@ -7959,7 +8180,7 @@ class CHCircuit extends CircuitVoice {
   output() { return this.mix.v[this.iOut]; }
 }
 
-return { OHCircuit: typeof OHCircuit === 'undefined' ? undefined : OHCircuit, CHCircuit: typeof CHCircuit === 'undefined' ? undefined : CHCircuit };
+return { HAT_EXTRA: typeof HAT_EXTRA === 'undefined' ? undefined : HAT_EXTRA, OHCircuit: typeof OHCircuit === 'undefined' ? undefined : OHCircuit, CHCircuit: typeof CHCircuit === 'undefined' ? undefined : CHCircuit };
 })();
 // ---- voices/tom-circuit.js
 __m["voices/tom-circuit.js"] = (() => {
@@ -7988,6 +8209,11 @@ __m["voices/tom-circuit.js"] = (() => {
 // R259 820k; noise C85/C84/C87/C88, Q55, R261 100k. HT: C99, R282 22k,
 // R281 5.6k; C103/C105 (+C104), R284, R286 820k; noise via Q58, R288 100k.
 const { CircuitVoice, aTaper } = __m["voices/circuit-voice.js"];
+const { PITCH, DECAY, pitchMul, decayMul, knob, amtMul } = __m["dsp/core.js"];
+
+// extra knob, toms only: NOISE is R232, where the Q52 noise burst joins the
+// drum (its conductance: none at 0, stock at centre, x8 at full)
+const TOM_EXTRA = [knob('noise', 'Noise')];
 
 const PARTS = {
   lt: { cIn: 0.0068e-6, rIn: 22e3, rX: 4.7e3, c1: 0.056e-6, c2: 0.012e-6 + 0.047e-6, rf: 820e3, rs: 1e3, rfb: 820e3, cOut: 0.047e-6,
@@ -8001,25 +8227,52 @@ const PARTS = {
   hc: { cIn: 0.0027e-6, rIn: 22e3, rX: (5.6e3 * 1.5e3) / 7.1e3, c1: 0.027e-6, c2: 0.0056e-6, rf: 820e3, rs: 1e3, rfb: 820e3, cOut: 0.033e-6 },
 };
 
+// DECAY works on R230, the positive feedback from IC15b that the board
+// already uses to lengthen the ring: less feedback (R230 up, phi < 1) is
+// shorter, more (R230 down) is longer, with pitch and level unchanged. The
+// loop gets close to oscillating above the top of each table, so the knob is
+// mapped through it: phi = R230(stock) / R230 against the measured ring time
+// relative to stock (test at TUNING 0 / 0.5 / 1 gives the same ratios).
+// Congas ring out much faster with less feedback, so their range starts lower.
+const TOM_DECAY = {
+  lt: [[0, 0.49], [0.25, 0.54], [0.5, 0.66], [0.75, 0.8], [1, 1], [1.2, 1.22], [1.4, 1.56], [1.6, 2.15], [1.7, 2.68], [1.75, 3]],
+  mt: [[0, 0.56], [0.5, 0.72], [0.75, 0.8], [1, 1], [1.2, 1.24], [1.4, 1.6], [1.6, 2.08], [1.7, 2.56], [1.78, 3]],
+  ht: [[0, 0.45], [0.25, 0.55], [0.5, 0.65], [0.75, 0.75], [1, 1], [1.2, 1.25], [1.4, 1.6], [1.6, 2.25], [1.7, 3]],
+  lc: [[0, 0.19], [0.25, 0.24], [0.5, 0.32], [0.75, 0.49], [1, 1], [1.05, 1.24], [1.1, 1.7], [1.15, 2.49], [1.165, 3]],
+  mc: [[0, 0.32], [0.25, 0.37], [0.5, 0.47], [0.75, 0.63], [1, 1], [1.1, 1.26], [1.2, 1.63], [1.25, 2.05], [1.3, 2.68], [1.32, 3]],
+  hc: [[0, 0.18], [0.25, 0.24], [0.5, 0.29], [0.75, 0.47], [1, 1], [1.05, 1.29], [1.1, 1.76], [1.15, 2.65], [1.16, 3]],
+};
+// knob -> [ring time ratio actually reached, phi]
+function tomDecay(key, v) {
+  const T = TOM_DECAY[key], r = Math.min(T[T.length - 1][1], Math.max(T[0][1], decayMul(v)));
+  let i = 1; while (i < T.length - 1 && T[i][1] < r) i++;
+  const [p0, r0] = T[i - 1], [p1, r1] = T[i];
+  return [r, p0 + ((p1 - p0) * Math.log(r / r0)) / Math.log(r1 / r0)];
+}
+
 class TomCircuit extends CircuitVoice {
   constructor(sr, shared, key) {
     super(sr, [
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'tuning', name: 'Tuning', def: 0.5 },
+      PITCH, DECAY, ...(PARTS[key].noise ? TOM_EXTRA : []),
     ], shared);
     const P = PARTS[key];
+    this.key = key;
     const a = (this.s1 = this.stage(['TT', 'Y', 'X', 'P', 'Mt', 'O1', 'N15', 'O2', 'W11', 'T11']));
     this.addTrigger(a, 'TT');
     a.R('TT', 'gnd', 4.7e3);                                  // R215
     a.C('TT', 'Y', P.cIn); a.D('gnd', 'Y');                   // C73, D56
     a.R('Y', 'X', P.rIn); a.R('X', 'gnd', P.rX);              // R226, R225 (|| R224 for LC)
     a.OpAmp('X', 'P', 'O1');
-    a.C('P', 'Mt', P.c1); a.C('Mt', 'O1', P.c2); a.R('P', 'O1', P.rf);
+    // PITCH scales the bridged-T capacitors by 1/m (DECAY: R230, below)
+    this.part(a, a.C('P', 'Mt', P.c1), 'pitch'); this.part(a, a.C('Mt', 'O1', P.c2), 'pitch');
+    a.R('P', 'O1', P.rf);
     a.R('Mt', 'W11', P.rs);                                   // R231
     a.D('Mt', 'T11'); a.D('T11', 'Mt');                       // D80, D81
     this.vrA = a.R('T11', 'W11', 250); this.vrB = a.R('W11', 'gnd', 250); // VR11 500 R
     a.R('O1', 'N15', 33e3); a.R('N15', 'O2', 33e3); a.OpAmp('gnd', 'N15', 'O2'); // IC15b
-    a.R('O2', 'Mt', P.rfb);                                   // R230
+    this.part(a, a.R('O2', 'Mt', P.rfb), 'fb');               // R230
     const nodes = ['J', 'S', 'OUT', 'NV'];
     if (P.noise) nodes.push('TTc', 'E', 'G', 'H', 'B52', 'C52', 'N223', 'N75', 'P15');
     const m = (this.s2 = this.stage(nodes));
@@ -8031,7 +8284,7 @@ class TomCircuit extends CircuitVoice {
     if (P.noise) {
       const N = P.noise, pn = this.shared.noise;
       this.link(m, 'TTc', 4.7e3, a, 'TT');                    // R219 (D55 blocks the return)
-      m.D('TTc', 'E'); m.C('E', 'gnd', N.c72);                // D55, C72
+      m.D('TTc', 'E'); this.part(m, m.C('E', 'gnd', N.c72), 'env'); // D55, C72 (DECAY)
       m.R('E', 'G', N.r218);                                  // R218
       this.feed(m, 'H', N.r216, (i) => pn.pn[i]);             // R216 from P.N.
       m.R('H', 'gnd', N.r217); m.C('G', 'H', N.c71);          // R217, C71
@@ -8040,7 +8293,7 @@ class TomCircuit extends CircuitVoice {
       m.R('P15', 'C52', N.r221); m.NPN('B52', 'C52', 'gnd');  // R221, Q52
       m.C('C52', 'N223', N.c74); m.R('N223', 'gnd', N.r223);  // C74, R223
       m.R('N223', 'N75', N.r222); m.C('N75', 'gnd', N.c75);   // R222, C75
-      m.R('N75', 'J', 100e3);                                 // R232
+      this.r232 = m.R('N75', 'J', 100e3); this.r232.g0 = 1 / 100e3; // R232 (NOISE knob)
       m.tol = 1e-4;
     }
     this.iOut = m.idx.OUT;
@@ -8050,6 +8303,9 @@ class TomCircuit extends CircuitVoice {
     // VR11 500 R (B): wiper-to-ground part shrinks as TUNING goes up
     const r = 500 * (1 - this.p.tuning);
     if (this.vrA) { this.vrA.g = 1 / Math.max(1, 500 - r); this.vrB.g = 1 / Math.max(1, r); this.s1.touch(); }
+    const [dr, phi] = tomDecay(this.key, this.p.decay);
+    this.scale('pitch', 1 / pitchMul(this.p.pitch)); this.scale('fb', 1 / phi); this.scale('env', dr);
+    if (this.r232) { this.r232.g = Math.max(1e-12, this.r232.g0 * (this.p.noise < 0.5 ? amtMul(this.p.noise) : 8 ** (2 * this.p.noise - 1))); this.s2.touch(); }
     if (this.vr10) { this.vr10.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.s2.touch(); }
   }
   output() { return this.s2.v[this.iOut]; }
@@ -8062,7 +8318,7 @@ class LCCircuit extends TomCircuit { constructor(sr, sh) { super(sr, sh, 'lc'); 
 class MCCircuit extends TomCircuit { constructor(sr, sh) { super(sr, sh, 'mc'); } }
 class HCCircuit extends TomCircuit { constructor(sr, sh) { super(sr, sh, 'hc'); } }
 
-return { LTCircuit: typeof LTCircuit === 'undefined' ? undefined : LTCircuit, MTCircuit: typeof MTCircuit === 'undefined' ? undefined : MTCircuit, HTCircuit: typeof HTCircuit === 'undefined' ? undefined : HTCircuit, LCCircuit: typeof LCCircuit === 'undefined' ? undefined : LCCircuit, MCCircuit: typeof MCCircuit === 'undefined' ? undefined : MCCircuit, HCCircuit: typeof HCCircuit === 'undefined' ? undefined : HCCircuit };
+return { TOM_EXTRA: typeof TOM_EXTRA === 'undefined' ? undefined : TOM_EXTRA, TOM_DECAY: typeof TOM_DECAY === 'undefined' ? undefined : TOM_DECAY, tomDecay: typeof tomDecay === 'undefined' ? undefined : tomDecay, LTCircuit: typeof LTCircuit === 'undefined' ? undefined : LTCircuit, MTCircuit: typeof MTCircuit === 'undefined' ? undefined : MTCircuit, HTCircuit: typeof HTCircuit === 'undefined' ? undefined : HTCircuit, LCCircuit: typeof LCCircuit === 'undefined' ? undefined : LCCircuit, MCCircuit: typeof MCCircuit === 'undefined' ? undefined : MCCircuit, HCCircuit: typeof HCCircuit === 'undefined' ? undefined : HCCircuit };
 })();
 // ---- voices/circuits.js
 __m["voices/circuits.js"] = (() => {
@@ -8225,9 +8481,9 @@ __m["voices/sd.js"] = (() => {
 //  * the gated white noise goes through the C66/C67 Sallen-Key high-pass
 //    (2.75 kHz, Q 0.73, from the parts) and C69/R205 into the mixer
 //  * IC13a's 220p feedback cap is the final low-pass
-const { Voice, BridgedT, Pulse, Biquad, OnePole, Noise, rail, clamp, decayCoef, lerp } = __m["dsp/core.js"];
+const { Voice, BridgedT, Pulse, Biquad, OnePole, Noise, rail, clamp, decayCoef, lerp, PITCH, DECAY, pitchMul, decayMul, spanMul } = __m["dsp/core.js"];
 const { busVoltage } = __m["dsp/mna.js"];
-const { SD_REVISION } = __m["voices/sd-circuit.js"];
+const { SD_REVISION, SD_EXTRA } = __m["voices/sd-circuit.js"];
 
 const meta = { id: 'sd', name: 'Snare Drum', short: 'SD' };
 
@@ -8249,18 +8505,20 @@ class SD extends Voice {
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'tone', name: 'Tone', def: 0.5 },
       { id: 'snappy', name: 'Snappy', def: 0.5 },
+      PITCH, DECAY, ...SD_EXTRA,
     ]);
     this.vppNormal = 3; this.vppAccent = 10;
     const F = FIT, orig = SD_REVISION === 'original';
-    this.lo = new BridgedT(sr); this.lo.set(orig ? F.fLoO : F.fLo, F.qLo);
-    this.hi = new BridgedT(sr); this.hi.set(orig ? F.fHiO : F.fHi, F.qHi);
+    this.fL = orig ? F.fLoO : F.fLo; this.fH = orig ? F.fHiO : F.fHi;
+    this.lo = new BridgedT(sr); this.hi = new BridgedT(sr);
     this.pLo = new Pulse(sr); this.pHi = new Pulse(sr);
     this.noise = new Noise(808);
-    this.nHp = new Biquad(sr, 'hp', 1 / (2 * Math.PI * 1.8e-9 * Math.sqrt(22e3 * 47e3)), 0.5 * Math.sqrt(47e3 / 22e3));
+    this.nHpF = 1 / (2 * Math.PI * 1.8e-9 * Math.sqrt(22e3 * 47e3)); this.nHpQ = 0.5 * Math.sqrt(47e3 / 22e3);
+    this.nHp = new Biquad(sr, 'hp', this.nHpF, this.nHpQ);
     this.nHp2 = new OnePole(sr, 1 / (2 * Math.PI * 27e3 * 0.01e-6), 'hp'); // C69 / R205
     this.nLp = new OnePole(sr, F.nLp, 'lp');
     this.out = new OnePole(sr, F.outLp, 'lp');
-    this.att = decayCoef(F.nAtt, sr); this.dec = decayCoef(F.nDec, sr);
+    this.att = decayCoef(F.nAtt, sr);
     this.eC = 0; this.eS = 0;
     this.onParam();
   }
@@ -8270,6 +8528,12 @@ class SD extends Voice {
     const ra = Math.max(1, t * R), rb = Math.max(1, R - ra); // ra: A1 (low) to wiper
     const load = 100e3 / ((ra * rb) / R + 100e3);
     this.gLo = (rb / R) * load; this.gHi = (ra / R) * load;
+    // PITCH: both drums by m at the same Q; DECAY: Q (drums) and the C51
+    // discharge (snappy) by d, as the circuit's part changes do
+    const F = FIT, m = pitchMul(this.p.pitch), d = decayMul(this.p.decay);
+    this.lo.set(this.fL * m, F.qLo * d); this.hi.set(this.fH * m, F.qHi * d);
+    this.dec = decayCoef(F.nDec * spanMul(this.p.snapdec, 3), this.sr);  // SNAP DEC: C51
+    this.nHp?.set(this.nHpF * spanMul(this.p.wires, 2), this.nHpQ);       // WIRES: C66/C67
   }
   trigger(accent = 0) {
     const F = FIT, vb = busVoltage(accent), a = lerp(this.trimN, this.trimA, clamp(accent, 0, 1));
@@ -8313,8 +8577,9 @@ __m["voices/tom.js"] = (() => {
 //    in VR11)
 //  * toms only: a burst of pink noise through the Q52 VCA and the R222/C75
 //    low-pass, with its own envelope (C72 via D55, discharging into R218)
-const { Voice, BridgedT, Pulse, OnePole, Biquad, Noise, map3, qFromDecay, rail, decayCoef, lerp, clamp } = __m["dsp/core.js"];
+const { Voice, BridgedT, Pulse, OnePole, Biquad, Noise, map3, qFromDecay, rail, decayCoef, lerp, clamp, PITCH, DECAY, pitchMul } = __m["dsp/core.js"];
 const { busVoltage } = __m["dsp/mna.js"];
+const { tomDecay, TOM_EXTRA } = __m["voices/tom-circuit.js"];
 
 const NAMES = { lt: 'Low Tom', mt: 'Mid Tom', ht: 'Hi Tom', lc: 'Low Conga', mc: 'Mid Conga', hc: 'Hi Conga' };
 
@@ -8336,6 +8601,7 @@ class TomConga extends Voice {
     super(sr, [
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'tuning', name: 'Tuning', def: 0.5 },
+      PITCH, DECAY, ...(FIT[key].nK != null ? TOM_EXTRA : []),
     ]);
     this.key = key; const F = FIT[key];
     this.vppNormal = 3; this.vppAccent = 10;
@@ -8347,7 +8613,7 @@ class TomConga extends Voice {
       this.white = new Noise(key.charCodeAt(0) * 97);
       this.pinkLp = new Biquad(sr, 'lp', 271, 0.74);
       this.nLp = new OnePole(sr, F.nLp, 'lp');
-      this.nE = 0; this.nK = decayCoef(F.nDec, sr);
+      this.nE = 0;
     }
     this.onParam();
   }
@@ -8355,13 +8621,17 @@ class TomConga extends Voice {
     const F = FIT[this.key], t = clamp(this.p.tuning, 0, 1);
     this.f = map3(t, F.f0, F.f5, F.f1);
     this.g = t < 0.5 ? lerp(F.g0, 1, t * 2) : lerp(1, F.g1, t * 2 - 1);
-    this.res.set(this.f, qFromDecay(this.f, F.t10));
+    // PITCH moves the ring at the same Q; DECAY multiplies Q (and the noise
+    // envelope of the toms) by the ring-time ratio the circuit's R230 reaches
+    const m = pitchMul(this.p.pitch), [d] = tomDecay(this.key, this.p.decay);
+    this.res.set(this.f * m, qFromDecay(this.f, F.t10) * d);
+    if (F.nK != null) this.nK = decayCoef(F.nDec * d, this.sr);
   }
   trigger(accent = 0) {
     const F = FIT[this.key], vb = busVoltage(accent) * lerp(this.trimN, this.trimA, clamp(accent, 0, 1));
     this.pulse.fire(this.res.pulseHeight(vb * F.k * this.g, 1e-3), 1e-3);
     this.sw = F.sw;
-    if (this.white) this.nE = vb * F.nK;
+    if (this.white) { const v = clamp(this.p.noise ?? 0.5, 0, 1); this.nE = vb * F.nK * (v < 0.5 ? 2 * v : 3 ** (2 * v - 1)); } // NOISE: R232
   }
   render(out, n) {
     const lvl = this.levelGain(), swK = this.swK;
@@ -8397,7 +8667,8 @@ __m["voices/rs.js"] = (() => {
 //    collector is chopped by the tones, giving the woody harmonics
 //  * the C121/C122 Sallen-Key high-pass around Q63 (590 Hz, Q 2.9, from the
 //    parts) and finally the Q74 mute, which Q61 releases ~10 ms after the hit
-const { Voice, BridgedT, Pulse, Biquad, swingVCA, rail, decayCoef, lerp, clamp } = __m["dsp/core.js"];
+const { Voice, BridgedT, Pulse, Biquad, swingVCA, rail, decayCoef, lerp, clamp, PITCH, DECAY, pitchMul, decayMul, spanMul } = __m["dsp/core.js"];
+const { RS_EXTRA } = __m["voices/rscl-circuit.js"];
 const { busVoltage } = __m["dsp/mna.js"];
 
 const meta = { id: 'rs', name: 'Rim Shot', short: 'RS' };
@@ -8414,15 +8685,23 @@ const FIT = {
 
 class RS extends Voice {
   constructor(sr) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }]);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY, ...RS_EXTRA]);
     this.vppNormal = 3; this.vppAccent = 10;
     const F = FIT;
-    this.hi = new BridgedT(sr); this.hi.set(F.fH, F.qH);
-    this.lo = new BridgedT(sr); this.lo.set(F.fL, F.qL);
+    this.hi = new BridgedT(sr); this.lo = new BridgedT(sr);
     this.pHi = new Pulse(sr); this.pLo = new Pulse(sr);
     this.hp = new Biquad(sr, 'hp', 1 / (2 * Math.PI * 4.7e-9 * Math.sqrt(10e3 * 330e3)), 0.5 * Math.sqrt(330e3 / 10e3));
-    this.eK = decayCoef(F.eTau, sr); this.mK = decayCoef(F.muteTau, sr);
-    this.e = 0; this.m = 0; this.t = 1e9; this.muteN = Math.round(F.mute * sr);
+    this.e = 0; this.m = 0; this.t = 1e9;
+    this.onParam();
+  }
+  onParam() {
+    // PITCH: both resonators by m; DECAY: the C24 envelope and the Q61 mute
+    // timer (C113) by d
+    const F = FIT, sr = this.sr, m = pitchMul(this.p.pitch), d = decayMul(this.p.decay);
+    this.hi.set(F.fH * m, F.qH); this.lo.set(F.fL * m, F.qL);
+    this.eK = decayCoef(F.eTau * d, sr); this.mK = decayCoef(F.muteTau * d, sr);
+    this.muteN = Math.round(F.mute * d * sr);
+    this.vca = F.vca * spanMul(this.p.click, 3); // CLICK: R317, the drive into Q62
   }
   trigger(accent = 0) {
     const F = FIT, vb = busVoltage(accent) * lerp(this.trimN, this.trimA, clamp(accent, 0, 1));
@@ -8434,7 +8713,7 @@ class RS extends Voice {
     const F = FIT, lvl = this.levelGain() * F.out;
     for (let i = 0; i < n; i++) {
       const s = this.hi.tick(this.pHi.tick()) + this.lo.tick(this.pLo.tick());
-      const y = this.hp.tick(swingVCA(this.e, s, F.vca));
+      const y = this.hp.tick(swingVCA(this.e, s, this.vca));
       this.e *= this.eK;
       if (this.t++ > this.muteN) this.m *= this.mK;
       out[i] += rail(y * this.m) * lvl;
@@ -8454,7 +8733,7 @@ __m["voices/cl.js"] = (() => {
 // Q74 FET mute closing as Q61's timer (C113 / R305) runs out. Q74's
 // on-resistance leaves a faint residue of the ring under the mute, and the
 // FET's gate swing leaks through as a soft thump as it closes.
-const { Voice, BridgedT, Pulse, OnePole, rail, decayCoef, qFromDecay, lerp, clamp } = __m["dsp/core.js"];
+const { Voice, BridgedT, Pulse, OnePole, rail, decayCoef, qFromDecay, lerp, clamp, PITCH, DECAY, pitchMul, decayMul } = __m["dsp/core.js"];
 const { busVoltage } = __m["dsp/mna.js"];
 
 const meta = { id: 'cl', name: 'Claves', short: 'CL' };
@@ -8469,17 +8748,25 @@ const FIT = {
 
 class CL extends Voice {
   constructor(sr) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }]);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY]);
     this.vppNormal = 2.5; this.vppAccent = 8;
     const F = FIT;
-    this.res = new BridgedT(sr); this.res.set(F.f, qFromDecay(F.f, F.ring));
+    this.res = new BridgedT(sr);
     this.pulse = new Pulse(sr);
     this.th = new OnePole(sr, 1 / (2 * Math.PI * F.thW), 'lp'); this.thN = Math.round(F.thW * sr); this.vb = 0;
-    this.mK = decayCoef(F.muteTau, sr); this.m = 0; this.t = 1e9; this.muteN = Math.round(F.mute * sr);
+    this.m = 0; this.t = 1e9;
+    this.onParam();
+  }
+  onParam() {
+    // PITCH: the resonator by m at the same Q; DECAY: the Q61 mute timer
+    // (C113), which is what ends the claves
+    const F = FIT, sr = this.sr, m = pitchMul(this.p.pitch), d = decayMul(this.p.decay);
+    this.res.set(F.f * m, qFromDecay(F.f, F.ring));
+    this.mK = decayCoef(F.muteTau * d, sr); this.muteN = Math.round(F.mute * d * sr);
   }
   trigger(accent = 0) {
     const F = FIT, vb = busVoltage(accent) * lerp(this.trimN, this.trimA, clamp(accent, 0, 1));
-    this.pulse.fire(this.res.pulseHeight(vb * F.k, 0.2e-3), 0.2e-3);
+    this.pulse.fire(this.res.pulseHeight(vb * F.k, 0.2e-3, F.f), 0.2e-3); // kick sized at the stock pitch
     this.m = 1; this.t = 0; this.vb = vb;
   }
   render(out, n) {
@@ -8510,7 +8797,8 @@ __m["voices/cp.js"] = (() => {
 //  * the "reverb": Q70 amplifies the same noise under a slower envelope
 //    (C139/C138), with the C146 roll-off on its collector
 //  * a little of the sawtooth itself leaks into the mix as a low thump
-const { Voice, Biquad, OnePole, Noise, rail, decayCoef, lerp, clamp } = __m["dsp/core.js"];
+const { Voice, Biquad, OnePole, Noise, rail, decayCoef, lerp, clamp, PITCH, DECAY, pitchMul, decayMul, spanMul } = __m["dsp/core.js"];
+const { CP_EXTRA } = __m["voices/cpma-circuit.js"];
 
 const meta = { id: 'cp', name: 'Hand Clap', short: 'CP' };
 
@@ -8528,18 +8816,28 @@ const FIT = {
 
 class CP extends Voice {
   constructor(sr) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, { id: 'snap', name: 'Snap', def: 0 }]);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, { id: 'snap', name: 'Snap', def: 0 }, PITCH, DECAY, ...CP_EXTRA]);
     this.vppNormal = 6; this.vppAccent = 10;
     const F = FIT;
     this.noise = new Noise(1981);
     this.bp = new Biquad(sr, 'bp', F.bpF, F.bpQ);
     this.vLp = new OnePole(sr, F.vLp, 'lp');
     this.thHp = new OnePole(sr, 20, 'hp');
-    this.fast = decayCoef(F.tTau, sr); this.slow = decayCoef(F.lTau, sr);
-    this.vAk = decayCoef(F.vAtt, sr); this.vDk = decayCoef(F.vDec, sr);
-    this.toothN = Math.max(1, Math.round(F.tooth * sr)); this.winN = Math.round(F.win * sr);
+    this.slow = decayCoef(F.lTau, sr);
+    this.vAk = decayCoef(F.vAtt, sr);
+    this.winN = Math.round(F.win * sr);
     this.ek = Math.exp(F.expK) - 1;
     this.saw = 0; this.t = 1e9; this.a = 0; this.vC = 0; this.vS = 0;
+    this.onParam();
+  }
+  onParam() {
+    // PITCH: the noise band-pass by m; DECAY: the reverb tail (C139) by d
+    const F = FIT;
+    this.bp.set(F.bpF * pitchMul(this.p.pitch), F.bpQ);
+    this.vDk = decayCoef(F.vDec * decayMul(this.p.decay), this.sr);
+    // SPACING: R365 charges C144, so the teeth (and their fall) stretch with it
+    const k = spanMul(this.p.spacing, 2);
+    this.fast = decayCoef(F.tTau * k, this.sr); this.toothN = Math.max(1, Math.round(F.tooth * k * this.sr));
   }
   trigger(accent = 0) {
     this.a = lerp(this.trimN, this.trimA, clamp(accent, 0, 1));
@@ -8578,7 +8876,7 @@ __m["voices/ma.js"] = (() => {
 // shuts abruptly. The gated noise goes through C131/R338 (1.1 kHz) and the
 // C132/C133 Sallen-Key high-pass around Q68 (10.6 kHz, Q 2.3, from the
 // parts), then the IC19 mixer's 220p roll-off.
-const { Voice, Biquad, OnePole, Noise, rail, decayCoef, lerp, clamp } = __m["dsp/core.js"];
+const { Voice, Biquad, OnePole, Noise, rail, decayCoef, lerp, clamp, PITCH, DECAY, pitchMul, decayMul } = __m["dsp/core.js"];
 
 const meta = { id: 'ma', name: 'Maracas', short: 'MA' };
 
@@ -8593,16 +8891,22 @@ const FIT = {
 
 class MA extends Voice {
   constructor(sr) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }]);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY]);
     this.vppNormal = 3; this.vppAccent = 5;
     const F = FIT;
     this.noise = new Noise(4242);
-    this.hp1 = new OnePole(sr, 1 / (2 * Math.PI * 15e3 * 0.01e-6), 'hp');
+    this.hp1 = new OnePole(sr, 1, 'hp');
     this.hp = new Biquad(sr, 'hp', F.hpF, F.hpQ);
     this.lp = new OnePole(sr, F.lp, 'lp');
-    this.aK = decayCoef(F.att, sr); this.rK = decayCoef(F.rel, sr);
-    this.holdN = Math.round(F.hold * sr);
     this.e = 0; this.t = 1e9; this.a = 0;
+    this.onParam();
+  }
+  onParam() {
+    // PITCH: the high-passes (C131-C133) by m; DECAY: the gate (C134, C135) by d
+    const F = FIT, sr = this.sr, m = pitchMul(this.p.pitch), d = decayMul(this.p.decay);
+    this.hp1.set(m / (2 * Math.PI * 15e3 * 0.01e-6)); this.hp.set(F.hpF * m, F.hpQ);
+    this.aK = decayCoef(F.att * d, sr); this.rK = decayCoef(F.rel * d, sr);
+    this.holdN = Math.round(F.hold * d * sr);
   }
   trigger(accent = 0) { this.a = lerp(this.trimN, this.trimA, clamp(accent, 0, 1)); this.t = 0; }
   render(out, n) {
@@ -8630,7 +8934,8 @@ __m["voices/cb.js"] = (() => {
 // on and off by its square (a unipolar pulse train, not a +-1 square). The
 // envelope is C9 with R82/C34 as a second, slower load: a fast drop then a
 // long tail. After IC2b, C76/R117 high-pass the output into IC6.
-const { Voice, Biquad, OnePole, rail, decayCoef, lerp, clamp } = __m["dsp/core.js"];
+const { Voice, Biquad, OnePole, rail, decayCoef, lerp, clamp, PITCH, DECAY, pitchMul, decayMul, spreadExp, spanMul } = __m["dsp/core.js"];
+const { CB_EXTRA } = __m["voices/cb-circuit.js"];
 const { voicingTrigger } = __m["voices/cb-circuit.js"];
 
 const meta = { id: 'cb', name: 'Cowbell', short: 'CB' };
@@ -8647,22 +8952,30 @@ const FIT = {
 
 class CB extends Voice {
   constructor(sr, metal) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }]);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY, ...CB_EXTRA]);
     this.metal = metal;
     this.vppNormal = 3.5; this.vppAccent = 12;
     const F = FIT;
     this.bp = new Biquad(sr, 'bp', F.bpF, F.bpQ);
     this.hp = new OnePole(sr, 1 / (2 * Math.PI * 22e3 * 0.022e-6), 'hp');
     this.inHp = new OnePole(sr, F.inHp, 'hp');
-    this.kF = decayCoef(F.fast, sr); this.kS = decayCoef(F.slow, sr);
     this.eF = 0; this.eS = 0;
+    this.onParam();
+  }
+  onParam() {
+    // PITCH: a private pair of oscillators retuned by m (TM1/TM2 territory);
+    // DECAY: both envelope capacitors (C9, C34) by d
+    const F = FIT, d = decayMul(this.p.decay);
+    this.pitchBank(pitchMul(this.p.pitch), spreadExp(this.p.detune), [4, 5]);
+    this.bp.set(F.bpF, F.bpQ * spanMul(this.p.ring, 3));
+    this.kF = decayCoef(F.fast * d, this.sr); this.kS = decayCoef(F.slow * d, this.sr);
   }
   trigger(accent = 0) {
     const F = FIT, v = voicingTrigger(accent) * lerp(this.trimN, this.trimA, clamp(accent, 0, 1)) * F.g;
     this.eF = v * (1 - F.mixS); this.eS = v * F.mixS;
   }
   render(out, n) {
-    const F = FIT, lvl = this.levelGain(), lo = this.metal.cbLo, hi = this.metal.cbHi;
+    const F = FIT, lvl = this.levelGain(), bank = this.bank(n), lo = bank.cbLo, hi = bank.cbHi;
     for (let i = 0; i < n; i++) {
       this.eF *= this.kF; this.eS *= this.kS;
       const e = this.eF + this.eS;
@@ -8689,7 +9002,8 @@ __m["voices/cy.js"] = (() => {
 //    so the hit swells in over a few ms
 //  * the IC5 high-passes on the high side and the Q25 high-pass on the low
 //    side; VR4 (TONE) cross-fades the high and low sides into IC6
-const { Voice, BridgedT, Biquad, OnePole, swingVCA, map3, rail, decayCoef, lerp, clamp } = __m["dsp/core.js"];
+const { Voice, BridgedT, Biquad, OnePole, swingVCA, map3, rail, decayCoef, lerp, clamp, PITCH, pitchMul, spreadExp } = __m["dsp/core.js"];
+const { CY_EXTRA } = __m["voices/cy-circuit.js"];
 const { voicingTrigger } = __m["voices/cb-circuit.js"];
 
 const meta = { id: 'cy', name: 'Cymbal', short: 'CY' };
@@ -8713,6 +9027,7 @@ class CY extends Voice {
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'tone', name: 'Tone', def: 0.5 },
       { id: 'decay', name: 'Decay', def: 0.5 },
+      PITCH, ...CY_EXTRA,
     ]);
     this.metal = metal;
     this.vppNormal = 3.5; this.vppAccent = 7;
@@ -8734,13 +9049,14 @@ class CY extends Voice {
     this.kB = decayCoef(dB, this.sr);
     this.kL = decayCoef(F.dL * dB / F.d5, this.sr); // Q18 hangs off the same Q20 tail
     this.gHi = lerp(F.hi0, F.hi1, t); this.gLo = lerp(F.lo0, F.lo1, t);
+    this.pitchBank(pitchMul(this.p.pitch), spreadExp(this.p.spread)); // private six oscillators, retuned
   }
   trigger(accent = 0) {
     const F = FIT, v = voicingTrigger(accent) * lerp(this.trimN, this.trimA, clamp(accent, 0, 1));
     this.cA = v * F.eA; this.cB = v * F.eB; this.cL = v * F.eL;
   }
   render(out, n) {
-    const F = FIT, lvl = this.levelGain() * F.g, s = this.metal.sum, aK = this.aK, g = F.vca;
+    const F = FIT, lvl = this.levelGain() * F.g, s = this.bank(n).sum, aK = this.aK, g = F.vca;
     for (let i = 0; i < n; i++) {
       const hi = this.bHi.tick(s[i]), lo = this.bLo.tick(s[i]);
       this.cA *= this.kA; this.cB *= this.kB; this.cL *= this.kL;
@@ -8777,7 +9093,8 @@ __m["voices/hats.js"] = (() => {
 //    dumps C62, so the decay knob mostly sets when the hat is cut off.
 //    CH chokes OH through Q23 the same way
 //  * CH envelope: C63 charged by the hit, discharging into the VCA
-const { Voice, BridgedT, Biquad, OnePole, swingVCA, map3, rail, decayCoef, lerp, clamp } = __m["dsp/core.js"];
+const { Voice, BridgedT, Biquad, OnePole, swingVCA, map3, rail, decayCoef, lerp, clamp, PITCH, DECAY, pitchMul, decayMul, spreadExp, spanMul } = __m["dsp/core.js"];
+const { HAT_EXTRA } = __m["voices/hats-circuit.js"];
 const { voicingTrigger } = __m["voices/cb-circuit.js"];
 
 const HI = BridgedT.fromParts(560, 82e3, 0.0033e-6, 0.0033e-6);
@@ -8794,18 +9111,26 @@ class Hat extends Voice {
     super(sr, spec);
     this.metal = metal; this.key = key; const F = FIT[key];
     this.bp = new BridgedT(sr); this.bp.set(F.bpF, F.bpQ);
-    this.hp = new Biquad(sr, 'hp', hp.f, F.hpQ);
+    this.hp = new Biquad(sr, 'hp', hp.f, F.hpQ); this.hpF = hp.f;
     this.lp = new OnePole(sr, F.lp, 'lp');
     this.aK = decayCoef(F.att, sr); this.dK = decayCoef(F.dec, sr);
     this.eC = 0; this.e = 0; this.t = 1e9; this.cutN = 1e12; this.cutK = 1;
+    this.onParam();
+  }
+  // PITCH: a private six-oscillator bank retuned by m; DECAY (CH only, its
+  // C63): the envelope by d
+  onParam() {
+    this.pitchBank(pitchMul(this.p.pitch), spreadExp(this.p.spread));
+    this.hp.set(this.hpF * spanMul(this.p.tone, 2), FIT[this.key].hpQ);
+    this.dec = FIT[this.key].dec * (this.key === 'ch' ? decayMul(this.p.decay) : 1);
   }
   fire(accent) {
     const F = FIT[this.key];
     this.eC = voicingTrigger(accent) * lerp(this.trimN, this.trimA, clamp(accent, 0, 1)) * F.e;
-    this.t = 0; this.dK = decayCoef(F.dec, this.sr); this.cutK = 1;
+    this.t = 0; this.dK = decayCoef(this.dec, this.sr); this.cutK = 1;
   }
   render(out, n) {
-    const F = FIT[this.key], lvl = this.levelGain() * F.g, s = this.metal.sum;
+    const F = FIT[this.key], lvl = this.levelGain() * F.g, s = this.bank(n).sum;
     for (let i = 0; i < n; i++) {
       if (this.t++ === this.cutN) this.dK = this.cutK;
       this.eC *= this.dK;                              // the envelope cap
@@ -8823,6 +9148,7 @@ class OH extends Hat {
     super(sr, metal, [
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'decay', name: 'Decay', def: 0.5 },
+      PITCH, ...HAT_EXTRA,
     ], 'oh', skHP(2.7e3, 68e3, 1.5e-9));
     this.vppNormal = 3.5; this.vppAccent = 7;
   }
@@ -8838,7 +9164,7 @@ OH.meta = { id: 'oh', name: 'Open Hi-Hat', short: 'OH' };
 
 class CH extends Hat {
   constructor(sr, metal) {
-    super(sr, metal, [{ id: 'level', name: 'Level', def: 0.8 }], 'ch', skHP(2.7e3, 68e3, 1e-9));
+    super(sr, metal, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY, ...HAT_EXTRA], 'ch', skHP(2.7e3, 68e3, 1e-9));
     this.vppNormal = 3; this.vppAccent = 6;
   }
   trigger(accent = 0) { this.fire(accent); }
@@ -8853,6 +9179,7 @@ __m["dsp/kit.js"] = (() => {
 // accurate trigger queue and the master bus. Host-agnostic (worklet,
 // ScriptProcessor or Node).
 const { MetalBank } = __m["dsp/metal.js"];
+const { KNOB_TRIM } = __m["dsp/knob-trim.js"];
 const { CALIBRATION, LEVEL } = __m["dsp/calibration.js"];
 const { SampleVoice } = __m["dsp/sampler.js"];
 const { BD } = __m["voices/bd.js"];
@@ -8881,6 +9208,22 @@ const VOICES = [
   ['oh', 'Open Hi-Hat', OH], ['ch', 'Closed Hi-Hat', CH],
 ];
 const VOLT_SCALE = 1 / 24;
+// Knobs every voice gets from the kit, on top of its own (same in all three
+// versions). Both are neutral at their defaults.
+//   ACCENT: how much of the accent level this voice takes (1 = stock; the
+//           circuit models see it as a lower accent bus voltage)
+//   DRIVE:  soft clipping after the voice, from warm to crushed; the curve is
+//           scaled so a 6 V peak comes out at about the same peak, so it
+//           thickens rather than just getting louder
+const COMMON = [
+  { id: 'accent', name: 'Accent', def: 1, kit: true },
+  { id: 'drive', name: 'Drive', def: 0, kit: true },
+];
+const DRIVE_PEAK = 6; // V
+function driveCurve(drive) {
+  const k = (8 * drive * drive) / DRIVE_PEAK; // 1/V
+  return k <= 0 ? null : { k, m: (k * DRIVE_PEAK) / Math.tanh(k * DRIVE_PEAK) / k };
+}
 const NOISE_IDS = ['sd', 'lt', 'mt', 'ht', 'cp', 'ma'];
 const METAL_IDS = ['cb', 'cy', 'oh', 'ch'];
 // CH renders before OH so the circuit OH can read CH's envelope (choke)
@@ -8897,6 +9240,7 @@ class Kit {
       const c = CALIBRATION[id];
       if (c) { v.trimN = c[0]; v.trimA = c[1]; }
       v.levelPts = LEVEL[id];
+      v.knobTrim = KNOB_TRIM[id];
     }
     // Every voice exists twice: the behavioural model above and the
     // component-level circuit simulation. `model[id]` picks which one plays.
@@ -8923,11 +9267,22 @@ class Kit {
     this.mix = new Float32Array(128);
     this.solo = null;    // render a single voice (tests)
     this.split = null;   // per-voice outputs, see _renderChunk
+    this.fx = {};        // per voice: kit-level knobs (COMMON) + drive buffer
+    for (const [id] of VOICES) this.fx[id] = { accent: 1, drive: 0, curve: null, buf: new Float32Array(128) };
   }
   spec() {
-    return VOICES.map(([id, name]) => ({ id, name, params: this.voices[id].params, values: { ...this.voices[id].p } }));
+    return VOICES.map(([id, name]) => ({
+      id, name, params: [...this.voices[id].params, ...COMMON],
+      values: { ...this.voices[id].p, accent: this.fx[id].accent, drive: this.fx[id].drive },
+    }));
   }
   set(id, param, value) {
+    const fx = this.fx[id];
+    if (fx && (param === 'accent' || param === 'drive')) {
+      fx[param] = Math.max(0, Math.min(1, value));
+      if (param === 'drive') fx.curve = driveCurve(fx.drive);
+      return;
+    }
     this.behavioural[id]?.set(param, value);
     this.sampled[id]?.set(param, value);
     this.circuit[id]?.set(param, value);
@@ -8962,7 +9317,17 @@ class Kit {
       this.cached.oh?.choke();
       if (this.model.ch !== 'circuit') this.circuit.oh?.choke?.();
     }
-    v.trigger(accent);
+    v.trigger(accent * (this.fx[id]?.accent ?? 1));
+  }
+  // one voice model into mix, through its DRIVE if that is up
+  _voiceOut(id, v, mix, n) {
+    const fx = this.fx[id], c = fx?.curve;
+    if (!c) { v.render(mix, n); return; }
+    if (fx.buf.length < n) fx.buf = new Float32Array(n);
+    const b = fx.buf; b.fill(0, 0, n);
+    v.render(b, n);
+    const { k, m } = c;
+    for (let i = 0; i < n; i++) mix[i] += Math.tanh(k * b[i]) * m;
   }
   _usesCircuit(ids) { return ids.some((id) => this.model[id] === 'circuit' || this.circuit[id]?.awake); }
   // Render n frames of mono, digital scale, into dst (overwrites).
@@ -8991,12 +9356,12 @@ class Kit {
     const ids = this.solo ? [this.solo] : ORDER;
     // split (optional, { id: Float32Array }): those voices render into their own buffer, not the mix (Elixir 808)
     const sp = this.split, to = sp ? (id) => (sp[id] ? (off ? sp[id].subarray(off, off + n) : sp[id]) : mix) : () => mix;
-    for (const id of ids) this.voices[id].render(to(id), n);
+    for (const id of ids) this._voiceOut(id, this.voices[id], to(id), n);
     // the models that aren't selected finish any tail they were playing
     if (!this.solo) for (const [id] of VOICES) for (const m of ['behavioural', 'circuit', 'cached', 'sampled']) {
       const other = this[m][id];
       if (!other || other === this.voices[id]) continue;
-      if (m === 'behavioural' || (other.awake ?? true)) other.render(to(id), n);
+      if (m === 'behavioural' || (other.awake ?? true)) this._voiceOut(id, other, to(id), n);
     }
     const g = this.master * VOLT_SCALE;
     for (let i = 0; i < n; i++) {
@@ -9006,7 +9371,7 @@ class Kit {
   }
 }
 
-return { VOICES: typeof VOICES === 'undefined' ? undefined : VOICES, VOLT_SCALE: typeof VOLT_SCALE === 'undefined' ? undefined : VOLT_SCALE, Kit: typeof Kit === 'undefined' ? undefined : Kit };
+return { VOICES: typeof VOICES === 'undefined' ? undefined : VOICES, VOLT_SCALE: typeof VOLT_SCALE === 'undefined' ? undefined : VOLT_SCALE, COMMON: typeof COMMON === 'undefined' ? undefined : COMMON, driveCurve: typeof driveCurve === 'undefined' ? undefined : driveCurve, Kit: typeof Kit === 'undefined' ? undefined : Kit };
 })();
 // ---- dsp/cache-build.js
 __m["dsp/cache-build.js"] = (() => {
@@ -13752,7 +14117,7 @@ const T8_IDS = TR808.VOICES.map(([id]) => id);
 const T8_NAME = Object.fromEntries(TR808.VOICES.map(([id, name]) => [id, name.toLowerCase()]));
 const T8_SPEC = new TR808.Kit(44100, { circuits: false }).spec(); // (no circuits: just the knob lists)
 const T8_PARAMS = Object.fromEntries(T8_SPEC.map((v) => [v.id, v.params]));
-const T8_LIVE = ['level', 'snap']; // knobs cached plays live; the cache button bakes the rest in
+const T8_LIVE = ['level', 'snap', 'accent', 'drive']; // knobs cached plays live; the cache button bakes the rest in
 // the sounds in the order the grid's lanes and the 808 page show them: kick, snares and claps, toms, congas and small
 // percussion, cymbals and hats
 const T8_ORDER = ['bd', 'sd', 'rs', 'cp', 'lt', 'mt', 'ht', 'lc', 'mc', 'hc', 'cl', 'ma', 'cb', 'cy', 'oh', 'ch'];

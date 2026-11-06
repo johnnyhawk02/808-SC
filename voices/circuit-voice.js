@@ -53,6 +53,36 @@ export class CircuitVoice extends Voice {
     this.minAwake = 0.25;   // s after a trigger before sleeping is allowed
     this.dcBlock = new OnePole(sr, 2, 'hp'); // output jack coupling
     this.isCircuit = true;
+    this.parts = {};        // knob group -> parts scaled from their schematic value
+    this.ownMetal = null;   // private, retuned metal bank (PITCH off centre)
+  }
+  // Remember a part (resistor or capacitor of stage c) so a knob can scale
+  // it: scale(group, k) sets every part in the group to k x its value on the
+  // schematic. The stage re-factors its matrix once, on the next sample, so
+  // a knob that is not moving costs nothing.
+  part(c, el, group) {
+    (this.parts[group] ??= []).push({ c, el, v0: 'c' in el ? el.c : 1 / el.g });
+    return el;
+  }
+  scale(group, k) {
+    for (const q of this.parts[group] ?? []) {
+      if ('c' in q.el) q.el.c = q.v0 * k; else q.el.g = 1 / (q.v0 * k);
+      q.c.touch();
+    }
+  }
+  // Metal voices: PITCH retunes a private copy of the six-oscillator bank
+  // (its timing capacitors scaled), so the other metal voices keep the
+  // stock tuning. Costs one extra bank while the voice plays, and only when
+  // the knob is off centre. ic3 = false skips the IC3 band-pass solve when
+  // the voice only uses the raw oscillators (cowbell).
+  pitchMetal(m, ic3 = true, spread = 1, idx) {
+    if (Math.abs(m - 1) < 1e-6 && Math.abs(spread - 1) < 1e-6) { this.ownMetal = null; return; }
+    if (!this.ownMetal) {
+      const Bank = this.shared.metal.constructor;
+      this.ownMetal = new Bank(this.sr);
+      this.ownMetal.active = () => ic3;
+    }
+    this.ownMetal.setPitch(m, spread, idx);
   }
   stage(nodes) {
     const c = new Circuit(nodes);
@@ -79,7 +109,7 @@ export class CircuitVoice extends Voice {
   triggerVolts(accent) { return busVoltage(accent); }
   // metal-board voices read the oscillators/IC3 through this.mc, so the
   // warm-up below can drive them from a private copy of the bank
-  get mc() { return this._mc ?? this.shared.metal; }
+  get mc() { return this._mc ?? this.ownMetal ?? this.shared.metal; }
   finish(steps = 3000, warmSecs = 0) {
     this.onParam?.();
     // DC operating point stage by stage (feeds follow), then let it run
@@ -116,6 +146,7 @@ export class CircuitVoice extends Voice {
   render(out, n) {
     this.preRender?.(n);
     if (!this.awake) { this.post?.(0, n, false); return; }
+    this.ownMetal?.render(n);
     for (let i = 0; i < n; i++) {
       this._tick(i);
       const y = this.dcBlock.tick(this.output());
