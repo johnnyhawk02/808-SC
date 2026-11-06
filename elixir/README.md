@@ -11,7 +11,8 @@ from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.git
 - **Mix page**: a strip for each of the sixteen sounds (echo send, reverb send, pan, level), mixed per sound in the
   player (`vmix808`; the echo takes them through `renderFx`'s extra input in `lxr.js`). The kick keys the sidechain and
   the rest duck. Each sound still has a track (`BUS808`) for mutes and the rush.
-- Looks: 80s magenta.
+- Looks: 80s magenta. The version, 1.N on the cauldron (and in the presets footer), N the number of changes merged into
+  main, stamped in by the Pages deploy.
 - Each voice plays as the **circuit** simulation (every knob works, costs CPU) or **cached** hits (16 normal + 16
   accented hits rendered by the circuit; level, decay and the clap's snap stay live; almost no CPU), with its own knobs.
 - **Cache**, on every voice, records 4 normal + 4 accented hits through the circuit at its current knobs in a worker (a

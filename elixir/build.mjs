@@ -55,9 +55,12 @@ const page = read('index.src.html')
   .replace('/*@KITS@*/', () => `const BUNDLED_KITS = ${JSON.stringify(kits)};`)
   .replace('/*@PRESETS@*/', () => `const BUILTIN_PRESETS = ${JSON.stringify(presets).replace(/<\/script/gi, '<\\/script')};`)
   .replace('/*@SOURCES@*/', () => `const SOURCES = ${JSON.stringify(sources).replace(/<\/script/gi, '<\\/script')};`);
-// the version, by the title and in the presets footer, so a phone shows which one it has: the number of the commit
-// this build goes into (one past the commits so far), and when it was built (UK time)
-const ver = Number(execSync('git rev-list --count HEAD', { cwd: new URL('.', here) }).toString()) + 1;
+// the version, on the cauldron by the title and in the presets footer, so a phone shows which one it has: 1.N, N the
+// number of changes merged into main (first-parent commits). The Pages deploy stamps the real one in (the text between
+// the <!--v--> marks, .github/workflows/pages.yml); a build here guesses the next merge. And when it was built (UK time)
+const git = (c) => { try { return execSync(c, { cwd: new URL('.', here), stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(); } catch (e) { return ''; } };
+const merged = Number(git('git rev-list --count --first-parent origin/main') || git('git rev-list --count --first-parent HEAD')) || 0;
+const ver = `<!--v-->1.${merged + 1}<!--/v-->`;
 const built = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 writeFileSync(outFile || new URL('index.html', here), page.replaceAll('@VER@', () => ver).replace('@BUILT@', () => built));
 console.log(`${outFile || 'index.html'}: ${(page.length / 1024).toFixed(1)} KB`);
