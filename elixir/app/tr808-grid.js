@@ -79,27 +79,39 @@ const g8Cells = {}, g8Labs = {};
 }
 // the side panel: the controls of the sound last put on a lane (or whose name was tapped)
 for (const id of T8_ORDER) t8Card(id, $('m-g8-side'));
-// Picking a sound that plays cached turns it to the circuit, so its knobs are heard as they move; moving on (another
-// sound, or off the grid page) without touching a knob turns it back to cached. Once a knob moves it stays on the
-// circuit (until cache is pressed, which records it and plays it cached).
-let g8Auto = null; // { id, moved }
+// Autocache: everything plays cached except the sound being edited. Picking a sound on the grid, or moving one of its
+// knobs (here or on the 808 page), plays it on the circuit, so its knobs are heard as they move; moving away (another
+// sound, or another page) caches it at its new knobs and plays that (if no knob moved, it just goes back to cached).
+// Picking circuit by hand keeps it on the circuit.
+let g8Auto = null, g8Quiet = 0; // { id, moved }
 function g8Unauto() {
   const a = g8Auto; g8Auto = null;
-  if (a && !a.moved && t8.models[a.id] === 'circuit') g8SetModel(a.id, 'cached');
+  if (!a) return;
+  if (a.moved) t8MakeCache(a.id); // (plays the circuit until its hits are ready, then cached)
+  else if (t8.models[a.id] === 'circuit') g8SetModel(a.id, 'cached');
 }
-function g8Select(id) {
+function g8Edit(id, moved) {
   if (g8Auto?.id !== id) {
     g8Unauto();
-    if (t8.models[id] === 'cached') { g8Auto = { id, moved: false }; g8SetModel(id, 'circuit'); }
+    if (t8.models[id] !== 'cached' && !moved) return;
+    g8Auto = { id, moved: false };
   }
+  if (moved) g8Auto.moved = true;
+  if (t8.models[id] === 'cached') g8SetModel(id, 'circuit');
+}
+function g8Select(id) {
+  g8Edit(id, false);
   g8.sel = id; g8Save(); g8Draw();
 }
-// (a knob moved by hand, or a model picked by hand, keeps it as it is)
 const g8SetKnob = t8SetKnob;
-t8SetKnob = function (id, p, x, save = true) { if (save && g8Auto?.id === id) g8Auto.moved = true; return g8SetKnob(id, p, x, save); };
+// (level and the clap's snap play live on the cached hits: no circuit, no new cache for those)
+t8SetKnob = function (id, p, x, save = true) { if (save && !g8Quiet && !T8_LIVE.includes(p)) g8Edit(id, true); return g8SetKnob(id, p, x, save); };
 const g8SetModel = t8SetModel;
-t8SetModel = function (id, m) { if (g8Auto?.id === id) g8Auto = null; return g8SetModel(id, m); };
-new MutationObserver(() => { if ($('m').dataset.page !== 'grid') g8Unauto(); }).observe($('m'), { attributes: true, attributeFilter: ['data-page'] });
+t8SetModel = function (id, m) { if (m === 'circuit' && g8Auto?.id === id) g8Auto = null; return g8SetModel(id, m); };
+// (revert puts the default knobs back: not an edit)
+const g8Revert = t8Revert;
+t8Revert = async function (id) { if (g8Auto?.id === id) g8Auto = null; g8Quiet++; try { return await g8Revert(id); } finally { g8Quiet--; } };
+new MutationObserver(() => g8Unauto()).observe($('m'), { attributes: true, attributeFilter: ['data-page'] });
 function g8Load(pr) {
   g8.lanes = g8Empty();
   for (const id in pr.l) for (let s = 0; s < 16; s++) {

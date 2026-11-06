@@ -5,7 +5,7 @@ from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.git
 
 - **Grid page** (opens first): a lane for each of the sixteen 808 sounds, sixteen steps; tap a step for on, accent,
   off, tap a sound's name to hear it. Seven 808 pattern presets over it (trap, miami, breaks, toms, congas, cowbell,
-  empty) set the lanes and the tempo; beside it, the controls of the sound last put on a lane (or tapped); picking a cached sound there turns it to the circuit, and moving on without touching a knob turns it back to cached; **generator** goes back to the beat page's generated
+  empty) set the lanes and the tempo; beside it, the controls of the sound last put on a lane (or tapped); **autocache**: everything plays cached except the sound being edited, which plays the circuit (picked on the grid, or a knob moved there or on the 808 page); moving away caches it at its new knobs (4 + 4 hits) and plays that, or just goes back to cached if no knob moved; **generator** goes back to the beat page's generated
   pattern (on the seven tracks, one sound each: BD, LT, HT, SD, CY, CH, OH), shown in their lanes, and the first edit
   copies it into the lanes. The lanes are kept in this browser.
 - **808 page**: all sixteen sounds at once, each with circuit/cached, its knobs and its cache button.
