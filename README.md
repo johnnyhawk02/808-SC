@@ -66,6 +66,32 @@ test/cache-render.mjs renders the cached circuit hits into cache/
 test/cache-check.mjs  cached kit: size, CPU
 ```
 
+## Extra knobs
+
+Beyond the original panel, every voice has knobs the 808 never had, each
+neutral at its default (a voice at defaults renders bit-identical to before):
+
+| Knob | Voices | Circuit model: the part it changes |
+|---|---|---|
+| Pitch (±12 st) | all | resonator / filter capacitors; metal voices get a private, retuned copy of the six oscillators |
+| Decay (×1/3..×3) | all without one | envelope capacitors, or the resonator's damping resistors (SD, with the input divider so the level holds); toms/congas: R230 through a measured table (`TOM_DECAY`) because the loop is close to oscillating |
+| Click, Attack | BD | C40 (trigger feed), C38 (the 4 ms mono-stable) |
+| Wires, Snap dec | SD | C66/C67 (noise high-pass), C51 (snappy envelope) |
+| Noise | LT MT HT | R232 (noise burst into the drum) |
+| Click | RS | R317 (drive into Q62) |
+| Spacing | CP | R365 (charges C144) |
+| Detune, Ring | CB | the two oscillators' C5/C6; IC2b's Q (R25 up, R24 down) |
+| Spread | CY OH CH | the six oscillators' capacitors, pulled together or apart |
+| Tone | OH CH | the hat's Sallen-Key high-pass |
+| Accent, Drive | all (kit level) | how much of the accent the voice takes; soft clip after the voice |
+
+The synth versions do the same with their own blocks; `test/knob-trim.mjs`
+measures the circuit's level change at each knob end and writes the
+difference to `dsp/knob-trim.js` (re-run after `test/ref-render.mjs all`).
+`test/match-cases.mjs <id>` lists every knob case's score. The 808
+recordings follow Pitch (resampling) and Decay (shorter only); Cached mode
+bakes the extras in when you press Cache, Accent and Drive stay live.
+
 ## Voice API
 
 ```js

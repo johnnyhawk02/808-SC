@@ -9,7 +9,7 @@ const T8_IDS = TR808.VOICES.map(([id]) => id);
 const T8_NAME = Object.fromEntries(TR808.VOICES.map(([id, name]) => [id, name.toLowerCase()]));
 const T8_SPEC = new TR808.Kit(44100, { circuits: false }).spec(); // (no circuits: just the knob lists)
 const T8_PARAMS = Object.fromEntries(T8_SPEC.map((v) => [v.id, v.params]));
-const T8_LIVE = ['level', 'snap']; // knobs cached plays live; the cache button bakes the rest in
+const T8_LIVE = ['level', 'snap', 'accent', 'drive']; // knobs cached plays live; the cache button bakes the rest in
 // the sounds in the order the grid's lanes and the 808 page show them: kick, snares and claps, toms, congas and small
 // percussion, cymbals and hats
 const T8_ORDER = ['bd', 'sd', 'rs', 'cp', 'lt', 'mt', 'ht', 'lc', 'mc', 'hc', 'cl', 'ma', 'cb', 'cy', 'oh', 'ch'];

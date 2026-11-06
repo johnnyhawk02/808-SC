@@ -22,6 +22,7 @@ export function cases(id) {
   const secs = LONG[id] ?? 1.2;
   const out = [{ name: 'n', accent: 0, knobs: {}, secs }, { name: 'a', accent: 1, knobs: {}, secs }];
   for (const p of spec.params) {
+    if (p.kit) continue; // kit-level knobs (accent, drive) are the same for every model
     if (p.id === 'level') continue;
     out.push({ name: `${p.id}0`, accent: 0, knobs: { [p.id]: 0 }, secs: secs * (p.id === 'decay' ? 0.6 : 1) });
     out.push({ name: `${p.id}1`, accent: 0, knobs: { [p.id]: 1 }, secs: secs * (p.id === 'decay' ? 1.6 : 1) });

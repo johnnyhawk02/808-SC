@@ -55,6 +55,11 @@
 // what the recording asks for, not readings.
 // The BA662's bias pin sits two diodes above -15 V.
 import { CircuitVoice, aTaper } from './circuit-voice.js';
+import { PITCH, DECAY, pitchMul, decayMul, knob, spanMul } from '../dsp/core.js';
+
+// extra knob, CP: SPACING is R365, which charges the C144 sawtooth, so it
+// sets the time between the claps (x1/2 .. x2)
+export const CP_EXTRA = [knob('spacing', 'Spacing')];
 
 const VT = 0.02585;
 
@@ -70,7 +75,7 @@ function mixer(v, m, level) {
 
 export class CPCircuit extends CircuitVoice {
   constructor(sr, shared) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, { id: 'snap', name: 'Snap', def: 0 }], shared);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, { id: 'snap', name: 'Snap', def: 0 }, PITCH, DECAY, ...CP_EXTRA], shared);
     this.accGain = 1;
     // C.P. OFFSET trimmer TM3 (see CP_PARTS)
     this.tm3 = CP_PARTS.TM3;
@@ -78,8 +83,10 @@ export class CPCircuit extends CircuitVoice {
     // ---- S1: noise band-pass IC21
     const f = (this.s1 = this.stage(['WNc', 'L', 'Nm', 'B']));
     this.feed(f, 'WNc', 1, (i) => wn.wn[i]);
-    f.R('WNc', 'L', 27e3); f.C('WNc', 'L', CP_PARTS.C127); f.R('L', 'gnd', 10e3); // R332, C127, R333
-    f.C('L', 'Nm', CP_PARTS.C128); f.C('L', 'B', CP_PARTS.C128); f.R('Nm', 'B', 100e3); // C128, C129, R334
+    // PITCH: C127-C129 scaled by 1/m move the whole band-pass up by m
+    const pt = (el) => this.part(f, el, 'pitch');
+    f.R('WNc', 'L', 27e3); pt(f.C('WNc', 'L', CP_PARTS.C127)); f.R('L', 'gnd', 10e3); // R332, C127, R333
+    pt(f.C('L', 'Nm', CP_PARTS.C128)); pt(f.C('L', 'B', CP_PARTS.C128)); f.R('Nm', 'B', 100e3); // C128, C129, R334
     f.OpAmp('gnd', 'Nm', 'B');
     // ---- S2: CP line and envelopes
     const e = (this.s2 = this.stage(['CP', 'TH', 'P15', 'E69', 'N139', 'N138', 'N143']));
@@ -87,7 +94,7 @@ export class CPCircuit extends CircuitVoice {
     e.R('CP', 'TH', 27e3); e.Rsrc('TH', 22e3, -15);              // R360, R361
     this.rail(e, 'P15', 15);
     e.NPN('CP', 'P15', 'E69');                                   // Q69
-    e.D('E69', 'N139'); e.C('N139', 'gnd', CP_PARTS.C139);            // D69, C139
+    e.D('E69', 'N139'); this.part(e, e.C('N139', 'gnd', CP_PARTS.C139), 'env'); // D69, C139 (DECAY: the reverb tail)
     e.R('N139', 'N138', 1e6); e.C('N138', 'gnd', CP_PARTS.C138); // R348, C138
     e.D('E69', 'N143'); e.C('N143', 'gnd', 1e-6);                // D68, C143
     // ---- S3: comparators, sawtooth and the exponential pair
@@ -95,7 +102,7 @@ export class CPCircuit extends CircuitVoice {
     this.rail(c, 'M15', -15);
     c.R('OC', 'gnd', 1e6); c.C('OC', 'gnd', CP_PARTS.C140);           // R350, C140
     c.R('OB', 'Dm', 2.7e3); c.R('Dm', 'gnd', 5.6e3);             // R355, R354
-    c.R('OA', 'gnd', 82e3); c.D('OA', 'SAW');                    // R365, D71
+    this.part(c, c.R('OA', 'gnd', 82e3), 'spacing'); c.D('OA', 'SAW'); // R365, D71
     c.C('SAW', 'gnd', CP_PARTS.C144);                                  // C144
     c.R('SAW', 'Dp', 1e6); c.C('OD', 'Dp', 220e-12);             // R356, C142
     c.R('OD', 'gnd', 10e3); c.R('OD', 'B73', 68e3);              // R359, R358
@@ -148,6 +155,8 @@ export class CPCircuit extends CircuitVoice {
     // SNAP (not on the 808): turns the Q70 "reverb" path down through R376,
     // 0 = as built, 1 = the claps alone
     if (this.r376) { this.r376.g = Math.max(1e-12, 1 - this.p.snap) / 47e3; this.mix.touch(); }
+    this.scale('pitch', 1 / pitchMul(this.p.pitch)); this.scale('env', decayMul(this.p.decay));
+    this.scale('spacing', spanMul(this.p.spacing, 2));
     if (this.tm) { this.tm.v = -15 * this.tm3; }
     if (this.vr17) { this.vr17.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.mix.touch(); }
   }
@@ -162,16 +171,17 @@ export class CPCircuit extends CircuitVoice {
 
 export class MACircuit extends CircuitVoice {
   constructor(sr, shared) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }], shared);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY], shared);
     const wn = this.shared.noise;
     // stage 1: select line and gate (Q67, Q66)
     const a = (this.s1 = this.stage(['MA', 'N135', 'B67', 'N67', 'N134', 'E66']));
     this.addTrigger(a, 'MA');
     a.R('MA', 'gnd', 1e6);                                        // line leakage (switch off)
-    a.D('MA', 'N135'); a.C('N135', 'gnd', 0.1e-6); a.R('N135', 'gnd', 150e3); // D67, C135, R345
+    // DECAY scales the gate's timing capacitors C135 and C134
+    a.D('MA', 'N135'); this.part(a, a.C('N135', 'gnd', 0.1e-6), 'env'); a.R('N135', 'gnd', 150e3); // D67, C135, R345
     a.R('N135', 'B67', 220e3); a.NPN('B67', 'N67', 'gnd');        // R344, Q67
     a.Rsrc('N67', 100e3, 15);                                     // R343
-    a.R('N67', 'N134', 470e3); a.D('N67', 'N134'); a.C('N134', 'gnd', 0.033e-6); // R341, D66, C134
+    a.R('N67', 'N134', 470e3); a.D('N67', 'N134'); this.part(a, a.C('N134', 'gnd', 0.033e-6), 'env'); // R341, D66, C134
     a.PNP('N134', 'gnd', 'E66');                                  // Q66
     // stage 2: noise transistor Q65 and the Q68 high-pass; R337 10k joins
     // the two stages (each side sees the other's previous-sample voltage)
@@ -181,8 +191,10 @@ export class MACircuit extends CircuitVoice {
     this.feed(b, 'N335', 6.8e3, (i) => wn.wn[i]);                 // R335 from W.N.
     b.C('N335', 'B65', 0.047e-6); b.R('B65', 'gnd', 1e6);         // C130, R336
     b.PNP('B65', 'C65', 'P15'); b.D('C65', 'Z');                  // Q65, D65
-    b.C('Z', 'F', 0.01e-6); b.R('F', 'gnd', 15e3);                // C131, R338
-    b.C('F', 'F2', 0.001e-6); b.C('F2', 'B68', 0.001e-6);         // C132, C133
+    // PITCH: the high-pass capacitors C131-C133 scaled by 1/m
+    const pt = (el) => this.part(b, el, 'pitch');
+    pt(b.C('Z', 'F', 0.01e-6)); b.R('F', 'gnd', 15e3);            // C131, R338
+    pt(b.C('F', 'F2', 0.001e-6)); pt(b.C('F2', 'B68', 0.001e-6)); // C132, C133
     b.R('F2', 'E68', 3.3e3); b.R('B68', 'gnd', 68e3);             // R339, R340
     b.NPN('B68', 'P15', 'E68'); b.Rsrc('E68', 22e3, -15);         // Q68, R347
     b.tol = 1e-3; // noise-driven
@@ -194,6 +206,7 @@ export class MACircuit extends CircuitVoice {
     this.finish();
   }
   onParam() {
+    this.scale('pitch', 1 / pitchMul(this.p.pitch)); this.scale('env', decayMul(this.p.decay));
     if (this.vr17) { this.vr17.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.mix.touch(); }
   }
   output() { return this.mix.v[this.iOut]; }

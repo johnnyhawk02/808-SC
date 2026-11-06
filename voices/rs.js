@@ -9,7 +9,8 @@
 //    collector is chopped by the tones, giving the woody harmonics
 //  * the C121/C122 Sallen-Key high-pass around Q63 (590 Hz, Q 2.9, from the
 //    parts) and finally the Q74 mute, which Q61 releases ~10 ms after the hit
-import { Voice, BridgedT, Pulse, Biquad, swingVCA, rail, decayCoef, lerp, clamp } from '../dsp/core.js';
+import { Voice, BridgedT, Pulse, Biquad, swingVCA, rail, decayCoef, lerp, clamp, PITCH, DECAY, pitchMul, decayMul, spanMul } from '../dsp/core.js';
+import { RS_EXTRA } from './rscl-circuit.js';
 import { busVoltage } from '../dsp/mna.js';
 
 export const meta = { id: 'rs', name: 'Rim Shot', short: 'RS' };
@@ -26,15 +27,23 @@ export const FIT = {
 
 export class RS extends Voice {
   constructor(sr) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }]);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY, ...RS_EXTRA]);
     this.vppNormal = 3; this.vppAccent = 10;
     const F = FIT;
-    this.hi = new BridgedT(sr); this.hi.set(F.fH, F.qH);
-    this.lo = new BridgedT(sr); this.lo.set(F.fL, F.qL);
+    this.hi = new BridgedT(sr); this.lo = new BridgedT(sr);
     this.pHi = new Pulse(sr); this.pLo = new Pulse(sr);
     this.hp = new Biquad(sr, 'hp', 1 / (2 * Math.PI * 4.7e-9 * Math.sqrt(10e3 * 330e3)), 0.5 * Math.sqrt(330e3 / 10e3));
-    this.eK = decayCoef(F.eTau, sr); this.mK = decayCoef(F.muteTau, sr);
-    this.e = 0; this.m = 0; this.t = 1e9; this.muteN = Math.round(F.mute * sr);
+    this.e = 0; this.m = 0; this.t = 1e9;
+    this.onParam();
+  }
+  onParam() {
+    // PITCH: both resonators by m; DECAY: the C24 envelope and the Q61 mute
+    // timer (C113) by d
+    const F = FIT, sr = this.sr, m = pitchMul(this.p.pitch), d = decayMul(this.p.decay);
+    this.hi.set(F.fH * m, F.qH); this.lo.set(F.fL * m, F.qL);
+    this.eK = decayCoef(F.eTau * d, sr); this.mK = decayCoef(F.muteTau * d, sr);
+    this.muteN = Math.round(F.mute * d * sr);
+    this.vca = F.vca * spanMul(this.p.click, 3); // CLICK: R317, the drive into Q62
   }
   trigger(accent = 0) {
     const F = FIT, vb = busVoltage(accent) * lerp(this.trimN, this.trimA, clamp(accent, 0, 1));
@@ -46,7 +55,7 @@ export class RS extends Voice {
     const F = FIT, lvl = this.levelGain() * F.out;
     for (let i = 0; i < n; i++) {
       const s = this.hi.tick(this.pHi.tick()) + this.lo.tick(this.pLo.tick());
-      const y = this.hp.tick(swingVCA(this.e, s, F.vca));
+      const y = this.hp.tick(swingVCA(this.e, s, this.vca));
       this.e *= this.eK;
       if (this.t++ > this.muteN) this.m *= this.mK;
       out[i] += rail(y * this.m) * lvl;

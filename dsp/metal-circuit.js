@@ -26,6 +26,7 @@
 //              -> CY Q18
 // R53 1k loads the bus to ground (bottom of the IC1 column, next to R35).
 import { Circuit } from './mna.js';
+import { spreadFactors } from './core.js';
 
 const VDD = 5, VTH = 2.8, VTL = 2.2;
 const OSC = [
@@ -82,6 +83,13 @@ export class MetalCircuit {
     c.settle(100);
     this.iH = c.idx.H; this.iL = c.idx.L;
     this.active = () => true;
+  }
+  // Retune: every timing capacitor C1-C6 scaled by 1/m (a private bank for a
+  // voice whose PITCH knob is off centre; the IC3 band-passes stay as built).
+  // spread (and idx) as in spreadFactors: each capacitor scaled on its own
+  setPitch(m, spread = 1, idx) {
+    const k = spreadFactors(OSC.map(([R, C]) => 1 / (R * C)), spread, idx);
+    OSC.forEach(([R, C], i) => { this.osc[i].tau = (R * C) / (m * k[i]); });
   }
   render(n) {
     if (this.hi.length < n) {
