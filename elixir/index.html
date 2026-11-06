@@ -1615,6 +1615,10 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 #m-kit, #m-alter, #m-xrand { display: none !important; }
 .m > .m-tabs { grid-template-columns: repeat(9, minmax(0, 1fr)); }
 @media (min-width: 1000px) { .m > .m-tabs { grid-template-columns: repeat(7, minmax(0, 1fr)); } }
+/* (the 808 page hidden: tr808.js, T8_PAGE) */
+.m [data-m-tab][hidden], .m [data-m-panel][hidden] { display: none !important; }
+.m.m-no808 > .m-tabs { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+@media (min-width: 1000px) { .m.m-no808 > .m-tabs { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
 @media (min-width: 1000px) { .m[data-page="grid"] [data-m-panel="grid"] { display: grid; } }
 @media (min-width: 1000px) {
   .m .m-rand > #m-everything { grid-column: 1; } .m .m-rand > #m-pattern { grid-column: 2; }
@@ -1720,7 +1724,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.28<!--/v--></small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.29<!--/v--></small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1817,7 +1821,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.28<!--/v-->, 6 Nov, 23:53</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.29<!--/v-->, 6 Nov, 23:58</footer>
     </section>
   </div>
   </div>
@@ -12396,7 +12400,7 @@ function mShown(t) {
 function mSettled() {
   clearTimeout(mSettle);
   const x = mPages.scrollLeft + mPages.offsetLeft;
-  const near = [...mPages.querySelectorAll('[data-m-panel]')].reduce((a, b) => (Math.abs(b.offsetLeft - x) < Math.abs(a.offsetLeft - x) ? b : a));
+  const near = [...mPages.querySelectorAll('[data-m-panel]:not([hidden])')].reduce((a, b) => (Math.abs(b.offsetLeft - x) < Math.abs(a.offsetLeft - x) ? b : a));
   mShown(near.dataset.mPanel);
 }
 // scrollend where the browser has it; otherwise a pause in the scrolling
@@ -13822,7 +13826,7 @@ const HELP = [
   ['rec', 'recording', `<ul><li><b>rec</b> records a WAV: press it to start (it starts playing too), again to stop, and the file downloads.</li>
 <li>Hold or right-click <b>rec</b> to choose what it records: <b>free</b>, or an exact loop of 1, 2, 4, 8, 16, 32, 64 or 128 bars. A loop starts at the next bar, shows its progress on the button and downloads by itself, cut to repeat seamlessly in any other app.</li></ul>`],
   ['keys', 'keyboard and mouse', `<ul><li><b>space</b> play and stop. <b>enter</b> record, <b>l</b> record a loop.</li>
-<li><b>1</b> everything, <b>2</b> kit, <b>3</b> alter, <b>4</b> pattern, <b>5</b> crossfeed, <b>6</b> random fx, <b>7</b> alter fx (the bar's order), <b>u</b> undo. <b>m</b> randomise on next bar.</li>
+<li><b>1</b> to <b>8</b> pick the grid's pattern; <b>cmd</b> (or <b>ctrl</b>) + <b>c</b> copies the pattern, <b>cmd</b> + <b>v</b> pastes it over the one picked. <b>u</b> undo.</li>
 <li><b>z x c v b n</b> mute drum 1, 2, 3, snare, cymbal, hihat; <b>a s d f g h</b> mute their echo sends; <b>q w e r t y</b> their reverb sends.</li>
 <li><b>shift</b> + <b>1</b> to <b>6</b> show the voice page with that drum; <b>[</b> and <b>]</b> step through its tabs.</li>
 <li><b>o</b> presets, <b>/</b> search presets, <b>?</b> help. <b>esc</b> closes whatever is open.</li>
@@ -14351,6 +14355,13 @@ function t8Draw() {
   }
 }
 M_PAGE_NAMES.t808 = '808';
+// The 808 page is hidden for now (the grid's controls panel edits every sound); true brings its tab back
+const T8_PAGE = false;
+if (!T8_PAGE) {
+  $('m').classList.add('m-no808');
+  document.querySelector('[data-m-tab="t808"]').hidden = true;
+  document.querySelector('[data-m-panel="t808"]').hidden = true;
+}
 t8Draw();
 // ---- the grid page: eight patterns, a lane for each of the sixteen 808 sounds, sixteen steps ----
 // A tap steps a cell through off, on, accent, off. The pattern buttons over the grid pick which of the eight patterns
@@ -14553,6 +14564,16 @@ document.addEventListener('selectstart', (e) => { const t = e.target.nodeType ==
 const g8Gen = generate;
 generate = function () { const r = g8Gen.apply(this, arguments); if (g8.mode === 'gen') g8Draw(); return r; };
 perfDraws.push(g8Draw);
+// Cmd+C (Ctrl+C) copies the pattern playing (or the generator's) and Cmd+V (Ctrl+V) pastes it over the pattern picked:
+// copy on 1, press 3, paste. (Kept in this page only, not the system clipboard.)
+let g8Clip = null;
+function g8Note(t) { const w = $('m-g8-what'); w.textContent = t; clearTimeout(w._t); w._t = setTimeout(g8Draw, 1200); }
+addEventListener('keydown', (e) => {
+  if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || e.target.closest?.('input, select, textarea') || $('m-menu')) return;
+  const k = e.key.toLowerCase();
+  if (k === 'c') { e.preventDefault(); g8Clip = g8Clean(g8Shown()); g8Note(`copied ${g8.mode === 'lanes' ? `pattern ${g8.cur + 1}` : 'the generator'}`); }
+  else if (k === 'v' && g8Clip) { e.preventDefault(); g8.mode = 'lanes'; g8.lanes = g8Clean(g8Clip); g8Send(); g8Draw(); g8Note(`pasted into pattern ${g8.cur + 1}`); }
+});
 M_PAGE_NAMES.grid = 'grid';
 g8Order();
 g8Send();

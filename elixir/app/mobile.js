@@ -62,7 +62,7 @@ function mShown(t) {
 function mSettled() {
   clearTimeout(mSettle);
   const x = mPages.scrollLeft + mPages.offsetLeft;
-  const near = [...mPages.querySelectorAll('[data-m-panel]')].reduce((a, b) => (Math.abs(b.offsetLeft - x) < Math.abs(a.offsetLeft - x) ? b : a));
+  const near = [...mPages.querySelectorAll('[data-m-panel]:not([hidden])')].reduce((a, b) => (Math.abs(b.offsetLeft - x) < Math.abs(a.offsetLeft - x) ? b : a));
   mShown(near.dataset.mPanel);
 }
 // scrollend where the browser has it; otherwise a pause in the scrolling
