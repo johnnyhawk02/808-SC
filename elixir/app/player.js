@@ -95,7 +95,7 @@ class Player {
     else if (m.type === 'rush') { this.rush = m.v; if (m.t !== undefined) this.rushT = m.t; }
     else if (m.type === 'rushSet') Object.assign(this.rs, m.set);
     else if (m.type === 'mute') m.muted.forEach((v, n) => { this.muted[n] = v ? 1 : 0; });
-    else if (m.type === 'xmod') this.e.setCrossMod(m.amt, m.target);
+    else if (m.type === 'xmod') return; // (Elixir 808: no crossfeed)
     else if (m.type === 'delay') this.delayPos = m.pos;
     else if (m.type === 'atBar') { if (this.playing) this.atBar.push(m.m); else this.msg(m.m); }
     else if (m.type === 'mix') {

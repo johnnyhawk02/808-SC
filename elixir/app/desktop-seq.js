@@ -5,7 +5,7 @@ function mPlaceName(el, fd) {
   const panel = el.closest('[data-m-panel]'), page = panel ? M_PAGE_NAMES[panel.dataset.mPanel] : '';
   const row = el.closest('.m-fx-row'), head = row && row.querySelector(':scope > b, .m-fxhead b');
   const box = { 'm-duck': 'sidechain', 'm-dist': 'distortion', 'm-comp': 'compressor' }[el.parentElement.id];
-  const where = panel && panel.dataset.mPanel === 'dice' ? `${page} · ${XN[mVoice]}` : head ? `${page} · ${head.textContent}` : box ? `${page} · ${box}` : page;
+  const where = head ? `${page} · ${head.textContent}` : box ? `${page} · ${box}` : page;
   // (the mixer's columns are named d1 .. hh; this gives the drum's name)
   const dr = ['d1', 'd2', 'd3', 'sn', 'cy', 'hh'].indexOf(fd.label);
   return [where, el.dataset.full || (dr >= 0 ? XN[dr] : fd.label)];

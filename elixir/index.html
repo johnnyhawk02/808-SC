@@ -1616,7 +1616,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m-808-all { display: flex; gap: 8px; align-items: center; }
 /* ---- no LXR-02 voices: the voice page, crossfeed and the kit, alter and crossfeed randomisers are gone; the 808 page
    takes the voice page's place ---- */
-.m > .m-tabs button[data-m-tab="dice"], .m > .m-tabs button[data-m-tab="xf"], #m-kit, #m-alter, #m-xrand, .m-fx-row.m-xrow { display: none !important; }
+#m-kit, #m-alter, #m-xrand { display: none !important; }
 .m > .m-tabs { grid-template-columns: repeat(8, minmax(0, 1fr)); }
 @media (min-width: 1000px) { .m > .m-tabs { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
 @media (min-width: 1000px) {
@@ -1627,7 +1627,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i>14</small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i>15</small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1664,14 +1664,6 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
     <section class="m-card m-beat-card"><div class="m-faders" id="m-beat-faders"></div><div class="m-dens"><b>density</b><div class="m-faders" id="m-dens-faders"></div></div></section>
   </div>
 
-  <div class="m-panel" data-m-panel="dice">
-    <section class="m-card m-dice-card">
-      <div class="m-voice" id="m-voice" role="tablist" aria-label="voice"></div>
-      <div class="m-voice m-vsec" id="m-vsec" role="tablist" aria-label="section"></div>
-      <div class="m-vsets" id="m-vsets"></div>
-    </section>
-  </div>
-
   <div class="m-panel" data-m-panel="t808">
     <section class="m-card m-808-card" aria-label="TR-808 voices">
       <div class="m-voice m-808-tracks" id="m-808-tracks" role="tablist" aria-label="track"></div>
@@ -1696,12 +1688,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
       <div class="m-fx-row"><b>reverb</b><div class="m-faders" id="m-fx-ring"></div></div>
       <div class="m-fx-row m-fx-slot"><b>insert</b><div class="m-fx-empty">empty slot</div></div>
       <div class="m-fx-row m-fx-slot"><b>insert</b><div class="m-fx-empty">empty slot</div></div>
-      <div class="m-fx-row m-xrow"><div class="m-fxhead"><b>crossfeed</b><button class="m-toggle" id="m-xclear" type="button">clear</button></div><div class="m-xgrid" id="m-xgrid" role="grid" aria-label="crossfeed: from each drum (rows) into each drum (columns)"></div></div>
     </section>
-  </div>
-
-  <div class="m-panel" data-m-panel="xf">
-    <section class="m-card m-fx-card m-xf-card" id="m-xf-card"></section>
   </div>
 
   <div class="m-panel" data-m-panel="mix">
@@ -1736,7 +1723,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v14, 6 Nov, 18:06</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v15, 6 Nov, 18:33</footer>
     </section>
   </div>
   </div>
@@ -1827,11 +1814,9 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
   <nav class="m-tabs" role="tablist" aria-label="pages">
     <button type="button" role="tab" data-m-tab="play" aria-selected="true">perf</button>
     <button type="button" role="tab" data-m-tab="beat" aria-selected="false">beat</button>
-    <button type="button" role="tab" data-m-tab="dice" aria-selected="false">voice</button>
     <button type="button" role="tab" data-m-tab="t808" aria-selected="false">808</button>
     <button type="button" role="tab" data-m-tab="xy" aria-selected="false">x/y</button>
     <button type="button" role="tab" data-m-tab="fx" aria-selected="false">fx</button>
-    <button type="button" role="tab" data-m-tab="xf" aria-selected="false">xfeed</button>
     <button type="button" role="tab" data-m-tab="mix" aria-selected="false">mix</button>
     <button type="button" role="tab" data-m-tab="comp" aria-selected="false">mstr</button>
     <button type="button" role="tab" data-m-tab="presets" aria-selected="false">prst</button>
@@ -9186,7 +9171,7 @@ class Player {
     else if (m.type === 'rush') { this.rush = m.v; if (m.t !== undefined) this.rushT = m.t; }
     else if (m.type === 'rushSet') Object.assign(this.rs, m.set);
     else if (m.type === 'mute') m.muted.forEach((v, n) => { this.muted[n] = v ? 1 : 0; });
-    else if (m.type === 'xmod') this.e.setCrossMod(m.amt, m.target);
+    else if (m.type === 'xmod') return; // (Elixir 808: no crossfeed)
     else if (m.type === 'delay') this.delayPos = m.pos;
     else if (m.type === 'atBar') { if (this.playing) this.atBar.push(m.m); else this.msg(m.m); }
     else if (m.type === 'mix') {
@@ -11883,7 +11868,7 @@ function mTab(t) {
 }
 // the tab that shows which page is in view
 // the page's name, beside the title
-const M_PAGE_NAMES = { play: 'perform', beat: 'beat', dice: 'voice', xy: 'x/y', fx: 'effects', xf: 'crossfeed', mix: 'mixer', comp: 'master', presets: 'presets' };
+const M_PAGE_NAMES = { play: 'perform', beat: 'beat',  xy: 'x/y', fx: 'effects', mix: 'mixer', comp: 'master', presets: 'presets' };
 function mShown(t) {
   if (t === mCur) return;
   mCur = t;
@@ -12129,71 +12114,7 @@ document.querySelectorAll('[data-m-undo]').forEach((b) => b.addEventListener('cl
 }));
 new MutationObserver(mUndo).observe($('undo'), { attributes: true, attributeFilter: ['disabled'] });
 
-// ---- the voice page: every parameter of a drum. The top strip picks the drum, the second one of four pages, each the
-// desktop's sections grouped by job: tone (oscillator, fm), shape (amp eg, the pitch envelope, the click), filter (and
-// the voice's mix) and mod (lfo, velocity). A drum's page is made the first time it's shown and kept (so a fader's
-// step sequencer stays with it) ----
-const vpNice = (t) => t.toLowerCase().replace(/_/g, ' ');
-// each fader's label on its page, by section and the desktop's name (anything not here: the name, lower case)
-const VP_LABEL = {
-  oscillator: { WAVEFORM: 'wave', MIX: 'noise mix' },
-  fm: { FM_AMOUNT: 'fm amt', FM_FREQ: 'fm freq', WAVEFORM: 'fm wave', MODE: 'fm mode', MOD_OSC1_FREQ: 'mod1 freq', MOD_OSC2_FREQ: 'mod2 freq',
-    MOD_OSC1_GAIN: 'mod1 gain', MOD_OSC2_GAIN: 'mod2 gain' },
-  amp: { EG_SLOPE: 'slope', DECAY_CLOSED: 'decay cl', DECAY_OPEN: 'decay op' },
-  pitch: { PITCH_DECAY: 'pitch dec', EG_SLOPE: 'pitch slope', MOD_AMOUNT: 'pitch amt' },
-  click: { TRANSIENT_WAVE: 'click', TRANSIENT_VOLUME: 'click vol', TRANSIENT_FREQ: 'click freq' },
-  filter: { FILTER_F: 'cutoff', FILTER_RESO: 'reso', FILTER_TYPE: 'type', FILTER_DRIVE: 'flt drive' },
-  mix: { SAMPLE_RATE: 'sample rate' },
-  lfo: { FREQ_LFO: 'lfo freq', SYNC_LFO: 'lfo sync', MOD_LFO: 'lfo amt', WAVE_LFO: 'lfo wave', RETRIGGER_LFO: 'retrigger', OFFSET_LFO: 'lfo offset' },
-  velocity: { VEL_DEST: 'vel dest', VEL_AMT: 'vel amt', VEL_MOD_VOL: 'vel vol' },
-};
-const VP_PAGES = [['tone', ['oscillator', 'fm']], ['shape', ['amp', 'pitch', 'click']], ['filter', ['filter', 'mix']], ['mod', ['lfo', 'velocity']]];
-// a drum's four pages: [name, [[label, parameter name], ...]]
-function vpSections(v) {
-  const sec = {};
-  for (const g of VOICE_PAGES[v].groups) {
-    const n = vpNice(g.name.replace(/ \(.*\)/, ''));
-    const into = (k, ps) => { sec[k] = (sec[k] || []).concat(ps.map(([t, pn]) => [VP_LABEL[k]?.[t] ?? vpNice(t), pn])); };
-    if (n === 'modulation') { into('pitch', g.params.filter(([t]) => !t.startsWith('VEL_'))); into('velocity', g.params.filter(([t]) => t.startsWith('VEL_'))); }
-    else into({ 'amp eg': 'amp', 'transient sample': 'click' }[n] || n, g.params);
-  }
-  // (two waves on the cymbal's and hi-hat's fm: one for each mod oscillator)
-  for (const ps of Object.values(sec)) { const w = ps.filter(([l]) => l === 'fm wave'); if (w.length === 2) { w[0][0] = 'mod1 wave'; w[1][0] = 'mod2 wave'; } }
-  return VP_PAGES.map(([name, parts]) => ({ name, params: parts.flatMap((k) => sec[k] || []) }));
-}
-let mVoice = 0, mVSec = 0;
-const mVBoxes = {};
-XN.forEach((name, v) => {
-  const b = document.createElement('button');
-  b.type = 'button'; b.className = 'm-btn'; b.textContent = name; b.setAttribute('role', 'tab');
-  b.addEventListener('click', () => { mVoice = v; mVoiceShow(); });
-  $('m-voice').append(b);
-});
-function mVoiceBox(v, k) {
-  const id = `m-voice-${v + 1}-${VP_PAGES[k][0]}`;
-  if (mVBoxes[id]) return mVBoxes[id];
-  const sec = vpSections(v)[k], box = document.createElement('div');
-  box.className = 'm-faders m-vset'; box.id = id; $('m-vsets').append(box);
-  for (const [label, pn] of sec.params) {
-    const par = PAR[pn], sp = spec(par);
-    mFader(box, label, { min: 0, max: sp.max, get: () => values[par], set: (x) => { setValue(par, x); setDirty(true); },
-      show: (x) => String(sp.show ? sp.show(x) : x), dflt: () => initValues[par] });
-  }
-  return (mVBoxes[id] = box);
-}
-function mVoiceShow() {
-  [...$('m-voice').children].forEach((b, v) => b.setAttribute('aria-selected', v === mVoice));
-  const secs = vpSections(mVoice), strip = $('m-vsec'); strip.innerHTML = '';
-  secs.forEach((sc, k) => {
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'm-btn'; b.setAttribute('role', 'tab');
-    b.textContent = sc.name; b.setAttribute('aria-selected', k === mVSec);
-    b.addEventListener('click', () => { mVSec = k; mVoiceShow(); }); strip.append(b);
-  });
-  const cur = mVoiceBox(mVoice, mVSec);
-  for (const box of Object.values(mVBoxes)) box.hidden = box !== cur;
-  mDrawAll();
-}
-mVoiceShow();
+// (Elixir 808: no voice page; the 808 page, app/tr808.js, has each voice's knobs)
 const mPct = (v) => (v ? Math.round(v) + '%' : 'off');
 // the same send on every drum (the mixer's per-drum sends, all at once); an echo send routes the drum to the echo bus
 const mAllSend = (k) => ({ min: 0, max: 100, get: () => Math.max(...mix[k]), show: (v) => `send ${mPct(v)}`,
@@ -12599,44 +12520,6 @@ $('m-fx-alter').addEventListener('click', async () => {
   });
 });
 
-// the fx page's crossfeed matrix: a row for each drum it comes from, a column for each it goes into, the column's head
-// what it modulates there (tap: fm, filter, ring). Drag a cell up or down for -100..100, double tap for none. It is the
-// desktop's matrix (xm), and redraws with it (its draws join xcells)
-{
-  const grid = $('m-xgrid'), SH = ['d1', 'd2', 'd3', 'sn', 'cy', 'hh'], T = ['fm', 'filter', 'ring'];
-  const changed = () => { xcells.forEach((d) => d()); sendX(); setDirty(true); };
-  grid.append(document.createElement('span'));
-  SH.forEach((n, d) => {
-    const h = document.createElement('button'); h.type = 'button'; h.className = 'm-xhead';
-    h.setAttribute('aria-label', `what crossfeed into ${XN[d]} modulates`);
-    h.addEventListener('click', () => { xm.target[d] = T[(T.indexOf(xm.target[d]) + 1) % 3]; xSelects[d].value = xm.target[d]; changed(); });
-    xcells.push(() => { h.innerHTML = `${n}<small>${xm.target[d]}</small>`; });
-    grid.append(h);
-  });
-  SH.forEach((n, s) => {
-    const lab = document.createElement('span'); lab.className = 'm-xlab'; lab.textContent = n; grid.append(lab);
-    SH.forEach((_, d) => {
-      const k = s * 6 + d, c = document.createElement('div');
-      c.className = 'm-xcell' + (s === d ? ' diag' : ''); c.setAttribute('role', 'slider'); c.tabIndex = 0;
-      c.setAttribute('aria-label', `${XN[s]} into ${XN[d]}`);
-      const draw = () => { const a = xm.amt[k]; c.style.setProperty('--a', Math.abs(a) / 100); c.classList.toggle('neg', a < 0); c.classList.toggle('hi', a >= 70); c.innerHTML = a ? `<b>${a}</b>` : ''; c.setAttribute('aria-valuenow', a); };
-      const set = (v) => { v = Math.max(-100, Math.min(100, Math.round(v / 5) * 5)); if (v !== xm.amt[k]) { xm.amt[k] = v; changed(); } };
-      let drag = null, lastTap = 0;
-      c.addEventListener('pointerdown', (e) => { c.setPointerCapture(e.pointerId); drag = { y: e.clientY, v: xm.amt[k] }; c.classList.add('held'); });
-      c.addEventListener('pointermove', (e) => { if (drag) set(drag.v + (drag.y - e.clientY) * 1.5); });
-      const up = (e) => {
-        if (!drag) return;
-        if (Math.abs(drag.y - e.clientY) < 4) { if (e.timeStamp - lastTap < 350) set(0); lastTap = e.timeStamp; }
-        drag = null; c.classList.remove('held');
-      };
-      c.addEventListener('pointerup', up); c.addEventListener('pointercancel', up);
-      c.addEventListener('keydown', (e) => { const st = { ArrowUp: 5, ArrowDown: -5, PageUp: 25, PageDown: -25 }[e.key]; if (st) { e.preventDefault(); set(xm.amt[k] + st); } else if (e.key === '0' || e.key === 'Delete') set(0); });
-      xcells.push(draw); grid.append(c);
-    });
-  });
-  $('m-xclear').addEventListener('click', () => { xm.amt.fill(0); changed(); });
-  xcells.forEach((d) => d());
-}
 // ---- step sequencers: holding a fader opens one for it: 2 to 64 steps (shown sixteen at a time, a page each), each an offset from the fader's setting (up or
 // down, up to depth of its range) that it takes while playing (the step is the bar's 16th counted from the start,
 // wrapped at the length, so short ones run against the bar), jumping to it or, with slew, gliding to it over up to a
@@ -13503,7 +13386,7 @@ function mPlaceName(el, fd) {
   const panel = el.closest('[data-m-panel]'), page = panel ? M_PAGE_NAMES[panel.dataset.mPanel] : '';
   const row = el.closest('.m-fx-row'), head = row && row.querySelector(':scope > b, .m-fxhead b');
   const box = { 'm-duck': 'sidechain', 'm-dist': 'distortion', 'm-comp': 'compressor' }[el.parentElement.id];
-  const where = panel && panel.dataset.mPanel === 'dice' ? `${page} · ${XN[mVoice]}` : head ? `${page} · ${head.textContent}` : box ? `${page} · ${box}` : page;
+  const where = head ? `${page} · ${head.textContent}` : box ? `${page} · ${box}` : page;
   // (the mixer's columns are named d1 .. hh; this gives the drum's name)
   const dr = ['d1', 'd2', 'd3', 'sn', 'cy', 'hh'].indexOf(fd.label);
   return [where, el.dataset.full || (dr >= 0 ? XN[dr] : fd.label)];
@@ -13538,10 +13421,6 @@ lvmDraw = function (m) {
 };
 
 
-// ---- crossfeed on its own page (laptop): the matrix moves from the fx page to the crossfeed page while the screen is
-// wide, and back for the phone layout ----
-const mXfPlace = () => (mWide.matches ? $('m-xf-card') : document.querySelector('[data-m-panel="fx"] .m-fx-card')).append(document.querySelector('.m-xrow'));
-mXfPlace(); mWide.addEventListener('change', mXfPlace);
 
 // every slider's name fitted to its column (shortened as the perf knobs' are), on the laptop, as the pages come into view
 // or change size

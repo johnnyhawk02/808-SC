@@ -50,7 +50,7 @@ function mTab(t) {
 }
 // the tab that shows which page is in view
 // the page's name, beside the title
-const M_PAGE_NAMES = { play: 'perform', beat: 'beat', dice: 'voice', xy: 'x/y', fx: 'effects', xf: 'crossfeed', mix: 'mixer', comp: 'master', presets: 'presets' };
+const M_PAGE_NAMES = { play: 'perform', beat: 'beat',  xy: 'x/y', fx: 'effects', mix: 'mixer', comp: 'master', presets: 'presets' };
 function mShown(t) {
   if (t === mCur) return;
   mCur = t;

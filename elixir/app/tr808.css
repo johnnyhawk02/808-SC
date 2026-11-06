@@ -23,7 +23,7 @@
 .m-808-all { display: flex; gap: 8px; align-items: center; }
 /* ---- no LXR-02 voices: the voice page, crossfeed and the kit, alter and crossfeed randomisers are gone; the 808 page
    takes the voice page's place ---- */
-.m > .m-tabs button[data-m-tab="dice"], .m > .m-tabs button[data-m-tab="xf"], #m-kit, #m-alter, #m-xrand, .m-fx-row.m-xrow { display: none !important; }
+#m-kit, #m-alter, #m-xrand { display: none !important; }
 .m > .m-tabs { grid-template-columns: repeat(8, minmax(0, 1fr)); }
 @media (min-width: 1000px) { .m > .m-tabs { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
 @media (min-width: 1000px) {
