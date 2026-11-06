@@ -13,6 +13,10 @@ const delaySamples = (pos, bpm) => 240 / bpm * Math.pow(2, -7 * (1 - pos)) * LXR
 const VERB_MAKEUP = 1;
 // the 808 voices' gain from the bench's digital level (volts / 24) to Elixir's: about as loud as the LXR voices
 const G808 = 2.4;
+// each 808 voice's track when the grid's lanes play (and the mixer channel it takes: tracks 5 and 6 share the hats'):
+// the kick on drum 1 (the sidechain's key), toms on drum 2, congas and the small percussion on drum 3, snare, rim shot
+// and clap on the snare, cymbal, then the hats
+const BUS808 = { bd: 0, lt: 1, mt: 1, ht: 1, lc: 2, mc: 2, hc: 2, cl: 2, ma: 2, cb: 2, sd: 3, rs: 3, cp: 3, cy: 4, ch: 5, oh: 6 };
 // snare rush: a fixed hash of (track, page, step) in 0..1; a hit whose hash is under the rush amount goes to the snare,
 // so the hits it takes stay put and more join as it goes up
 function rushHash(t, pg, s) {
@@ -84,7 +88,7 @@ class Player {
     this.lvl = new Float32Array(6); this.lvlN = 0; this.lvlOn = false;
     this.events = [];
     // the TR-808 voices (app/tr808.js): a track set to one plays it instead of its LXR voice
-    this.k808 = null; this.t808 = new Array(7).fill(null); this.want808 = {}; this.b808 = {};
+    this.k808 = null; this.t808 = new Array(7).fill(null); this.want808 = {}; this.b808 = {}; this.lanes = null;
     this._render(this.A); this._render(this.B);
   }
   msg(m) {
@@ -147,6 +151,15 @@ class Player {
     const pg = this.pattern.pages ? bar % this.pattern.pages.length : 0;
     const P = this.pattern.pages ? this.pattern.pages[pg] : this.pattern; // pages: one bar each, in turn
     const hits = [], { on, acc, bar: cond } = P, G = this.groove, len = LXR.REAL_FS * 60 / this.bpm / 4;
+    if (this.lanes) { // the grid's lanes: each voice on its track (BUS808), moved by that track's groove
+      for (const id in this.lanes) {
+        const L = this.lanes[id], t = BUS808[id];
+        if (!L.on[s] || t === undefined || this.muted[Math.min(t, 5)]) continue;
+        this.queue.push({ at: Math.max(0, at0 + G.off[t][s] * len), t, lane: id, acc: !!L.acc[s] });
+        hits.push(t);
+      }
+      this.sched[s] = hits; return;
+    }
     if (this.rush && this.patternOn) { this.scheduleRush(s, bar, pg, P, at0, len, hits); return; }
     for (let t = 0; t < 7 && this.patternOn; t++) {
       if (!on[t][s] || !barOk(cond[t][s], bar) || this.muted[Math.min(t, 5)]) continue;
@@ -241,14 +254,18 @@ class Player {
     }
     const K = this.k808;
     if (m.type === 'map808') this.t808 = m.map.slice(0, 7);
+    // the grid's lanes, one an 808 voice ({ id: { on: [16], acc: [16] } }), which play instead of the tracks' pattern; null: the tracks
+    else if (m.type === 'lanes808') this.lanes = m.lanes;
+    // a tap on a voice's name on the 808 page: play it now
+    else if (m.type === 'hit808') { const t = this.t808.includes(m.id) ? this.t808.indexOf(m.id) : BUS808[m.id] ?? 3; this.hit(t, 127, m.acc, m.id); this.gainTo[Math.min(t, 5)] = 1; }
     else if (m.type === 'set808') K.set(m.id, m.param, m.value);
     else if (m.type === 'model808') { this.want808[m.id] = m.model; K.setModel(m.id, m.model); }
     else if (m.type === 'cache808') { K.loadCache(m.id, m.info, new Int16Array(m.pcm)); K.setModel(m.id, this.want808[m.id] || 'cached'); }
   }
   // a hit on track t: its 808 voice, accented or not (Elixir 808 plays no LXR voices). (The 808 voice takes the accent in
   // its circuit, as the TR-808 does, so the accent fader's turn-down of unaccented hits skips it)
-  hit(t, vel, acc) {
-    const id = this.k808 && this.t808[t];
+  hit(t, vel, acc, lane) {
+    const id = this.k808 && (lane || this.t808[t]);
     if (!id) return;
     this.k808._fire(id, acc ? 1 : 0);
     // the 808 voice takes the track's pan as the LXR voice would on its trigger
@@ -265,8 +282,10 @@ class Player {
     for (let c = 0; c < 6; c++) out[c].fill(0);
     K.render(this.mix808, 64);
     const vols = [e.drums[0], e.drums[1], e.drums[2], e.snare, e.cymbal, e.hat];
-    for (let t = 0; t < 7; t++) {
-      const id = T[t]; if (!id || T.indexOf(id) < t) continue; // (a voice on two tracks plays out of the first)
+    // (with the grid's lanes, each voice on its own track, BUS808; else the tracks' voices, a voice on two playing out
+    // of the first, and any other (a tap on the 808 page) on its own track)
+    for (const id in B) {
+      const t = !this.lanes && T.includes(id) ? T.indexOf(id) : BUS808[id];
       const c = Math.min(t, 5), o = out[c], b = B[id], g = TR808.VOLT_SCALE * G808 * 32768 * vols[c].vol;
       for (let i = 0; i < 64; i++) { const x = Math.round(o[i] + b[i] * g); o[i] = x > 32767 ? 32767 : x < -32768 ? -32768 : x; }
     }
@@ -337,7 +356,7 @@ class Player {
         // a voice muted after its step was booked is skipped too; above 80 the grid roll gives way to the free one, and
         // no snare plays within half a free-roll gap of the last
         if (q.at < 64 && this.rush > S.p32 && (q.roll || q.free) && (q.roll || this.clock - this.snareAt < this.rushGap)) { if (q.roll === 2) this.rushHead = q; }
-        else if (q.at < 64) { if (q.t === this.rushT) this.snareAt = this.clock; if (!this.muted[Math.min(q.t, 5)]) { const sw = q.sw || 1; this.hit(q.t, q.acc ? 127 : Math.max(1, Math.round(this.vel * sw)), q.acc); this.gainTo[Math.min(q.t, 5)] = q.acc ? 1 : this.k808 && this.t808[q.t] ? sw : this.accGain * sw; } }
+        else if (q.at < 64) { if (q.t === this.rushT) this.snareAt = this.clock; if (!this.muted[Math.min(q.t, 5)]) { const sw = q.sw || 1; this.hit(q.t, q.acc ? 127 : Math.max(1, Math.round(this.vel * sw)), q.acc, q.lane); this.gainTo[Math.min(q.t, 5)] = q.acc ? 1 : this.k808 && (q.lane || this.t808[q.t]) ? sw : this.accGain * sw; } }
         else { q.at -= 64; keep.push(q); }
       }
       this.queue = keep;

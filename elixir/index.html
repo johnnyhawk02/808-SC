@@ -1591,29 +1591,25 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
   .fit .m-turn b::before { content: "\21BB"; display: block; text-align: center; font-size: 200px; line-height: 1; }
   .fit .m-turn button { font: inherit; font-size: 64px; color: inherit; background: none; border: 5px solid #17200e; border-radius: 10px; padding: 10px 40px; cursor: pointer; }
 }
-/* ---- the 808 page: the track strip, the 808 voice picks, then the voice's model, knobs and cache row ---- */
-.m-808-card { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 10px; min-height: 0; padding: 10px 2px; }
-.m-808-tracks { grid-template-columns: repeat(7, 1fr); }
-.m .m-808-tracks .m-btn { text-transform: lowercase; white-space: pre; }
-.m-808-pick { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
-.m .m-808-pick .m-toggle { min-width: 0; min-height: 34px; padding: 0; font-size: var(--fs-xs) !important; text-transform: uppercase; }
-.m-808-body { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px; min-height: 0; padding: 8px 4px 6px; border: 2px solid var(--ink); }
-.m-808-set[hidden] { display: none; }
-.m-808-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.m-808-head b { font-family: var(--display); font-weight: 400; letter-spacing: .08em; text-transform: uppercase; }
-.m-808-models { display: flex; gap: 4px; }
-.m .m-808-models .m-toggle { min-height: 34px; padding: 0 12px; font-size: var(--fs-xs) !important; text-transform: uppercase; }
-.m-808-knobs { display: grid; min-height: 0; }
-.m-808-set { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; min-height: 0; }
-.m-808-set .m-vf { display: flex; flex-direction: column; align-items: center; min-height: 0; gap: 2px; }
-.m .m-808-set .m-vf output { font-size: var(--fs-xs); line-height: 1; height: 1.1em; }
-.m .m-808-set .m-flab { font-size: var(--fs-xs); white-space: nowrap; }
-.m .m-808-set .m-vtrack { width: min(56px, 100%); flex: 1; height: auto; min-height: 40px; }
-.m-808-cache { display: flex; align-items: center; gap: 8px; min-height: 0; }
-.m .m-808-cache .m-btn, .m .m-808-all .m-btn { min-height: 40px; padding: 0 14px; font-size: var(--fs-s, var(--fs-xs)) !important; }
-.m-808-cache .m-btn[hidden] { display: none; }
-.m-808-status { flex: 1; font-size: var(--fs-xs); opacity: .8; }
-.m-808-all { display: flex; gap: 8px; align-items: center; }
+/* ---- the 808 page: every sound in its own box, eight across, two rows: its name (tap to hear it), circuit or cached,
+   its knobs, then its cache button and what it plays ---- */
+.m-808-card { display: grid; min-height: 0; padding: 8px 2px; }
+.m-808-all { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 8px; min-height: 0; }
+.m-808-v { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto auto; gap: 4px; min-width: 0; min-height: 0; padding: 6px 4px; border: 1.5px solid var(--ink); border-radius: 8px; }
+.m .m-808-vname { min-height: 30px; padding: 0; border: 0 !important; background: none !important; box-shadow: none !important; color: var(--ink);
+  font-family: var(--display); font-size: var(--fs-m) !important; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+.m .m-808-vname:active { background: var(--ink) !important; color: var(--panel); }
+.m-808-models { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.m .m-808-models .m-toggle { min-width: 0; min-height: 26px; padding: 0; font-size: 13px !important; letter-spacing: 0; text-transform: uppercase; }
+.m-808-set { display: grid; grid-auto-rows: minmax(0, 1fr); gap: 2px; min-height: 0; }
+.m .m-808-set .m-knob { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; column-gap: 2px; min-height: 0; }
+.m .m-808-set .m-knob .m-vtrack { grid-row: 1 / 3; container-type: size; width: 100%; height: 100%; min-height: 26px; max-height: 52px; background: none; overflow: visible; border-radius: 0; }
+.m .m-808-set .m-knob output { grid-area: 1 / 2; font-size: 14px; line-height: 1; text-align: right; }
+.m .m-808-set .m-knob .m-flab { grid-area: 2 / 2; font-size: 12px; line-height: 1; text-align: right; white-space: nowrap; }
+.m .m-808-go { min-height: 30px; padding: 0; font-size: 14px !important; letter-spacing: .04em; }
+.m-808-status { font-size: 13px; line-height: 1; text-align: center; opacity: .8; white-space: nowrap; overflow: hidden; }
+.m .m-808-revert { min-height: 0; padding: 0; border: 0 !important; background: none !important; box-shadow: none !important; font-size: 12px !important; text-decoration: underline; color: var(--ink); text-transform: uppercase; }
+.m-808-revert[hidden] { display: none; }
 /* ---- no LXR-02 voices: the voice page, crossfeed and the kit, alter and crossfeed randomisers are gone; the 808 page
    takes the voice page's place ---- */
 #m-kit, #m-alter, #m-xrand { display: none !important; }
@@ -1626,11 +1622,14 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 }
 
 /* ---- the grid page: presets, then seven rows of sixteen steps, a beat a column group ---- */
-.m-g8-card { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; min-height: 0; padding: 10px 2px; }
-.m-g8-presets { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.m-g8-card { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px; min-height: 0; padding: 10px 2px; }
+.m-g8-presets { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; }
 .m .m-g8-presets .m-toggle { min-width: 0; min-height: 34px; padding: 0 2px; font-size: var(--fs-xs) !important; text-transform: uppercase; }
-.m-g8-grid { display: grid; grid-template-columns: 64px repeat(16, minmax(0, 1fr)); grid-template-rows: repeat(7, minmax(0, 1fr)); gap: 3px; min-height: 0; }
-.m-g8-lab { align-self: center; font-size: var(--fs-xs); text-transform: uppercase; white-space: nowrap; overflow: hidden; }
+.m-g8-grid { display: grid; grid-template-columns: 48px repeat(16, minmax(0, 1fr)); grid-template-rows: repeat(16, minmax(0, 1fr)); gap: 2px; min-height: 0; }
+.m .m-g8-lab { min-width: 0; min-height: 0; padding: 0 0 0 2px; border: 0 !important; background: none !important; box-shadow: none !important; color: var(--ink);
+  font-size: var(--fs-xs) !important; line-height: 1; text-align: left; text-transform: uppercase; opacity: .55; cursor: pointer; }
+.m .m-g8-lab.used { opacity: 1; }
+.m .m-g8-lab:active { background: var(--ink) !important; color: var(--panel); }
 .m .m-g8-cell { min-width: 0; min-height: 0; padding: 0; border: 1.5px solid var(--ink) !important; border-radius: 2px; background: var(--ghost) !important; opacity: .5; cursor: pointer; box-shadow: none; }
 .m .m-g8-cell.beat { opacity: .8; }
 .m-g8-cell:nth-child(17n + 6), .m-g8-cell:nth-child(17n + 10), .m-g8-cell:nth-child(17n + 14) { margin-left: 4px; }
@@ -1649,11 +1648,27 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
   .m > .m-tabs { grid-area: 2 / 1 / 3 / 3; padding-left: 4px; border-left: 0; }
   .m .m-panel:not([data-m-panel="play"]) { grid-area: 3 / 1 / 5 / 3; padding-left: 4px; border-left: 0; }
 }
+
+/* ---- 80s magenta: the glass a hot pink, the ink a deep plum, the backlight's glow and the faded patches pink too ---- */
+.m { --panel: #ff4fbf; --ink: #1d0019; --muted: rgba(29, 0, 25, .66); --tint: rgba(29, 0, 25, .07); --tint-2: rgba(29, 0, 25, .12);
+  --ghost: rgba(29, 0, 25, .12); --led: #1d0019; --rule: 1px solid rgba(29, 0, 25, .34);
+  background-image: linear-gradient(170deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, 0) 38%, rgba(0, 0, 0, .05)),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, .03) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(0, 0, 0, .03) 0 1px, transparent 1px 3px),
+    radial-gradient(60% 34% at 12% 100%, rgba(255, 190, 240, .55), rgba(255, 190, 240, 0) 70%),
+    radial-gradient(52% 30% at 88% 102%, rgba(255, 170, 235, .45), rgba(255, 170, 235, 0) 70%),
+    radial-gradient(38% 22% at 72% 38%, rgba(60, 0, 50, .14), rgba(60, 0, 50, 0) 70%),
+    linear-gradient(180deg, rgba(60, 0, 50, .2) 0%, rgba(60, 0, 50, 0) 30%),
+    radial-gradient(130% 100% at 50% 60%, rgba(0, 0, 0, 0) 55%, rgba(40, 0, 34, .3) 100%); }
+.m::after { background: radial-gradient(34% 17% at 76% 24%, rgba(255, 79, 191, .36), rgba(255, 79, 191, 0) 100%),
+  radial-gradient(22% 12% at 16% 66%, rgba(255, 79, 191, .3), rgba(255, 79, 191, 0) 100%),
+  linear-gradient(90deg, rgba(255, 79, 191, 0) 88%, rgba(255, 79, 191, .2) 97%, rgba(255, 79, 191, .1)); }
+.m-card { background-color: var(--panel); }
+.fit .m-turn > div { background: #ff4fbf; color: #1d0019; }
 </style>
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i>23</small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i>26</small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1699,16 +1714,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
   </div>
 
   <div class="m-panel" data-m-panel="t808">
-    <section class="m-card m-808-card" aria-label="TR-808 voices">
-      <div class="m-voice m-808-tracks" id="m-808-tracks" role="tablist" aria-label="track"></div>
-      <div class="m-808-pick" id="m-808-pick" role="group" aria-label="808 voice on this track"></div>
-      <div class="m-808-body" id="m-808-body">
-        <div class="m-808-head"><b id="m-808-name"></b>
-          <span class="m-808-models" role="group" aria-label="model"><button class="m-toggle" type="button" data-m808="circuit" title="The component-level circuit simulation: every knob works, costs CPU">circuit</button><button class="m-toggle" type="button" data-m808="cached" title="16 normal + 16 accented hits rendered by the circuit, one picked at random per hit. Level, decay and the clap's snap stay live. Almost no CPU">cached</button></span></div>
-        <div class="m-808-knobs" id="m-808-knobs"></div>
-        <div class="m-808-cache"><button class="m-btn" id="m-808-cache-go" type="button" title="Record 4 normal + 4 accented hits through the circuit at these knob settings, keep them in this browser and play them as cached, picked at random, never the same one twice running">cache</button><span class="m-808-status" id="m-808-status" aria-live="polite"></span><button class="m-btn" id="m-808-revert" type="button" hidden title="Forget your cached hits and go back to the shipped ones (default knobs)">revert</button></div>
-      </div>
-      <div class="m-808-all"><button class="m-btn" id="m-808-kit" type="button" title="The standard kit on the tracks: BD, LT, HT, SD, CY, CH, OH">808 kit</button></div>
+    <section class="m-card m-808-card" aria-label="TR-808 sounds"><div class="m-808-all" id="m-808-all"></div>
     </section>
   </div>
 
@@ -1757,7 +1763,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v23, 6 Nov, 18:43</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v26, 6 Nov, 18:54</footer>
     </section>
   </div>
   </div>
@@ -8985,8 +8991,8 @@ __m["dsp/cache-build.js"] = (() => {
 // accented hits through the circuit model at the given knob settings (LEVEL
 // full), each with the noise generator and the free-running metal oscillators
 // in another state and the trigger level +-1.5%, tails trimmed at -60 dB;
-// plus the LEVEL knob's gain curve. Stored at 32 kHz (windowed-sinc
-// conversion, flat to ~14 kHz, -60 dB by 16 kHz): the sampler-era top end.
+// plus the LEVEL knob's gain curve. Stored at 48 kHz, the rate the circuit
+// runs at, so the whole top end is kept (no rate conversion).
 //
 // Host-agnostic: test/cache-render.mjs runs it in Node for the shipped cache
 // (default knobs), cache-worker.js runs it in the browser for the Cache button.
@@ -8996,7 +9002,7 @@ const { Kit, VOLT_SCALE } = __m["dsp/kit.js"];
 const { CIRCUITS } = __m["voices/circuits.js"];
 const { VARIANTS } = __m["dsp/cache.js"];
 
-const SR = 48000, OUT_SR = 32000; // circuit runs at 48 kHz, hits stored at 32 kHz
+const SR = 48000, OUT_SR = 48000; // circuit runs at 48 kHz, hits stored at 48 kHz
 const MAXLEN = { cy: 3, oh: 2.5, bd: 2, lt: 1.5, mt: 1.5, ht: 1.5 }; // s, before trimming
 const LIVE = ['level', 'snap'];          // knobs the cached player handles itself
 
@@ -9078,8 +9084,9 @@ function buildCache(id, values = {}, onProgress, variants = VARIANTS) {
   return { info, pcm };
 }
 
-// 48 -> 32 kHz: Blackman-windowed sinc, cutoff 15 kHz, 64 taps at 48 kHz
+// SR -> OUT_SR: Blackman-windowed sinc, cutoff 15 kHz, 64 taps (nothing to do while they're the same)
 function resample(x) {
+  if (OUT_SR === SR) return x;
   const r = SR / OUT_SR, fc = 15000 / SR, H = 32, n = Math.floor(x.length / r), y = new Float32Array(n);
   for (let m = 0; m < n; m++) {
     const t = m * r, k0 = Math.ceil(t - H), k1 = Math.floor(t + H);
@@ -9124,6 +9131,10 @@ const delaySamples = (pos, bpm) => 240 / bpm * Math.pow(2, -7 * (1 - pos)) * LXR
 const VERB_MAKEUP = 1;
 // the 808 voices' gain from the bench's digital level (volts / 24) to Elixir's: about as loud as the LXR voices
 const G808 = 2.4;
+// each 808 voice's track when the grid's lanes play (and the mixer channel it takes: tracks 5 and 6 share the hats'):
+// the kick on drum 1 (the sidechain's key), toms on drum 2, congas and the small percussion on drum 3, snare, rim shot
+// and clap on the snare, cymbal, then the hats
+const BUS808 = { bd: 0, lt: 1, mt: 1, ht: 1, lc: 2, mc: 2, hc: 2, cl: 2, ma: 2, cb: 2, sd: 3, rs: 3, cp: 3, cy: 4, ch: 5, oh: 6 };
 // snare rush: a fixed hash of (track, page, step) in 0..1; a hit whose hash is under the rush amount goes to the snare,
 // so the hits it takes stay put and more join as it goes up
 function rushHash(t, pg, s) {
@@ -9195,7 +9206,7 @@ class Player {
     this.lvl = new Float32Array(6); this.lvlN = 0; this.lvlOn = false;
     this.events = [];
     // the TR-808 voices (app/tr808.js): a track set to one plays it instead of its LXR voice
-    this.k808 = null; this.t808 = new Array(7).fill(null); this.want808 = {}; this.b808 = {};
+    this.k808 = null; this.t808 = new Array(7).fill(null); this.want808 = {}; this.b808 = {}; this.lanes = null;
     this._render(this.A); this._render(this.B);
   }
   msg(m) {
@@ -9258,6 +9269,15 @@ class Player {
     const pg = this.pattern.pages ? bar % this.pattern.pages.length : 0;
     const P = this.pattern.pages ? this.pattern.pages[pg] : this.pattern; // pages: one bar each, in turn
     const hits = [], { on, acc, bar: cond } = P, G = this.groove, len = LXR.REAL_FS * 60 / this.bpm / 4;
+    if (this.lanes) { // the grid's lanes: each voice on its track (BUS808), moved by that track's groove
+      for (const id in this.lanes) {
+        const L = this.lanes[id], t = BUS808[id];
+        if (!L.on[s] || t === undefined || this.muted[Math.min(t, 5)]) continue;
+        this.queue.push({ at: Math.max(0, at0 + G.off[t][s] * len), t, lane: id, acc: !!L.acc[s] });
+        hits.push(t);
+      }
+      this.sched[s] = hits; return;
+    }
     if (this.rush && this.patternOn) { this.scheduleRush(s, bar, pg, P, at0, len, hits); return; }
     for (let t = 0; t < 7 && this.patternOn; t++) {
       if (!on[t][s] || !barOk(cond[t][s], bar) || this.muted[Math.min(t, 5)]) continue;
@@ -9352,14 +9372,18 @@ class Player {
     }
     const K = this.k808;
     if (m.type === 'map808') this.t808 = m.map.slice(0, 7);
+    // the grid's lanes, one an 808 voice ({ id: { on: [16], acc: [16] } }), which play instead of the tracks' pattern; null: the tracks
+    else if (m.type === 'lanes808') this.lanes = m.lanes;
+    // a tap on a voice's name on the 808 page: play it now
+    else if (m.type === 'hit808') { const t = this.t808.includes(m.id) ? this.t808.indexOf(m.id) : BUS808[m.id] ?? 3; this.hit(t, 127, m.acc, m.id); this.gainTo[Math.min(t, 5)] = 1; }
     else if (m.type === 'set808') K.set(m.id, m.param, m.value);
     else if (m.type === 'model808') { this.want808[m.id] = m.model; K.setModel(m.id, m.model); }
     else if (m.type === 'cache808') { K.loadCache(m.id, m.info, new Int16Array(m.pcm)); K.setModel(m.id, this.want808[m.id] || 'cached'); }
   }
   // a hit on track t: its 808 voice, accented or not (Elixir 808 plays no LXR voices). (The 808 voice takes the accent in
   // its circuit, as the TR-808 does, so the accent fader's turn-down of unaccented hits skips it)
-  hit(t, vel, acc) {
-    const id = this.k808 && this.t808[t];
+  hit(t, vel, acc, lane) {
+    const id = this.k808 && (lane || this.t808[t]);
     if (!id) return;
     this.k808._fire(id, acc ? 1 : 0);
     // the 808 voice takes the track's pan as the LXR voice would on its trigger
@@ -9376,8 +9400,10 @@ class Player {
     for (let c = 0; c < 6; c++) out[c].fill(0);
     K.render(this.mix808, 64);
     const vols = [e.drums[0], e.drums[1], e.drums[2], e.snare, e.cymbal, e.hat];
-    for (let t = 0; t < 7; t++) {
-      const id = T[t]; if (!id || T.indexOf(id) < t) continue; // (a voice on two tracks plays out of the first)
+    // (with the grid's lanes, each voice on its own track, BUS808; else the tracks' voices, a voice on two playing out
+    // of the first, and any other (a tap on the 808 page) on its own track)
+    for (const id in B) {
+      const t = !this.lanes && T.includes(id) ? T.indexOf(id) : BUS808[id];
       const c = Math.min(t, 5), o = out[c], b = B[id], g = TR808.VOLT_SCALE * G808 * 32768 * vols[c].vol;
       for (let i = 0; i < 64; i++) { const x = Math.round(o[i] + b[i] * g); o[i] = x > 32767 ? 32767 : x < -32768 ? -32768 : x; }
     }
@@ -9448,7 +9474,7 @@ class Player {
         // a voice muted after its step was booked is skipped too; above 80 the grid roll gives way to the free one, and
         // no snare plays within half a free-roll gap of the last
         if (q.at < 64 && this.rush > S.p32 && (q.roll || q.free) && (q.roll || this.clock - this.snareAt < this.rushGap)) { if (q.roll === 2) this.rushHead = q; }
-        else if (q.at < 64) { if (q.t === this.rushT) this.snareAt = this.clock; if (!this.muted[Math.min(q.t, 5)]) { const sw = q.sw || 1; this.hit(q.t, q.acc ? 127 : Math.max(1, Math.round(this.vel * sw)), q.acc); this.gainTo[Math.min(q.t, 5)] = q.acc ? 1 : this.k808 && this.t808[q.t] ? sw : this.accGain * sw; } }
+        else if (q.at < 64) { if (q.t === this.rushT) this.snareAt = this.clock; if (!this.muted[Math.min(q.t, 5)]) { const sw = q.sw || 1; this.hit(q.t, q.acc ? 127 : Math.max(1, Math.round(this.vel * sw)), q.acc, q.lane); this.gainTo[Math.min(q.t, 5)] = q.acc ? 1 : this.k808 && (q.lane || this.t808[q.t]) ? sw : this.accGain * sw; } }
         else { q.at -= 64; keep.push(q); }
       }
       this.queue = keep;
@@ -13649,9 +13675,7 @@ addEventListener('keydown', (e) => {
   }
   if (pop) return; // (the other keys wait until the pop-up is closed)
   // (arrows and enter stay with a focused control, so a fader still steps with the arrows)
-  // (shift with 1..7: the 808 page with that track)
-  if (e.shiftKey && /^Digit[1-7]$/.test(e.code)) { e.preventDefault(); mTab('t808'); $('m-808-tracks').children[Number(e.code[5]) - 1].click(); }
-  else if (KEYS[k]) { e.preventDefault(); const b = $(KEYS[k]); if (!b.disabled) b.click(); }
+  if (KEYS[k]) { e.preventDefault(); const b = $(KEYS[k]); if (!b.disabled) b.click(); }
   else if (k === 'm') { e.preventDefault(); $('m-nextbar').click(); }
   else if (MUTE_KEYS.includes(k)) { e.preventDefault(); mMuteToggle(MUTE_KEYS.indexOf(k)); }
   else if (SEND_KEYS.fx.includes(k)) { e.preventDefault(); mSendToggle('fx', SEND_KEYS.fx.indexOf(k)); }
@@ -13660,19 +13684,21 @@ addEventListener('keydown', (e) => {
   else if (k === '/') { e.preventDefault(); mTab('presets'); $('m-psearch').focus(); }
   else if (k === '?') { e.preventDefault(); $('m-help-open').click(); }
 }, { capture: true });
-// ---- the 808 page: the TR-808 voices (the bench's own code, bundled as TR808 by tr808-bundle.mjs) on Elixir's tracks ----
-// Each of the seven tracks plays one of the sixteen 808 voices (no LXR voices: the LXR-02 engine is only the effects and
-// the mix now), which takes the track's place in the engine's output (app/player.js: hit, render808), so the sequencer, accents, mixer, sends, sidechain and recorder
-// work on it as on any voice. Each 808 voice plays as the circuit simulation or as cached hits, with its own knobs; the
-// cache button renders a voice's hits at its current knobs in a worker, as on the bench, kept in this browser
-// (IndexedDB tr808-cache, the bench's own, so caches made on either show up in both); revert brings the shipped ones back.
-// The setup (which voice on which track, models, knobs) is kept in this browser, not in the presets.
+// ---- the 808 sounds (the bench's own code, bundled as TR808 by tr808-bundle.mjs) and the 808 page ----
+// No LXR voices: the LXR-02 engine is only the effects and the mix now. The grid's lanes (app/tr808-grid.js) play the
+// sixteen sounds, each on a track of the mixer (app/player.js: BUS808); the generator plays one sound a track (t8.map,
+// the standard kit). Each sound plays as the circuit simulation or as cached hits, with its own knobs; the cache
+// button renders a sound's hits at its current knobs in a worker, as on the bench, kept in this browser (IndexedDB
+// tr808-cache, the bench's own, so caches made on either show up in both); revert brings the shipped ones back.
+// Models and knobs are kept in this browser, not in the presets.
 const T8_IDS = TR808.VOICES.map(([id]) => id);
 const T8_NAME = Object.fromEntries(TR808.VOICES.map(([id, name]) => [id, name.toLowerCase()]));
 const T8_SPEC = new TR808.Kit(44100, { circuits: false }).spec(); // (no circuits: just the knob lists)
 const T8_PARAMS = Object.fromEntries(T8_SPEC.map((v) => [v.id, v.params]));
 const T8_LIVE = ['level', 'snap']; // knobs cached plays live; the cache button bakes the rest in
-const T8_TRACKS = ['dr1', 'dr2', 'dr3', 'sn', 'cy', 'cl', 'op'];
+// the sounds in the order the grid's lanes and the 808 page show them: kick, snares and claps, toms, congas and small
+// percussion, cymbals and hats
+const T8_ORDER = ['bd', 'sd', 'rs', 'cp', 'lt', 'mt', 'ht', 'lc', 'mc', 'hc', 'cl', 'ma', 'cb', 'cy', 'oh', 'ch'];
 const T8_KIT = ['bd', 'lt', 'ht', 'sd', 'cy', 'ch', 'oh'];
 const T8_KEY = 'elixir808-tr808';
 // the cache button records this many hits a voice, plain and accented each, played in random order, never the same one
@@ -13682,7 +13708,7 @@ const T8_HITS = 4;
 const T8_CACHE_URL = new URL('../cache/', location.href);
 
 const t8 = { map: T8_KIT.slice(), models: Object.fromEntries(T8_IDS.map((id) => [id, 'cached'])),
-  values: Object.fromEntries(T8_SPEC.map((v) => [v.id, { ...v.values }])), track: 0 };
+  values: Object.fromEntries(T8_SPEC.map((v) => [v.id, { ...v.values }])) };
 try {
   const s = JSON.parse(localStorage.getItem(T8_KEY));
   if (s) {
@@ -13691,7 +13717,6 @@ try {
       if (s.models?.[id] === 'circuit' || s.models?.[id] === 'cached') t8.models[id] = s.models[id];
       for (const p of T8_PARAMS[id]) if (typeof s.values?.[id]?.[p.id] === 'number') t8.values[id][p.id] = s.values[id][p.id];
     }
-    if (s.track >= 0 && s.track < 7) t8.track = s.track;
   }
 } catch (e) {}
 const t8Save = () => { try { localStorage.setItem(T8_KEY, JSON.stringify(t8)); } catch (e) {} };
@@ -13817,172 +13842,173 @@ async function t8Revert(id) {
   mDrawAll(); t8Draw();
 }
 
-// ---- the page ----
-const t8TrackBtns = T8_TRACKS.map((name, t) => {
-  const b = document.createElement('button');
-  b.type = 'button'; b.className = 'm-btn'; b.setAttribute('role', 'tab');
-  b.addEventListener('click', () => { t8.track = t; t8Save(); t8Draw(); });
-  $('m-808-tracks').append(b);
-  return b;
-});
-const t8PickBtns = T8_IDS.map((id) => {
-  const b = document.createElement('button');
-  b.type = 'button'; b.className = 'm-toggle'; b.textContent = id;
-  b.title = T8_NAME[id];
-  b.addEventListener('click', () => {
-    t8.map[t8.track] = id; t8Save(); t8SendMap();
-    if (id && t8.models[id] === 'cached') t8LoadCached(id);
-    t8Draw();
-  });
-  $('m-808-pick').append(b);
-  return b;
-});
-// each voice's knobs, built once, in its own box; the page shows the track's voice's box
-const t8KnobBoxes = {};
-for (const id of T8_IDS) {
-  const box = document.createElement('div');
-  box.className = 'm-808-set'; box.id = `m-808-set-${id}`; box.hidden = true;
-  $('m-808-knobs').append(box);
-  t8KnobBoxes[id] = box;
+// ---- the page: every sound in its own box, all on one page: its name (tap to hear it), circuit or cached, its knobs,
+// and its cache button with what it plays ----
+async function t8Audition(id) {
+  if (t8.models[id] === 'cached') await t8LoadCached(id);
+  send({ type: 'hit808', id, acc: false });
+}
+const t8Cards = {};
+for (const id of T8_ORDER) {
+  const card = document.createElement('div');
+  card.className = 'm-808-v';
+  card.innerHTML = `<button class="m-808-vname" type="button" title="${T8_NAME[id]}: tap to hear it">${id}</button>`
+    + '<span class="m-808-models"><button class="m-toggle" type="button" data-m="circuit" title="The circuit simulation: every knob works, costs CPU">circuit</button>'
+    + '<button class="m-toggle" type="button" data-m="cached" title="Recorded hits, one picked at random each time: almost no CPU">cached</button></span>'
+    + '<div class="m-808-set"></div>'
+    + '<button class="m-btn m-808-go" type="button" title="Record 4 normal + 4 accented hits through the circuit at these knobs, kept in this browser, played at random, never the same one twice running">cache</button>'
+    + '<span class="m-808-status"></span>'
+    + '<button class="m-808-revert" type="button" hidden title="Forget your hits and go back to the shipped ones (default knobs)">revert</button>';
+  $('m-808-all').append(card);
+  card.querySelector('.m-808-vname').addEventListener('click', () => t8Audition(id));
+  card.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => t8SetModel(id, b.dataset.m)));
+  card.querySelector('.m-808-go').addEventListener('click', () => t8MakeCache(id));
+  card.querySelector('.m-808-revert').addEventListener('click', () => t8Revert(id));
+  const box = card.querySelector('.m-808-set');
   for (const p of T8_PARAMS[id]) {
-    mFader(box, p.name.toLowerCase(), { min: 0, max: 100, get: () => Math.round(t8.values[id][p.id] * 100), show: String, dflt: Math.round(p.def * 100),
+    mFader(box, p.name.toLowerCase(), { knob: true, min: 0, max: 100, get: () => Math.round(t8.values[id][p.id] * 100), show: String, dflt: Math.round(p.def * 100),
       set: (v) => { t8SetKnob(id, p.id, v / 100); t8Draw(); } });
   }
+  t8Cards[id] = card;
 }
-document.querySelectorAll('[data-m808]').forEach((b) => b.addEventListener('click', () => {
-  const id = t8.map[t8.track]; if (id) t8SetModel(id, b.dataset.m808);
-}));
-$('m-808-cache-go').addEventListener('click', () => { const id = t8.map[t8.track]; if (id) t8MakeCache(id); });
-$('m-808-revert').addEventListener('click', () => { const id = t8.map[t8.track]; if (id) t8Revert(id); });
-$('m-808-kit').addEventListener('click', () => {
-  t8.map = T8_KIT.slice(); t8Save(); t8SendMap();
-  for (const id of T8_KIT) if (t8.models[id] === 'cached') t8LoadCached(id);
-  t8Draw();
-});
 
 const t8KnobText = (id, knobs) => T8_PARAMS[id].filter((p) => knobs?.[p.id] !== undefined).map((p) => `${p.name.toLowerCase()} ${Math.round(knobs[p.id] * 100)}`).join(' · ');
 function t8Draw() {
-  const id = t8.map[t8.track];
-  t8TrackBtns.forEach((b, t) => { b.setAttribute('aria-selected', t === t8.track); b.textContent = `${T8_TRACKS[t]} ${t8.map[t]}`; });
-  t8PickBtns.forEach((b, i) => b.setAttribute('aria-pressed', T8_IDS[i] === id));
-  for (const k in t8KnobBoxes) t8KnobBoxes[k].hidden = k !== id;
-  $('m-808-name').textContent = T8_NAME[id];
-  document.querySelectorAll('[data-m808]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.m808 === t8.models[id]));
-  // the cache row, on every voice (one with only a level knob just gets new hits)
-  const bake = T8_PARAMS[id].some((p) => !T8_LIVE.includes(p.id)), j = t8Jobs[id], c = t8Custom[id], st = $('m-808-status');
-  $('m-808-cache-go').disabled = !!j && !j.error;
-  $('m-808-revert').hidden = !c || !!j;
-  if (j) st.textContent = j.error ? `failed: ${j.error}` : j.total ? `rendering ${Math.round(100 * j.done / j.total)}%…` : 'starting…';
-  else if (t8Missing.has(id) && !c) st.textContent = 'shipped hits not found: cached plays the synth model';
-  else if (!c) st.textContent = bake ? 'shipped hits, 16 (default knobs)' : 'shipped hits, 16';
-  else {
-    const k = c.info.knobs ?? {}, moved = Object.keys(k).some((p) => Math.abs((t8.values[id][p] ?? k[p]) - k[p]) > 1e-9);
-    const n = c.info.normal.length;
-    st.textContent = moved ? `your ${n} hits (knobs moved since)` : `your ${n} hits, random robin`;
-    st.title = `cached plays your hits: ${t8KnobText(id, k)}`;
+  for (const id in t8Cards) {
+    const card = t8Cards[id], j = t8Jobs[id], c = t8Custom[id], st = card.querySelector('.m-808-status');
+    card.querySelectorAll('[data-m]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.m === t8.models[id]));
+    card.querySelector('.m-808-go').disabled = !!j && !j.error;
+    card.querySelector('.m-808-revert').hidden = !c || !!j;
+    st.title = '';
+    if (j) st.textContent = j.error ? 'failed' : j.total ? `${Math.round(100 * j.done / j.total)}%` : '…';
+    else if (t8Missing.has(id) && !c) st.textContent = 'no hits';
+    else if (!c) st.textContent = '16 shipped';
+    else {
+      const k = c.info.knobs ?? {}, moved = Object.keys(k).some((p) => Math.abs((t8.values[id][p] ?? k[p]) - k[p]) > 1e-9);
+      st.textContent = `${moved ? 'old ' : ''}${c.info.normal.length} yours`;
+      st.title = `cached plays your hits: ${t8KnobText(id, k)}${moved ? ' (knobs moved since)' : ''}`;
+    }
+    if (j?.error) st.title = j.error;
   }
 }
 M_PAGE_NAMES.t808 = '808';
 t8Draw();
-// ---- the grid page: the pattern that plays, seven drums by sixteen steps, and 808 pattern presets over it ----
-// A tap steps a cell through off, on, accent, off. The grid shows whatever plays: the generator's pattern (the beat
-// page's genre, beat, energy...) until the first edit or preset, which copies it into the steps pattern (Elixir's
-// steps tab) and plays that; "generator" hands back to the beat page. A preset sets the pattern, the 808 drum on each
-// track and the tempo.
-// Patterns: a track's 16 steps as a string, '.' off, 'x' on, 'X' accent; tracks dr1, dr2, dr3, sn, cy, cl (closed hat),
-// op (open hat); drums: the 808 voice on each track (app/tr808.js)
+// ---- the grid page: a lane for each of the sixteen 808 sounds, sixteen steps, and 808 pattern presets over it ----
+// A tap steps a cell through off, on, accent, off. The lanes play instead of the tracks' pattern (app/player.js:
+// lanes808), each sound on its own track for the mixer (BUS808 there). "generator" hands back to the beat page's
+// generated pattern on the tracks (one 808 sound a track, t8.map); the grid shows it in the sounds' lanes, and the
+// first edit copies it into the lanes. The lanes are kept in this browser.
+// Presets: each lane's 16 steps as a string, '.' off, 'x' on, 'X' accent, plus the tempo
 const G8_PRESETS = [
-  { name: 'electro', bpm: 122, drums: ['bd', 'lt', 'cp', 'sd', 'cy', 'ch', 'oh'],
-    p: ['X.....x...X.....', '................', '................', '....X.......X...', '................', 'x.x.x.x.x.x.x.x.', '..............x.'] },
-  { name: 'boom bap', bpm: 90, drums: ['bd', 'lt', 'rs', 'sd', 'cy', 'ch', 'oh'],
-    p: ['X.........x..x..', '................', '.......x........', '....X.......X...', '................', 'x.x.x.x.x.x.x.x.', '................'] },
-  { name: 'house', bpm: 124, drums: ['bd', 'lt', 'cp', 'sd', 'cy', 'ch', 'oh'],
-    p: ['X...X...X...X...', '................', '....x.......x...', '................', '................', 'x...x...x...x...', '..x...x...x...x.'] },
-  { name: 'trap', bpm: 140, drums: ['bd', 'lt', 'cp', 'sd', 'cy', 'ch', 'oh'],
-    p: ['X......x..X.....', '................', '........X.......', '........X.......', '................', 'x.x.xxx.x.x.xxxx', '................'] },
-  { name: 'miami', bpm: 130, drums: ['bd', 'lt', 'cp', 'sd', 'cy', 'ch', 'oh'],
-    p: ['X..x..X...X..x..', '................', '....x.......x...', '....X.......X...', '................', 'x.xxx.xxx.xxx.xx', '................'] },
-  { name: 'breaks', bpm: 128, drums: ['bd', 'lt', 'ht', 'sd', 'cy', 'ch', 'oh'],
-    p: ['X.x.......x.....', '................', '................', '....X..x.x..X...', '................', 'x.x.x.x.x.x.x...', '..............X.'] },
-  { name: 'toms', bpm: 116, drums: ['bd', 'lt', 'ht', 'sd', 'cb', 'ch', 'oh'],
-    p: ['X.......X.......', '......x.....x.x.', '..x.......x.....', '....X.......X...', 'x..x..x...x.....', 'x.x.x.x.x.x.x.x.', '................'] },
-  { name: 'congas', bpm: 112, drums: ['bd', 'lc', 'hc', 'rs', 'cl', 'ch', 'ma'],
-    p: ['X.......X.......', '...x..x....x..x.', 'x.....x.x...x...', '....x.......x...', 'x..x..x...x.x...', '................', 'x.xxx.xxx.xxx.xx'] },
-  { name: 'cowbell', bpm: 120, drums: ['bd', 'lt', 'cb', 'cp', 'cy', 'ch', 'oh'],
-    p: ['X...X...X...X...', '................', 'x..x..x...x..x..', '....X.......X...', '................', '..x...x...x...x.', '................'] },
-  { name: 'empty', bpm: null, drums: null, p: ['', '', '', '', '', '', ''] },
+  { name: 'electro', bpm: 122, l: { bd: 'X.....x...X.....', sd: '....X.......X...', cp: '....x.......x...', ch: 'x.x.x.x.x.x.x.x.', oh: '..............x.' } },
+  { name: 'boom bap', bpm: 90, l: { bd: 'X.........x..x..', rs: '.......x........', sd: '....X.......X...', ch: 'x.x.x.x.x.x.x.x.' } },
+  { name: 'house', bpm: 124, l: { bd: 'X...X...X...X...', cp: '....x.......x...', ch: 'x...x...x...x...', oh: '..x...x...x...x.' } },
+  { name: 'trap', bpm: 140, l: { bd: 'X......x..X.....', sd: '........X.......', cp: '........X.......', ch: 'x.x.xxx.x.x.xxxx' } },
+  { name: 'miami', bpm: 130, l: { bd: 'X..x..X...X..x..', sd: '....X.......X...', cp: '....x.......x...', ch: 'x.xxx.xxx.xxx.xx' } },
+  { name: 'breaks', bpm: 128, l: { bd: 'X.x.......x.....', sd: '....X..x.x..X...', ch: 'x.x.x.x.x.x.x...', oh: '..............X.' } },
+  { name: 'toms', bpm: 116, l: { bd: 'X.......X.......', lt: '......x.....x.x.', mt: '.....x.....x....', ht: '..x.......x.....', sd: '....X.......X...', cb: 'x..x..x...x.....', ch: 'x.x.x.x.x.x.x.x.' } },
+  { name: 'congas', bpm: 112, l: { bd: 'X.......X.......', lc: '...x..x....x..x.', mc: '.x.......x......', hc: 'x.....x.x...x...', rs: '....x.......x...', cl: 'x..x..x...x.x...', ma: 'x.xxx.xxx.xxx.xx' } },
+  { name: 'cowbell', bpm: 120, l: { bd: 'X...X...X...X...', cp: '....X.......X...', cb: 'x..x..x...x..x..', ch: '..x...x...x...x.', cy: 'X...............' } },
+  { name: 'empty', bpm: null, l: {} },
 ];
-const G8_TRACK = ['dr1', 'dr2', 'dr3', 'sn', 'cy', 'cl', 'op'];
-// what plays now: the steps pattern's first page, or the generator's
-const g8Shown = () => (source === 'steps' ? pages[0] : pattern.pages ? pattern.pages[0] : pattern);
-// first edit: what plays becomes the steps pattern, which plays from now on
-function g8Take() {
-  if (source === 'steps') return;
-  copyInto(pages[0], g8Shown()); pageCount = 1; editPage = 0; grid = pages[0];
-  setSource('steps'); drawGrid();
+const G8_IDS = T8_ORDER;
+const G8_KEY = 'elixir808-lanes';
+const g8Empty = () => Object.fromEntries(G8_IDS.map((id) => [id, { on: new Array(16).fill(0), acc: new Array(16).fill(0) }]));
+const g8 = { mode: 'lanes', lanes: null, preset: 'electro' };
+try {
+  const s = JSON.parse(localStorage.getItem(G8_KEY));
+  if (s && s.lanes) {
+    g8.lanes = g8Empty();
+    for (const id of G8_IDS) for (let i = 0; i < 16; i++) { g8.lanes[id].on[i] = s.lanes[id]?.on?.[i] ? 1 : 0; g8.lanes[id].acc[i] = s.lanes[id]?.acc?.[i] ? 1 : 0; }
+    g8.mode = s.mode === 'gen' ? 'gen' : 'lanes'; g8.preset = s.preset ?? null;
+  }
+} catch (e) {}
+const g8Save = () => { try { localStorage.setItem(G8_KEY, JSON.stringify(g8)); } catch (e) {} };
+// the generator's pattern (the tracks), in the lanes: each track's hits in its 808 sound's lane
+function g8FromTracks() {
+  const L = g8Empty(), P = source === 'steps' ? pages[0] : pattern.pages ? pattern.pages[0] : pattern;
+  for (let t = 0; t < 7; t++) {
+    const lane = L[t8.map[t]]; if (!lane) continue;
+    for (let s = 0; s < 16; s++) if (P.on[t][s]) { lane.on[s] = 1; lane.acc[s] = lane.acc[s] || (P.acc[t][s] ? 1 : 0); }
+  }
+  return L;
 }
-const g8Cells = [];
+const g8Shown = () => (g8.mode === 'lanes' ? g8.lanes : g8FromTracks());
+// to the audio thread, and the sounds the lanes play load their cached hits
+function g8Send() {
+  send({ type: 'lanes808', lanes: g8.mode === 'lanes' ? g8.lanes : null });
+  if (g8.mode === 'lanes') for (const id of G8_IDS) if (g8.lanes[id].on.some(Boolean) && t8.models[id] === 'cached') t8LoadCached(id);
+  g8Save();
+}
+// first edit: what plays becomes the lanes
+function g8Take() {
+  if (g8.mode === 'lanes') return;
+  g8.lanes = g8FromTracks(); g8.mode = 'lanes'; g8.preset = null;
+}
+const g8Cells = {}, g8Labs = {};
 {
   const box = $('m-grid');
-  G8_TRACK.forEach((name, t) => {
-    const lab = document.createElement('span'); lab.className = 'm-g8-lab'; box.append(lab);
-    g8Cells[t] = [];
+  for (const id of G8_IDS) {
+    const lab = document.createElement('button');
+    lab.type = 'button'; lab.className = 'm-g8-lab'; lab.textContent = id; lab.title = `${T8_NAME[id]}: tap to hear it`;
+    lab.addEventListener('click', () => t8Audition(id));
+    box.append(lab); g8Labs[id] = lab;
+    g8Cells[id] = [];
     for (let s = 0; s < 16; s++) {
       const c = document.createElement('button');
       c.type = 'button'; c.className = 'm-g8-cell' + (s % 4 === 0 ? ' beat' : '');
       c.addEventListener('click', () => {
         g8Take();
-        const P = pages[0];
+        const L = g8.lanes[id];
         // off -> on -> accent -> off
-        if (!P.on[t][s]) { P.on[t][s] = 1; P.acc[t][s] = 0; } else if (!P.acc[t][s]) P.acc[t][s] = 1; else { P.on[t][s] = 0; P.acc[t][s] = 0; P.bar[t][s] = 0; }
-        drawGrid(); sendSeq(); setDirty(true); g8Draw();
+        if (!L.on[s]) { L.on[s] = 1; L.acc[s] = 0; } else if (!L.acc[s]) L.acc[s] = 1; else { L.on[s] = 0; L.acc[s] = 0; }
+        g8Send(); g8Draw();
       });
-      box.append(c); g8Cells[t].push(c);
+      box.append(c); g8Cells[id].push(c);
     }
-  });
+  }
   G8_PRESETS.forEach((pr) => {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'm-toggle'; b.textContent = pr.name;
     b.addEventListener('click', () => g8Load(pr));
     $('m-g8-presets').append(b);
   });
-  $('m-g8-gen').addEventListener('click', () => { setSource('perform'); generate(); sendSeq(); g8Draw(); });
+  $('m-g8-gen').addEventListener('click', () => { g8.mode = 'gen'; setSource('perform'); generate(); sendSeq(); g8Send(); g8Draw(); });
 }
 function g8Load(pr) {
-  const P = pages[0];
-  for (let t = 0; t < 7; t++) for (let s = 0; s < 16; s++) {
-    const ch = pr.p[t][s] || '.';
-    P.on[t][s] = ch === '.' ? 0 : 1; P.acc[t][s] = ch === 'X' ? 1 : 0; P.bar[t][s] = 0;
+  g8.lanes = g8Empty();
+  for (const id in pr.l) for (let s = 0; s < 16; s++) {
+    const ch = pr.l[id][s] || '.';
+    g8.lanes[id].on[s] = ch === '.' ? 0 : 1; g8.lanes[id].acc[s] = ch === 'X' ? 1 : 0;
   }
-  pageCount = 1; editPage = 0; grid = pages[0];
-  if (source !== 'steps') setSource('steps');
-  if (pr.drums) { t8.map = pr.drums.slice(); t8Save(); t8SendMap(); for (const id of t8.map) if (t8.models[id] === 'cached') t8LoadCached(id); t8Draw(); }
-  if (pr.bpm) { setPerf('tempo', pr.bpm); drawPerf(); }
-  g8Preset = pr.name;
-  drawGrid(); sendSeq(); setDirty(true); mDrawAll(); g8Draw();
+  g8.mode = 'lanes'; g8.preset = pr.name;
+  if (pr.bpm) { setPerf('tempo', pr.bpm); drawPerf(); sendSeq(); }
+  g8Send(); mDrawAll(); g8Draw();
 }
-let g8Preset = null, g8Now = -1;
+let g8Now = -1;
 function g8Draw() {
-  const P = g8Shown(), steps = source === 'steps';
-  G8_TRACK.forEach((name, t) => {
-    $('m-grid').children[t * 17].textContent = `${name} ${t8.map[t]}`;
-    g8Cells[t].forEach((c, s) => {
-      const on = !!P.on[t][s], acc = on && !!P.acc[t][s];
+  const L = g8Shown(), lanes = g8.mode === 'lanes';
+  for (const id of G8_IDS) {
+    g8Labs[id].classList.toggle('used', L[id].on.some(Boolean));
+    g8Cells[id].forEach((c, s) => {
+      const on = !!L[id].on[s], acc = on && !!L[id].acc[s];
       c.classList.toggle('on', on); c.classList.toggle('acc', acc); c.classList.toggle('now', s === g8Now);
-      c.setAttribute('aria-label', `${name} step ${s + 1}${on ? acc ? ', accent' : ', on' : ''}`);
+      c.setAttribute('aria-label', `${T8_NAME[id]} step ${s + 1}${on ? acc ? ', accent' : ', on' : ''}`);
     });
-  });
-  [...$('m-g8-presets').children].forEach((b) => b.setAttribute('aria-pressed', steps && b.textContent === g8Preset));
-  $('m-g8-gen').setAttribute('aria-pressed', !steps);
-  $('m-g8-what').textContent = steps ? g8Preset || 'your pattern' : 'generator';
+  }
+  [...$('m-g8-presets').children].forEach((b) => b.setAttribute('aria-pressed', lanes && b.textContent === g8.preset));
+  $('m-g8-gen').setAttribute('aria-pressed', !lanes);
+  $('m-g8-what').textContent = lanes ? g8.preset || 'your pattern' : 'generator';
 }
-// the playhead, and redraws when the generator or a preset load changes the pattern
+// the playhead, and redraws when the generator changes the pattern
 const g8Mark = markStep;
 markStep = (s) => { g8Mark(s); g8Now = s; if ($('m').dataset.page === 'grid' || !mWide.matches) g8Draw(); };
 const g8Gen = generate;
-generate = function () { const r = g8Gen.apply(this, arguments); g8Draw(); return r; };
+generate = function () { const r = g8Gen.apply(this, arguments); if (g8.mode === 'gen') g8Draw(); return r; };
 perfDraws.push(g8Draw);
 M_PAGE_NAMES.grid = 'grid';
+// first run: the electro preset (its tempo too)
+if (!g8.lanes) g8Load(G8_PRESETS[0]); else g8Send();
 g8Draw();
 // ---- the glass isn't flat: each control's ink shadow deepens a little toward the top right of the screen (--d, used
 // by the CSS), worked out once from where it sits and again when the screen's size changes ----

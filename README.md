@@ -246,9 +246,9 @@ state and the trigger level +-1.5%. Every trigger picks one at random (never
 the same twice in a row). LEVEL follows the circuit's own level curve, DECAY
 (where the voice has one) shortens the hit with a fade below its default,
 pitch and tone knobs are ignored, and a closed hat chokes a cached open hat.
-The hits are stored at 32 kHz, 16-bit (`cache/<id>.wav` + `cache/index.json`):
-21 MB in all, loaded per voice the first time Cached is picked, about 43 MB in
-memory. The dense pattern costs about 5% of a core instead of ~215%.
+The hits are stored at 48 kHz, 16-bit, the rate the circuit runs at
+(`cache/<id>.wav` + `cache/index.json`): 36 MB in all, loaded per voice the
+first time Cached is picked, about 71 MB in memory. The dense pattern costs about 5% of a core instead of ~215%.
 Re-render after a circuit change with `node test/cache-render.mjs [ids]`
 (about 3 minutes for all 16).
 
