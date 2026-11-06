@@ -101,6 +101,18 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
   $('m-g8-gen').addEventListener('click', () => { g8.mode = 'gen'; setSource('perform'); generate(); sendSeq(); g8Send(); g8Draw(); });
 }
 // the side panel: the controls of the sound last put on a lane (or whose name was tapped)
+// (over them, a button for each sound picks which one's controls show; picking doesn't play it)
+const g8Picks = {};
+{
+  const row = document.createElement('div'); row.className = 'm-g8-picks'; row.setAttribute('aria-label', 'sound to edit');
+  for (const id of T8_ORDER) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'm-toggle'; b.textContent = id; b.title = `${T8_NAME[id]}: its controls`;
+    b.addEventListener('click', () => g8Select(id));
+    row.append(b); g8Picks[id] = b;
+  }
+  $('m-g8-side').append(row);
+}
 for (const id of T8_ORDER) t8Card(id, $('m-g8-side'));
 // Autocache: everything plays cached except the sound being edited. Picking a sound on the grid, or moving one of its
 // knobs (here or on the 808 page), plays it on the circuit, so its knobs are heard as they move; moving away (another
@@ -153,7 +165,8 @@ function g8Pick(i) {
 let g8Now = -1;
 function g8Draw() {
   const L = g8Shown(), lanes = g8.mode === 'lanes';
-  [...$('m-g8-side').children].forEach((c, i) => { c.hidden = T8_ORDER[i] !== g8.sel; });
+  [...$('m-g8-side').querySelectorAll(':scope > .m-808-v')].forEach((c, i) => { c.hidden = T8_ORDER[i] !== g8.sel; });
+  for (const id of T8_ORDER) { g8Picks[id].setAttribute('aria-pressed', id === g8.sel); g8Picks[id].classList.toggle('used', L[id].on.some(Boolean)); }
   for (const id of G8_IDS) {
     for (const lab of [g8Labs[id], g8LabsR[id]]) { lab.classList.toggle('used', L[id].on.some(Boolean)); lab.classList.toggle('sel', id === g8.sel); }
     g8Cells[id].forEach((c, s) => {

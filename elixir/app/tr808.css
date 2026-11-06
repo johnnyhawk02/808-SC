@@ -75,7 +75,11 @@
 
 /* the grid page's side panel: the controls of the sound last put on a lane, beside the grid */
 .m-g8-presets, .m-g8-grid, .m-g8-foot { grid-column: 1; }
-.m-g8-side { grid-area: 1 / 2 / 4 / 3; display: grid; min-height: 0; }
+.m-g8-side { grid-area: 1 / 2 / 4 / 3; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 6px; min-height: 0; }
+/* the sound pickers over the controls: two rows of eight; sounds with no steps in the pattern dimmed */
+.m-g8-picks { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; }
+.m .m-g8-picks .m-toggle { min-width: 0; min-height: 26px; padding: 0; font-size: 14px !important; letter-spacing: 0; text-transform: uppercase; opacity: .55; }
+.m .m-g8-picks .m-toggle.used, .m .m-g8-picks .m-toggle[aria-pressed="true"] { opacity: 1; }
 .m-g8-side > [hidden] { display: none; }
 .m-g8-side .m-808-v { grid-template-rows: auto auto minmax(0, 1fr) auto auto auto; }
 .m .m-g8-side .m-808-set .m-knob .m-vtrack { max-height: 90px; }
