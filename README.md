@@ -22,6 +22,7 @@ index.html            test bench: pads, knobs, Circuit / Cached / Synth / 808 sw
                       16-step pattern, scope, DSP load readout
 app.js                UI + audio host
 worklet.js            AudioWorkletProcessor wrapping the kit; reports DSP load
+cache-worker.js       Web Worker behind the Cache button (dsp/cache-build.js)
 dsp/kit.js            both models of all 16 voices, sample-accurate trigger queue,
                       per-voice model switch (setModel / setAllModels), OH choke
 dsp/mna.js            circuit simulator: modified nodal analysis, trapezoidal caps
@@ -246,3 +247,13 @@ The hits are stored at 32 kHz, 16-bit (`cache/<id>.wav` + `cache/index.json`):
 memory. The dense pattern costs about 5% of a core instead of ~215%.
 Re-render after a circuit change with `node test/cache-render.mjs [ids]`
 (about 3 minutes for all 16).
+
+**Cache button.** Each card with knobs other than LEVEL has a Cache button:
+set the knobs (on any model, Circuit is the one to listen to), press Cache,
+and a Web Worker (`cache-worker.js`) runs the same build (`dsp/cache-build.js`)
+at those settings; Cached then plays the new hits, with DECAY shortening from
+the cached setting. It takes ~15 s (BD) to ~80 s (CY) per voice, and several
+voices render in parallel. The hits are kept in the browser's IndexedDB
+(`tr808-cache`) with the knob settings, which the knobs show again after a
+reload; Revert drops them and goes back to the shipped hits and default knobs.
+LEVEL and the clap's SNAP stay live.

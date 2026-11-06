@@ -24,6 +24,7 @@ const INFO = {
   ch: ['Q28–Q31', '6 osc · 50 ms'],
 };
 const KEYS = '1234567890qwerty';
+const LIVE = ['level', 'snap']; // knobs Cached plays live; the rest the Cache button bakes in
 
 const specKit = new Kit(48000, { circuits: false }); // main-thread copy, only for the knob specs
 const spec = specKit.spec();
@@ -114,6 +115,11 @@ for (const [i, v] of spec.entries()) {
       <button type="button" data-m="sample" aria-pressed="${state.models[v.id] === 'sample'}" title="Recordings of a real TR-808 (Michael Fischer, 1994), nearest knob setting">808</button>
     </div>
     <div class="knobs"></div>
+    <div class="cachebar"${bakeable(v) ? '' : ' hidden'}>
+      <button type="button" class="cache-go" title="Render 16 normal + 16 accented hits through the circuit at these knob settings, keep them in this browser and play them as Cached">Cache</button>
+      <span class="cache-status" aria-live="polite"></span>
+      <button type="button" class="cache-revert" hidden title="Forget your cached hits and go back to the shipped ones (default knobs)">Revert</button>
+    </div>
     <div class="pads">
       <button type="button" class="pad" id="hit-${v.id}">Hit</button>
       <button type="button" class="pad acc" id="acc-${v.id}">Accent</button>
@@ -125,11 +131,7 @@ for (const [i, v] of spec.entries()) {
     wrap.className = 'knob'; wrap.htmlFor = id;
     wrap.innerHTML = `<span>${p.name}</span><input type="range" id="${id}" min="0" max="1" step="0.01" value="${v.values[p.id]}"><output>${Math.round(v.values[p.id] * 10)}</output>`;
     const input = wrap.querySelector('input'), out = wrap.querySelector('output');
-    input.addEventListener('input', () => {
-      const value = +input.value;
-      state.values[v.id][p.id] = value; out.textContent = Math.round(value * 10);
-      send({ t: 'set', id: v.id, param: p.id, value });
-    });
+    input.addEventListener('input', () => setKnob(v.id, p.id, +input.value));
     knobs.append(wrap);
   }
   card.querySelector(`#hit-${v.id}`).addEventListener('pointerdown', (e) => { e.preventDefault(); hit(v.id, false); });
@@ -138,7 +140,16 @@ for (const [i, v] of spec.entries()) {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hit(v.id, b.classList.contains('acc')); }
   });
   for (const b of card.querySelectorAll('.model button')) b.addEventListener('click', () => setModel(v.id, b.dataset.m));
+  card.querySelector('.cache-go').addEventListener('click', () => makeCache(v.id));
+  card.querySelector('.cache-revert').addEventListener('click', () => revertCache(v.id));
   grid.append(card);
+}
+function setKnob(id, param, value) {
+  state.values[id][param] = value;
+  const input = document.getElementById(`k-${id}-${param}`);
+  if (input) { input.value = value; input.nextElementSibling.textContent = Math.round(value * 10); }
+  send({ t: 'set', id, param, value });
+  showCache(id);
 }
 // ---------------------------------------------------------------- 808 samples
 // Fetched per voice the first time its 808 button is picked; each recording
@@ -177,16 +188,107 @@ async function loadCached(id) {
   if (!ctx) return; // startAudio() loads it
   if (!cacheSent.has(id)) {
     cacheLoading[id] ??= (async () => {
+      await customReady;
+      if (custom[id]) { const pcm = custom[id].pcm.slice(0); send({ t: 'cache', id, info: custom[id].info, pcm }, [pcm]); cacheSent.add(id); return; }
       cacheIndex ??= fetch(new URL('./cache/index.json', import.meta.url)).then((r) => r.json());
       const info = (await cacheIndex)[id];
       const buf = await (await fetch(new URL(`./cache/${id}.wav`, import.meta.url))).arrayBuffer();
       const pcm = readWav(buf).buffer;
+      if (custom[id]) return; // a Cache press finished meanwhile and sent its own
       send({ t: 'cache', id, info, pcm }, [pcm]);
       cacheSent.add(id);
     })().catch((err) => { console.warn('cache load failed', id, err); delete cacheLoading[id]; });
     await cacheLoading[id];
   }
   if (state.models[id] === 'cached') send({ t: 'model', id, value: 'cached' });
+}
+
+// ---------------------------------------------------------------- Cache button
+// Sculpt a voice on its knobs, press Cache: a Web Worker runs the circuit at
+// those settings (dsp/cache-build.js, the same code that made cache/) and
+// the hits replace the shipped ones for Cached. They're kept in this
+// browser's IndexedDB, so they survive a reload; Revert brings back the
+// shipped hits and the default knobs. LEVEL (and the clap's SNAP) stay live.
+function bakeable(v) { return v.params.some((p) => !LIVE.includes(p.id)); }
+const custom = {};   // id -> { info, pcm: ArrayBuffer (16-bit), date }
+const jobs = {};     // id -> { done, total } while rendering
+const DB = 'tr808-cache', STORE = 'hits';
+function db() {
+  return new Promise((ok, fail) => {
+    const r = indexedDB.open(DB, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore(STORE);
+    r.onsuccess = () => ok(r.result); r.onerror = () => fail(r.error);
+  });
+}
+async function dbDo(mode, fn) {
+  const d = await db();
+  return new Promise((ok, fail) => {
+    const tx = d.transaction(STORE, mode), req = fn(tx.objectStore(STORE));
+    tx.oncomplete = () => { d.close(); ok(req?.result); }; tx.onerror = tx.onabort = () => { d.close(); fail(tx.error); };
+  });
+}
+const customReady = (async () => {
+  try {
+    const keys = await dbDo('readonly', (st) => st.getAllKeys());
+    const vals = await dbDo('readonly', (st) => st.getAll());
+    keys.forEach((id, i) => {
+      if (!state.values[id] || !vals[i]?.info) return;
+      custom[id] = vals[i];
+      // the knobs show what the cached hits were rendered at
+      for (const [p, x] of Object.entries(vals[i].info.knobs ?? {})) setKnob(id, p, x);
+    });
+  } catch (err) { console.warn('no saved caches (IndexedDB unavailable)', err); }
+  for (const v of spec) showCache(v.id);
+})();
+const knobLabel = (id, knobs) => spec.find((v) => v.id === id).params
+  .filter((p) => knobs?.[p.id] !== undefined).map((p) => `${p.name} ${Math.round(knobs[p.id] * 10)}`).join(' · ');
+function showCache(id) {
+  const card = document.getElementById(`card-${id}`);
+  if (!card) return;
+  const st = card.querySelector('.cache-status'), go = card.querySelector('.cache-go'), rv = card.querySelector('.cache-revert');
+  const j = jobs[id], c = custom[id];
+  go.disabled = !!j; rv.hidden = !c || !!j;
+  card.classList.toggle('custom', !!c);
+  if (j) { st.textContent = j.error ? `Failed: ${j.error}` : j.total ? `Rendering ${Math.round(100 * j.done / j.total)}%…` : 'Starting…'; return; }
+  if (!c) { st.textContent = 'Shipped hits'; st.title = 'Cached plays hits rendered at the default knobs'; return; }
+  // the knobs moved since: say so, a new Cache press would pick them up
+  const k = c.info.knobs ?? {}, moved = Object.keys(k).some((p) => Math.abs((state.values[id][p] ?? k[p]) - k[p]) > 1e-9);
+  st.textContent = moved ? 'Yours (knobs moved)' : 'Yours';
+  st.title = `Cached plays your hits: ${knobLabel(id, k)}`;
+}
+// one worker per voice being cached, so several voices render on several cores
+function makeCache(id) {
+  if (jobs[id] && !jobs[id].error) return;
+  const j = (jobs[id] = { done: 0, total: 0 }); showCache(id);
+  const w = new Worker(new URL('./cache-worker.js', import.meta.url), { type: 'module' });
+  const fail = (msg) => {
+    w.terminate(); j.error = msg; showCache(id);
+    setTimeout(() => { if (jobs[id] === j) { delete jobs[id]; showCache(id); } }, 6000);
+  };
+  w.onerror = (e) => { e.preventDefault?.(); fail(e.message || 'worker failed'); };
+  w.onmessage = async ({ data: m }) => {
+    if (m.t === 'progress') { j.done = m.done; j.total = m.total; showCache(id); return; }
+    if (m.t === 'error') { fail(m.message); return; }
+    w.terminate(); delete jobs[id];
+    const entry = { info: m.info, pcm: m.pcm, date: Date.now() };
+    custom[id] = entry;
+    dbDo('readwrite', (st) => st.put(entry, id)).catch((err) => console.warn('could not save cache', err));
+    await cacheLoading[id]; // a shipped load in flight must not land after ours
+    cacheSent.delete(id); delete cacheLoading[id];
+    showCache(id);
+    setModel(id, 'cached');
+  };
+  w.postMessage({ id, values: { ...state.values[id] } });
+}
+async function revertCache(id) {
+  if (!custom[id]) return;
+  delete custom[id];
+  dbDo('readwrite', (st) => st.delete(id)).catch((err) => console.warn('could not delete cache', err));
+  await cacheLoading[id];
+  cacheSent.delete(id); delete cacheLoading[id];
+  for (const p of spec.find((v) => v.id === id).params) if (!LIVE.includes(p.id)) setKnob(id, p.id, p.def);
+  showCache(id);
+  if (state.models[id] === 'cached') loadCached(id);
 }
 
 // rendering load reported by the worklet (fraction of the real-time budget)
