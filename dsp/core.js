@@ -203,6 +203,19 @@ function blep(t, dt) {
   return 0;
 }
 
+// ---------------------------------------------------------------------------
+// Extra knobs beyond the original panel. Each one is neutral at its default,
+// so a voice at defaults still sounds like a stock 808.
+//   PITCH: +-12 semitones around the stock tuning (resonator / oscillator
+//          capacitors in the circuit models)
+//   DECAY: x1/3 .. x3 the stock ring time (envelope capacitors or the
+//          resonator's damping resistors), only on voices whose panel had none
+export const PITCH_SEMIS = 12, DECAY_SPAN = 3;
+export const PITCH = { id: 'pitch', name: 'Pitch', def: 0.5, fmt: (v) => { const s = Math.round((v - 0.5) * 2 * PITCH_SEMIS); return s > 0 ? `+${s}` : `${s}`; } };
+export const DECAY = { id: 'decay', name: 'Decay', def: 0.5, fmt: (v) => `x${decayMul(v).toFixed(v < 0.5 ? 2 : 1)}` };
+export const pitchMul = (v) => 2 ** (((clamp(v ?? 0.5, 0, 1) - 0.5) * 2 * PITCH_SEMIS) / 12);
+export const decayMul = (v) => DECAY_SPAN ** ((clamp(v ?? 0.5, 0, 1) - 0.5) * 2);
+
 // Small helper for voices: each exposes `params` (spec list) and `p` values.
 export class Voice {
   constructor(sr, spec) {
@@ -213,6 +226,15 @@ export class Voice {
     this.trimN = 1; this.trimA = 1; // output calibration, see dsp/calibration.js
   }
   set(id, v) { this.p[id] = v; this.onParam?.(id, v); }
+  // Metal voices (this.metal = the shared oscillator bank): PITCH off centre
+  // gives the voice a private, retuned bank so the others keep stock tuning.
+  pitchBank(m) {
+    if (Math.abs(m - 1) < 1e-6) { this.own = null; return; }
+    if (!this.own) this.own = new this.metal.constructor(this.sr);
+    this.own.setPitch(m);
+  }
+  // the bank to read for this block (renders the private one)
+  bank(n) { if (this.own) { this.own.render(n); return this.own; } return this.metal; }
   // LEVEL knob gain, following the circuit's pot taper (dsp/calibration.js)
   levelGain() { return levelLaw(this.levelPts, this.p.level); }
   // accent: 0 = normal hit, 1 = full accent (ACCENT knob fully up).

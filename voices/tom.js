@@ -11,8 +11,9 @@
 //    in VR11)
 //  * toms only: a burst of pink noise through the Q52 VCA and the R222/C75
 //    low-pass, with its own envelope (C72 via D55, discharging into R218)
-import { Voice, BridgedT, Pulse, OnePole, Biquad, Noise, map3, qFromDecay, rail, decayCoef, lerp, clamp } from '../dsp/core.js';
+import { Voice, BridgedT, Pulse, OnePole, Biquad, Noise, map3, qFromDecay, rail, decayCoef, lerp, clamp, PITCH, DECAY, pitchMul } from '../dsp/core.js';
 import { busVoltage } from '../dsp/mna.js';
+import { tomDecay } from './tom-circuit.js';
 
 const NAMES = { lt: 'Low Tom', mt: 'Mid Tom', ht: 'Hi Tom', lc: 'Low Conga', mc: 'Mid Conga', hc: 'Hi Conga' };
 
@@ -34,6 +35,7 @@ class TomConga extends Voice {
     super(sr, [
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'tuning', name: 'Tuning', def: 0.5 },
+      PITCH, DECAY,
     ]);
     this.key = key; const F = FIT[key];
     this.vppNormal = 3; this.vppAccent = 10;
@@ -45,7 +47,7 @@ class TomConga extends Voice {
       this.white = new Noise(key.charCodeAt(0) * 97);
       this.pinkLp = new Biquad(sr, 'lp', 271, 0.74);
       this.nLp = new OnePole(sr, F.nLp, 'lp');
-      this.nE = 0; this.nK = decayCoef(F.nDec, sr);
+      this.nE = 0;
     }
     this.onParam();
   }
@@ -53,7 +55,11 @@ class TomConga extends Voice {
     const F = FIT[this.key], t = clamp(this.p.tuning, 0, 1);
     this.f = map3(t, F.f0, F.f5, F.f1);
     this.g = t < 0.5 ? lerp(F.g0, 1, t * 2) : lerp(1, F.g1, t * 2 - 1);
-    this.res.set(this.f, qFromDecay(this.f, F.t10));
+    // PITCH moves the ring at the same Q; DECAY multiplies Q (and the noise
+    // envelope of the toms) by the ring-time ratio the circuit's R230 reaches
+    const m = pitchMul(this.p.pitch), [d] = tomDecay(this.key, this.p.decay);
+    this.res.set(this.f * m, qFromDecay(this.f, F.t10) * d);
+    if (F.nK != null) this.nK = decayCoef(F.nDec * d, this.sr);
   }
   trigger(accent = 0) {
     const F = FIT[this.key], vb = busVoltage(accent) * lerp(this.trimN, this.trimA, clamp(accent, 0, 1));

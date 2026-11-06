@@ -32,10 +32,11 @@
 // inside the 2SK30A's -0.4..-5 V spread, meets the table's 25 ms (-1 V gave
 // 42 ms). On-resistance |Vp| / (2 Idss), Idss 2 mA (Y rank) = 875 R.
 import { CircuitVoice, aTaper } from './circuit-voice.js';
+import { PITCH, DECAY, pitchMul, decayMul } from '../dsp/core.js';
 
 class RSCLCircuit extends CircuitVoice {
   constructor(sr, shared, mode) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }], shared);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY], shared);
     this.mode = mode;
     const a = (this.s1 = this.stage(['TR', 'N307', 'N301', 'X21', 'P21', 'M21', 'O21',
       'N306', 'N310', 'X20', 'P20', 'M20', 'O20a', 'I20b', 'O20b', 'B61', 'G61', 'M15']));
@@ -44,25 +45,28 @@ class RSCLCircuit extends CircuitVoice {
     a.C('TR', 'N307', 0.01e-6); a.R('N307', 'gnd', 100e3);      // C111, R307
     a.D('N307', 'N301'); a.R('N301', 'X21', 47e3); a.R('X21', 'gnd', 10e3); // D62, R301, R302
     a.OpAmp('X21', 'P21', 'O21');
-    a.C('P21', 'M21', 0.0047e-6); a.C('M21', 'O21', 0.0047e-6); // C116, C115
+    // PITCH scales the bridged-T capacitors by 1/m (C115-C119); DECAY scales
+    // the timing capacitors: C113 (Q61 mute timer) and, for RS, C24 (envelope)
+    const pt = (el) => this.part(a, el, 'pitch');
+    pt(a.C('P21', 'M21', 0.0047e-6)); pt(a.C('M21', 'O21', 0.0047e-6)); // C116, C115
     a.R('M21', 'gnd', 5.6e3); a.R('P21', 'O21', 1e6);           // R315, R316
     a.C('TR', 'N306', 0.001e-6); a.R('N306', 'gnd', 22e3);      // C114, R306
     a.D('N306', 'N310'); a.R('N310', 'X20', 33e3); a.R('X20', 'gnd', 10e3); // D64, R310, R311
     a.OpAmp('X20', 'P20', 'O20a');
-    a.C('P20', 'M20', 0.0022e-6); a.C('M20', 'O20a', 0.0022e-6); // C119, C117
+    pt(a.C('P20', 'M20', 0.0022e-6)); pt(a.C('M20', 'O20a', 0.0022e-6)); // C119, C117
     a.R('M20', 'gnd', 1e3); a.R('P20', 'O20a', 820e3);          // R312, R308
-    if (mode === 'rs') a.C('M20', 'O20a', 0.0022e-6);           // SW11: C118
+    if (mode === 'rs') pt(a.C('M20', 'O20a', 0.0022e-6));       // SW11: C118
     else a.R('M20', 'O20b', 390e3);                             // SW11: R313
     a.R('O20a', 'I20b', 33e3); a.R('I20b', 'O20b', 33e3); a.OpAmp('gnd', 'I20b', 'O20b');
     a.C('TR', 'B61', 0.022e-6); a.Rsrc('B61', 47e3, -15);       // C112, R304
     this.rail(a, 'M15', -15);
     a.NPN('B61', 'G61', 'M15');                                 // Q61
-    a.R('G61', 'gnd', 1e6); a.C('G61', 'gnd', 0.047e-6);        // R305, C113
+    a.R('G61', 'gnd', 1e6); this.part(a, a.C('G61', 'gnd', 0.047e-6), 'env'); // R305, C113
     let src;
     if (mode === 'rs') {
       const b = (this.s2 = this.stage(['TRc', 'N61', 'E24', 'N108', 'K62', 'B62', 'N317', 'N322', 'B63', 'E63', 'P15']));
       this.link(b, 'TRc', 1, a, 'TR');
-      b.D('TRc', 'N61'); b.R('N61', 'E24', 1e3); b.C('E24', 'gnd', 0.47e-6);   // D61, R107, C24
+      b.D('TRc', 'N61'); b.R('N61', 'E24', 1e3); this.part(b, b.C('E24', 'gnd', 0.47e-6), 'env'); // D61, R107, C24
       b.R('E24', 'N108', 10e3); b.D('N108', 'K62');                            // R108, D63
       b.NPN('B62', 'K62', 'gnd');                                              // Q62
       b.Rsrc('B62', 2.2e6, 15); b.C('B62', 'N317', 10e-6);                     // R321, C120
@@ -97,6 +101,7 @@ class RSCLCircuit extends CircuitVoice {
     this.fet.g = (k * k) / 875 + 1e-9;
   }
   onParam() {
+    this.scale('pitch', 1 / pitchMul(this.p.pitch)); this.scale('env', decayMul(this.p.decay));
     if (this.vr16) { this.vr16.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.s3.touch(); }
   }
   output() { return this.s3.v[this.iOut]; }

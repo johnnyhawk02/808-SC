@@ -12,7 +12,7 @@
 //  * VR6 (DECAY) sets the ring time; VR5 (TONE) with R171/C45 is a one-pole
 //    low-pass whose corner is computed from the parts, as in the circuit.
 //  * The trigger edge leaks through C40 into IC12 and gives the click.
-import { Voice, BridgedT, Pulse, OnePole, map3, qFromDecay, rail, clamp, lerp } from '../dsp/core.js';
+import { Voice, BridgedT, Pulse, OnePole, map3, qFromDecay, rail, clamp, lerp, PITCH, pitchMul } from '../dsp/core.js';
 
 export const meta = { id: 'bd', name: 'Bass Drum', short: 'BD' };
 
@@ -36,6 +36,7 @@ export class BD extends Voice {
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'tone', name: 'Tone', def: 0.5 },
       { id: 'decay', name: 'Decay', def: 0.5 },
+      PITCH,
     ]);
     this.vppNormal = 3.5; this.vppAccent = 10;
     this.res = new BridgedT(sr);
@@ -49,7 +50,8 @@ export class BD extends Voice {
   onParam() {
     const F = FIT;
     this.t10 = map3(this.p.decay, F.d0, F.d5, F.d1);
-    this.q = qFromDecay(F.f0, this.t10);
+    this.q = qFromDecay(F.f0, this.t10); // Q, not ring time, stays put under PITCH (as in the circuit)
+    this.f0 = F.f0 * pitchMul(this.p.pitch);
     this.gCoef = Math.exp(-1 / (F.glideK * this.t10 * this.sr));
     // VR5 10k C-taper || R172 10k, in series with R171 220R, into C45 .1u
     const vr5 = 10e3 * (1 - clamp(this.p.tone, 0, 1)) ** 2 + 1;
@@ -61,7 +63,7 @@ export class BD extends Voice {
     this.amp = lerp(F.aN * this.trimN, F.aA * this.trimA, clamp(accent, 0, 1));
     this.t = 0;
     this.g = 1;
-    this.res.set(F.f0 * (1 + F.glide) * F.fast, this.q);
+    this.res.set(this.f0 * (1 + F.glide) * F.fast, this.q);
     this.pulse.fire(this.res.pulseHeight(this.amp * F.kick1, 1e-3), 1e-3);
     this.segN = Math.max(1, Math.round(F.seg * this.sr));
   }
@@ -69,10 +71,10 @@ export class BD extends Voice {
     const F = FIT, sr = this.sr, lvl = this.levelGain(), clickN = sr * 0.001;
     for (let i = 0; i < n; i++) {
       if (this.t === this.segN) {
-        this.res.set(F.f0 * (1 + F.glide * this.g), this.q);
+        this.res.set(this.f0 * (1 + F.glide * this.g), this.q);
         this.pulse.fire(this.res.pulseHeight(this.amp * F.kick2, 1e-3), 1e-3);
       } else if (this.t > this.segN && (this.t & 15) === 0) {
-        this.res.set(F.f0 * (1 + F.glide * this.g), this.q);
+        this.res.set(this.f0 * (1 + F.glide * this.g), this.q);
       }
       this.g *= this.gCoef;
       let y = rail(this.res.tick(this.pulse.tick()));

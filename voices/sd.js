@@ -14,7 +14,7 @@
 //  * the gated white noise goes through the C66/C67 Sallen-Key high-pass
 //    (2.75 kHz, Q 0.73, from the parts) and C69/R205 into the mixer
 //  * IC13a's 220p feedback cap is the final low-pass
-import { Voice, BridgedT, Pulse, Biquad, OnePole, Noise, rail, clamp, decayCoef, lerp } from '../dsp/core.js';
+import { Voice, BridgedT, Pulse, Biquad, OnePole, Noise, rail, clamp, decayCoef, lerp, PITCH, DECAY, pitchMul, decayMul } from '../dsp/core.js';
 import { busVoltage } from '../dsp/mna.js';
 import { SD_REVISION } from './sd-circuit.js';
 
@@ -38,18 +38,19 @@ export class SD extends Voice {
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'tone', name: 'Tone', def: 0.5 },
       { id: 'snappy', name: 'Snappy', def: 0.5 },
+      PITCH, DECAY,
     ]);
     this.vppNormal = 3; this.vppAccent = 10;
     const F = FIT, orig = SD_REVISION === 'original';
-    this.lo = new BridgedT(sr); this.lo.set(orig ? F.fLoO : F.fLo, F.qLo);
-    this.hi = new BridgedT(sr); this.hi.set(orig ? F.fHiO : F.fHi, F.qHi);
+    this.fL = orig ? F.fLoO : F.fLo; this.fH = orig ? F.fHiO : F.fHi;
+    this.lo = new BridgedT(sr); this.hi = new BridgedT(sr);
     this.pLo = new Pulse(sr); this.pHi = new Pulse(sr);
     this.noise = new Noise(808);
     this.nHp = new Biquad(sr, 'hp', 1 / (2 * Math.PI * 1.8e-9 * Math.sqrt(22e3 * 47e3)), 0.5 * Math.sqrt(47e3 / 22e3));
     this.nHp2 = new OnePole(sr, 1 / (2 * Math.PI * 27e3 * 0.01e-6), 'hp'); // C69 / R205
     this.nLp = new OnePole(sr, F.nLp, 'lp');
     this.out = new OnePole(sr, F.outLp, 'lp');
-    this.att = decayCoef(F.nAtt, sr); this.dec = decayCoef(F.nDec, sr);
+    this.att = decayCoef(F.nAtt, sr);
     this.eC = 0; this.eS = 0;
     this.onParam();
   }
@@ -59,6 +60,11 @@ export class SD extends Voice {
     const ra = Math.max(1, t * R), rb = Math.max(1, R - ra); // ra: A1 (low) to wiper
     const load = 100e3 / ((ra * rb) / R + 100e3);
     this.gLo = (rb / R) * load; this.gHi = (ra / R) * load;
+    // PITCH: both drums by m at the same Q; DECAY: Q (drums) and the C51
+    // discharge (snappy) by d, as the circuit's part changes do
+    const F = FIT, m = pitchMul(this.p.pitch), d = decayMul(this.p.decay);
+    this.lo.set(this.fL * m, F.qLo * d); this.hi.set(this.fH * m, F.qHi * d);
+    this.dec = decayCoef(F.nDec * d, this.sr);
   }
   trigger(accent = 0) {
     const F = FIT, vb = busVoltage(accent), a = lerp(this.trimN, this.trimA, clamp(accent, 0, 1));

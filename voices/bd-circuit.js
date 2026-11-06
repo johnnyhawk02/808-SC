@@ -17,7 +17,7 @@
 //    are treated as a unity-gain buffer with a ~2 Hz high-pass.
 //  * Tolerances, temperature and op-amp slew/bandwidth are not modelled.
 import { Circuit, busVoltage, TRIG_WIDTH } from '../dsp/mna.js';
-import { Voice, OnePole, lerp, clamp } from '../dsp/core.js';
+import { Voice, OnePole, lerp, clamp, PITCH, pitchMul } from '../dsp/core.js';
 
 export const meta = { id: 'bd', name: 'Bass Drum (circuit)', short: 'BD' };
 
@@ -31,6 +31,7 @@ export class BDCircuit extends Voice {
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'tone', name: 'Tone', def: 0.5 },
       { id: 'decay', name: 'Decay', def: 0.5 },
+      PITCH,
     ]);
     this.vppNormal = 3.5; this.vppAccent = 10;
     this.oversample = globalThis.BD_OS ?? 1;
@@ -55,8 +56,9 @@ export class BDCircuit extends Voice {
     // IC12a with the bridged-T network
     c.OpAmp('X', 'P', 'Q');
     c.R('P', 'Q', 1e6);                 // R167
-    c.C('P', 'M', 0.015e-6);            // C41
-    c.C('M', 'Q', 0.015e-6);            // C42
+    // C41, C42: PITCH scales both by 1/m, which moves the bridged-T's
+    // f = 1/(2 pi sqrt(R1 R2 C1 C2)) by m and leaves its Q alone
+    this.cT = [c.C('P', 'M', 0.015e-6), c.C('M', 'Q', 0.015e-6)];
     c.R('M', 'K', 6.8e3);               // R166
     c.R('K', 'gnd', 47e3);              // R165
     // IC12b: inverting amp whose gain VR6 sets, fed back through R170
@@ -85,6 +87,7 @@ export class BDCircuit extends Voice {
     // VR5 (C taper) in parallel with R172: more resistance = darker.
     const vr5 = 10e3 * Math.pow(1 - clamp(this.p.tone, 0, 1), 2) + 1;
     this.vr5.g = 1 / ((vr5 * 10e3) / (vr5 + 10e3));
+    for (const cap of this.cT) cap.c = 0.015e-6 / pitchMul(this.p.pitch);
     this.ckt.touch();
   }
   _settle() { this.ckt.settle(2000); }

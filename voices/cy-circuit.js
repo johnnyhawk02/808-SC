@@ -26,6 +26,7 @@
 // parts copy Q16's.
 import { CircuitVoice, aTaper } from './circuit-voice.js';
 import { voicingTrigger } from './cb-circuit.js';
+import { PITCH, pitchMul } from '../dsp/core.js';
 
 function vca(v, c, src, tag, sNode) {
   // swing VCA transistor: base from IC3 via .022u, 1M + 1M bias, 100 R emitter
@@ -43,6 +44,7 @@ export class CYCircuit extends CircuitVoice {
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'tone', name: 'Tone', def: 0.5 },
       { id: 'decay', name: 'Decay', def: 0.5 },
+      PITCH,
     ], shared);
     this.sleepAfter = 0.3;
     // ---- envelopes
@@ -104,6 +106,7 @@ export class CYCircuit extends CircuitVoice {
   }
   triggerVolts(accent) { return voicingTrigger(accent); }
   onParam() {
+    this.pitchMetal(pitchMul(this.p.pitch)); // private six-oscillator bank, retuned
     if (!this.vr6) return;
     this.vr2.g = 1 / (470e3 + 2e6 * this.p.decay);
     // VR4 20k (B), wiper grounded: TONE up = less of the low node shunted

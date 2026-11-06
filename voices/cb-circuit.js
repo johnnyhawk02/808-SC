@@ -15,6 +15,7 @@
 // below). Assumed: a 100k leak on the Q5 collector (only for the solver).
 import { CircuitVoice, aTaper } from './circuit-voice.js';
 import { busVoltage } from '../dsp/mna.js';
+import { PITCH, DECAY, pitchMul, decayMul } from '../dsp/core.js';
 
 // Voicing-board trigger buffer IC2a (schematic p.13): TRIG -> R19 100k -> (+),
 // TRIG -> R18 3.3k -> D1 clamp -> R20 15k -> (+), R21 3.3k to gnd; gain
@@ -35,13 +36,15 @@ export function voicingTrigger(accent) {
 
 export class CBCircuit extends CircuitVoice {
   constructor(sr, shared) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }], shared);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY], shared);
     const a = (this.s1 = this.stage(['T5', 'N122', 'E9', 'N82', 'N3', 'N4', 'N62', 'B15', 'C15', 'E15',
       'N64', 'B14', 'C14', 'E14', 'K30', 'K31', 'A', 'Pm', 'O2']));
     this.addTrigger(a, 'T5');
     a.R('T5', 'gnd', 100e3);
-    a.R('T5', 'N122', 1e3); a.D('N122', 'E9'); a.C('E9', 'gnd', 0.47e-6);   // R122, D2, C9
-    a.R('E9', 'N82', 33e3); a.C('N82', 'gnd', 1e-6);                          // R82, C34
+    // DECAY scales the envelope capacitors C9 and C34; PITCH retunes a
+    // private copy of the two cowbell oscillators (their C5/C6)
+    a.R('T5', 'N122', 1e3); a.D('N122', 'E9'); this.part(a, a.C('E9', 'gnd', 0.47e-6), 'env'); // R122, D2, C9
+    a.R('E9', 'N82', 33e3); this.part(a, a.C('N82', 'gnd', 1e-6), 'env');     // R82, C34
     a.R('E9', 'N3', 100e3); a.R('E9', 'N4', 100e3);                           // R28, R29
     // Q15 (540 Hz) and Q14 (800 Hz)
     this.feed(a, 'N62', 33e3, (i) => this.mc.v[4][i]); a.R('N62', 'gnd', 2.2e3);   // R62, R63
@@ -66,6 +69,7 @@ export class CBCircuit extends CircuitVoice {
   }
   triggerVolts(accent) { return voicingTrigger(accent); }
   onParam() {
+    this.pitchMetal(pitchMul(this.p.pitch), false); this.scale('env', decayMul(this.p.decay));
     if (!this.vrT) return;
     const r = 5e3 * aTaper(this.p.level);
     this.vrT.g = 1 / Math.max(1, 5e3 - r); this.vrB.g = 1 / Math.max(1, r); this.s2.touch();

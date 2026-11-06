@@ -21,6 +21,7 @@
 //   VR8 + C83 33u). C63 also drives the OH choke (R173 330k -> Q23).
 import { CircuitVoice, aTaper } from './circuit-voice.js';
 import { voicingTrigger } from './cb-circuit.js';
+import { PITCH, DECAY, pitchMul, decayMul } from '../dsp/core.js';
 
 function swingHat(v, c, tag) {
   // IC3 high -> .022u -> VCA transistor (1M + 1M bias, 100 R emitter)
@@ -42,6 +43,7 @@ export class OHCircuit extends CircuitVoice {
     super(sr, [
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'decay', name: 'Decay', def: 0.5 },
+      PITCH,
     ], shared);
     this.sleepAfter = 0.3;
     this.chokeFrom = null; // CH circuit voice (wired by the kit)
@@ -81,6 +83,7 @@ export class OHCircuit extends CircuitVoice {
   choke() { if (this.awake) this.chokeHold = Math.round(0.01 * this.sr); }
   post(i, n) { if (this.chokeHold > 0) this.chokeHold -= n; }
   onParam() {
+    this.pitchMetal(pitchMul(this.p.pitch)); // private six-oscillator bank, retuned
     if (!this.vrL) return;
     this.vr3.g = 1 / (100e3 + 2e6 * this.p.decay);
     this.vrL.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level));
@@ -91,13 +94,13 @@ export class OHCircuit extends CircuitVoice {
 
 export class CHCircuit extends CircuitVoice {
   constructor(sr, shared) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }], shared);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY], shared);
     this.e28 = new Float32Array(128);
     const e = (this.s1 = this.stage(['T8', 'B28', 'VC', 'C28', 'E28']));
     this.addTrigger(e, 'T8');
     e.R('T8', 'gnd', 22e3); e.R('T8', 'B28', 33e3);                         // R13, R141
     e.Rsrc('VC', 100, 15); e.C('VC', 'gnd', 47e-6); e.R('VC', 'C28', 470);   // R136, C61, R138
-    e.NPN('B28', 'C28', 'E28'); e.C('E28', 'gnd', 0.47e-6);                 // Q28, C63
+    e.NPN('B28', 'C28', 'E28'); this.part(e, e.C('E28', 'gnd', 0.47e-6), 'env'); // Q28, C63 (DECAY)
     e.R('E28', 'gnd', 330e3);                                               // R173 into Q23 (load)
     const h = (this.s2 = this.stage(['IH', 'BQ', 'CQ', 'EQ', 'Y', 'N72', 'B31', 'E31', 'P15']));
     swingHat(this, h);
@@ -121,6 +124,7 @@ export class CHCircuit extends CircuitVoice {
     if (awake) this.e28[i] = v; else this.e28.fill(v, 0, n);
   }
   onParam() {
+    this.pitchMetal(pitchMul(this.p.pitch)); this.scale('env', decayMul(this.p.decay));
     if (!this.vrL) return;
     this.vrL.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level));
     this.mix.touch();

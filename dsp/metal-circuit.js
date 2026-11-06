@@ -83,6 +83,9 @@ export class MetalCircuit {
     this.iH = c.idx.H; this.iL = c.idx.L;
     this.active = () => true;
   }
+  // Retune: every timing capacitor C1-C6 scaled by 1/m (a private bank for a
+  // voice whose PITCH knob is off centre; the IC3 band-passes stay as built).
+  setPitch(m) { OSC.forEach(([R, C], i) => { this.osc[i].tau = (R * C) / m; }); }
   render(n) {
     if (this.hi.length < n) {
       this.v = OSC.map(() => new Float32Array(n)); this.hi = new Float32Array(n); this.lo = new Float32Array(n);

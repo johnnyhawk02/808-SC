@@ -11,7 +11,7 @@
 //  * the "reverb": Q70 amplifies the same noise under a slower envelope
 //    (C139/C138), with the C146 roll-off on its collector
 //  * a little of the sawtooth itself leaks into the mix as a low thump
-import { Voice, Biquad, OnePole, Noise, rail, decayCoef, lerp, clamp } from '../dsp/core.js';
+import { Voice, Biquad, OnePole, Noise, rail, decayCoef, lerp, clamp, PITCH, DECAY, pitchMul, decayMul } from '../dsp/core.js';
 
 export const meta = { id: 'cp', name: 'Hand Clap', short: 'CP' };
 
@@ -29,7 +29,7 @@ export const FIT = {
 
 export class CP extends Voice {
   constructor(sr) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, { id: 'snap', name: 'Snap', def: 0 }]);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, { id: 'snap', name: 'Snap', def: 0 }, PITCH, DECAY]);
     this.vppNormal = 6; this.vppAccent = 10;
     const F = FIT;
     this.noise = new Noise(1981);
@@ -37,10 +37,17 @@ export class CP extends Voice {
     this.vLp = new OnePole(sr, F.vLp, 'lp');
     this.thHp = new OnePole(sr, 20, 'hp');
     this.fast = decayCoef(F.tTau, sr); this.slow = decayCoef(F.lTau, sr);
-    this.vAk = decayCoef(F.vAtt, sr); this.vDk = decayCoef(F.vDec, sr);
+    this.vAk = decayCoef(F.vAtt, sr);
     this.toothN = Math.max(1, Math.round(F.tooth * sr)); this.winN = Math.round(F.win * sr);
     this.ek = Math.exp(F.expK) - 1;
     this.saw = 0; this.t = 1e9; this.a = 0; this.vC = 0; this.vS = 0;
+    this.onParam();
+  }
+  onParam() {
+    // PITCH: the noise band-pass by m; DECAY: the reverb tail (C139) by d
+    const F = FIT;
+    this.bp.set(F.bpF * pitchMul(this.p.pitch), F.bpQ);
+    this.vDk = decayCoef(F.vDec * decayMul(this.p.decay), this.sr);
   }
   trigger(accent = 0) {
     this.a = lerp(this.trimN, this.trimA, clamp(accent, 0, 1));

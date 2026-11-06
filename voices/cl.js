@@ -6,7 +6,7 @@
 // Q74 FET mute closing as Q61's timer (C113 / R305) runs out. Q74's
 // on-resistance leaves a faint residue of the ring under the mute, and the
 // FET's gate swing leaks through as a soft thump as it closes.
-import { Voice, BridgedT, Pulse, OnePole, rail, decayCoef, qFromDecay, lerp, clamp } from '../dsp/core.js';
+import { Voice, BridgedT, Pulse, OnePole, rail, decayCoef, qFromDecay, lerp, clamp, PITCH, DECAY, pitchMul, decayMul } from '../dsp/core.js';
 import { busVoltage } from '../dsp/mna.js';
 
 export const meta = { id: 'cl', name: 'Claves', short: 'CL' };
@@ -21,13 +21,21 @@ export const FIT = {
 
 export class CL extends Voice {
   constructor(sr) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }]);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY]);
     this.vppNormal = 2.5; this.vppAccent = 8;
     const F = FIT;
-    this.res = new BridgedT(sr); this.res.set(F.f, qFromDecay(F.f, F.ring));
+    this.res = new BridgedT(sr);
     this.pulse = new Pulse(sr);
     this.th = new OnePole(sr, 1 / (2 * Math.PI * F.thW), 'lp'); this.thN = Math.round(F.thW * sr); this.vb = 0;
-    this.mK = decayCoef(F.muteTau, sr); this.m = 0; this.t = 1e9; this.muteN = Math.round(F.mute * sr);
+    this.m = 0; this.t = 1e9;
+    this.onParam();
+  }
+  onParam() {
+    // PITCH: the resonator by m at the same Q; DECAY: the Q61 mute timer
+    // (C113), which is what ends the claves
+    const F = FIT, sr = this.sr, m = pitchMul(this.p.pitch), d = decayMul(this.p.decay);
+    this.res.set(F.f * m, qFromDecay(F.f, F.ring));
+    this.mK = decayCoef(F.muteTau * d, sr); this.muteN = Math.round(F.mute * d * sr);
   }
   trigger(accent = 0) {
     const F = FIT, vb = busVoltage(accent) * lerp(this.trimN, this.trimA, clamp(accent, 0, 1));

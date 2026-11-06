@@ -26,6 +26,9 @@ export class MetalBank {
     this.cbLo = new Float32Array(0);
     this.cbHi = new Float32Array(0);
   }
+  // Retune every oscillator by a factor (a private bank for a voice whose
+  // PITCH knob is off centre; the shared bank stays at the stock tuning).
+  setPitch(m) { METAL_OSC.forEach((o, i) => this.osc[i].setFreq(o.f * m)); }
   // Render one block: the 6-oscillator mix (each through 120k into a 1k node)
   // plus the two cowbell oscillators individually.
   render(n) {

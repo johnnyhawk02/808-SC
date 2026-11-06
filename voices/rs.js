@@ -9,7 +9,7 @@
 //    collector is chopped by the tones, giving the woody harmonics
 //  * the C121/C122 Sallen-Key high-pass around Q63 (590 Hz, Q 2.9, from the
 //    parts) and finally the Q74 mute, which Q61 releases ~10 ms after the hit
-import { Voice, BridgedT, Pulse, Biquad, swingVCA, rail, decayCoef, lerp, clamp } from '../dsp/core.js';
+import { Voice, BridgedT, Pulse, Biquad, swingVCA, rail, decayCoef, lerp, clamp, PITCH, DECAY, pitchMul, decayMul } from '../dsp/core.js';
 import { busVoltage } from '../dsp/mna.js';
 
 export const meta = { id: 'rs', name: 'Rim Shot', short: 'RS' };
@@ -26,15 +26,22 @@ export const FIT = {
 
 export class RS extends Voice {
   constructor(sr) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }]);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY]);
     this.vppNormal = 3; this.vppAccent = 10;
     const F = FIT;
-    this.hi = new BridgedT(sr); this.hi.set(F.fH, F.qH);
-    this.lo = new BridgedT(sr); this.lo.set(F.fL, F.qL);
+    this.hi = new BridgedT(sr); this.lo = new BridgedT(sr);
     this.pHi = new Pulse(sr); this.pLo = new Pulse(sr);
     this.hp = new Biquad(sr, 'hp', 1 / (2 * Math.PI * 4.7e-9 * Math.sqrt(10e3 * 330e3)), 0.5 * Math.sqrt(330e3 / 10e3));
-    this.eK = decayCoef(F.eTau, sr); this.mK = decayCoef(F.muteTau, sr);
-    this.e = 0; this.m = 0; this.t = 1e9; this.muteN = Math.round(F.mute * sr);
+    this.e = 0; this.m = 0; this.t = 1e9;
+    this.onParam();
+  }
+  onParam() {
+    // PITCH: both resonators by m; DECAY: the C24 envelope and the Q61 mute
+    // timer (C113) by d
+    const F = FIT, sr = this.sr, m = pitchMul(this.p.pitch), d = decayMul(this.p.decay);
+    this.hi.set(F.fH * m, F.qH); this.lo.set(F.fL * m, F.qL);
+    this.eK = decayCoef(F.eTau * d, sr); this.mK = decayCoef(F.muteTau * d, sr);
+    this.muteN = Math.round(F.mute * d * sr);
   }
   trigger(accent = 0) {
     const F = FIT, vb = busVoltage(accent) * lerp(this.trimN, this.trimA, clamp(accent, 0, 1));
