@@ -13,7 +13,7 @@
 //    low-pass, with its own envelope (C72 via D55, discharging into R218)
 import { Voice, BridgedT, Pulse, OnePole, Biquad, Noise, map3, qFromDecay, rail, decayCoef, lerp, clamp, PITCH, DECAY, pitchMul } from '../dsp/core.js';
 import { busVoltage } from '../dsp/mna.js';
-import { tomDecay } from './tom-circuit.js';
+import { tomDecay, TOM_EXTRA } from './tom-circuit.js';
 
 const NAMES = { lt: 'Low Tom', mt: 'Mid Tom', ht: 'Hi Tom', lc: 'Low Conga', mc: 'Mid Conga', hc: 'Hi Conga' };
 
@@ -35,7 +35,7 @@ class TomConga extends Voice {
     super(sr, [
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'tuning', name: 'Tuning', def: 0.5 },
-      PITCH, DECAY,
+      PITCH, DECAY, ...(FIT[key].nK != null ? TOM_EXTRA : []),
     ]);
     this.key = key; const F = FIT[key];
     this.vppNormal = 3; this.vppAccent = 10;
@@ -65,7 +65,7 @@ class TomConga extends Voice {
     const F = FIT[this.key], vb = busVoltage(accent) * lerp(this.trimN, this.trimA, clamp(accent, 0, 1));
     this.pulse.fire(this.res.pulseHeight(vb * F.k * this.g, 1e-3), 1e-3);
     this.sw = F.sw;
-    if (this.white) this.nE = vb * F.nK;
+    if (this.white) { const v = clamp(this.p.noise ?? 0.5, 0, 1); this.nE = vb * F.nK * (v < 0.5 ? 2 * v : 3 ** (2 * v - 1)); } // NOISE: R232
   }
   render(out, n) {
     const lvl = this.levelGain(), swK = this.swK;

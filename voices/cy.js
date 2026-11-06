@@ -11,7 +11,8 @@
 //    so the hit swells in over a few ms
 //  * the IC5 high-passes on the high side and the Q25 high-pass on the low
 //    side; VR4 (TONE) cross-fades the high and low sides into IC6
-import { Voice, BridgedT, Biquad, OnePole, swingVCA, map3, rail, decayCoef, lerp, clamp, PITCH, pitchMul } from '../dsp/core.js';
+import { Voice, BridgedT, Biquad, OnePole, swingVCA, map3, rail, decayCoef, lerp, clamp, PITCH, pitchMul, spreadExp } from '../dsp/core.js';
+import { CY_EXTRA } from './cy-circuit.js';
 import { voicingTrigger } from './cb-circuit.js';
 
 export const meta = { id: 'cy', name: 'Cymbal', short: 'CY' };
@@ -35,7 +36,7 @@ export class CY extends Voice {
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'tone', name: 'Tone', def: 0.5 },
       { id: 'decay', name: 'Decay', def: 0.5 },
-      PITCH,
+      PITCH, ...CY_EXTRA,
     ]);
     this.metal = metal;
     this.vppNormal = 3.5; this.vppAccent = 7;
@@ -57,7 +58,7 @@ export class CY extends Voice {
     this.kB = decayCoef(dB, this.sr);
     this.kL = decayCoef(F.dL * dB / F.d5, this.sr); // Q18 hangs off the same Q20 tail
     this.gHi = lerp(F.hi0, F.hi1, t); this.gLo = lerp(F.lo0, F.lo1, t);
-    this.pitchBank(pitchMul(this.p.pitch)); // private six oscillators, retuned
+    this.pitchBank(pitchMul(this.p.pitch), spreadExp(this.p.spread)); // private six oscillators, retuned
   }
   trigger(accent = 0) {
     const F = FIT, v = voicingTrigger(accent) * lerp(this.trimN, this.trimA, clamp(accent, 0, 1));

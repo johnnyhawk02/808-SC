@@ -2,7 +2,7 @@
 // board (HD14584 / IC1, schematic p.13). CB uses two of them; CY, OH and CH
 // use the sum of all six. They run continuously, so the phase relationship
 // differs on every hit, exactly like the hardware.
-import { SchmittOsc } from './core.js';
+import { SchmittOsc, spreadFactors } from './core.js';
 
 // Period of an RC Schmitt oscillator is roughly K*R*C. K is calibrated so the
 // cowbell pair lands on the manual's trimmed values (1.85 ms / 1.25 ms).
@@ -28,7 +28,11 @@ export class MetalBank {
   }
   // Retune every oscillator by a factor (a private bank for a voice whose
   // PITCH knob is off centre; the shared bank stays at the stock tuning).
-  setPitch(m) { METAL_OSC.forEach((o, i) => this.osc[i].setFreq(o.f * m)); }
+  // spread (and idx, which oscillators it applies to) see spreadFactors
+  setPitch(m, spread = 1, idx) {
+    const k = spreadFactors(METAL_OSC.map((o) => o.f), spread, idx);
+    METAL_OSC.forEach((o, i) => this.osc[i].setFreq(o.f * m * k[i]));
+  }
   // Render one block: the 6-oscillator mix (each through 120k into a 1k node)
   // plus the two cowbell oscillators individually.
   render(n) {

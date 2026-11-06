@@ -7,7 +7,8 @@
 // on and off by its square (a unipolar pulse train, not a +-1 square). The
 // envelope is C9 with R82/C34 as a second, slower load: a fast drop then a
 // long tail. After IC2b, C76/R117 high-pass the output into IC6.
-import { Voice, Biquad, OnePole, rail, decayCoef, lerp, clamp, PITCH, DECAY, pitchMul, decayMul } from '../dsp/core.js';
+import { Voice, Biquad, OnePole, rail, decayCoef, lerp, clamp, PITCH, DECAY, pitchMul, decayMul, spreadExp, spanMul } from '../dsp/core.js';
+import { CB_EXTRA } from './cb-circuit.js';
 import { voicingTrigger } from './cb-circuit.js';
 
 export const meta = { id: 'cb', name: 'Cowbell', short: 'CB' };
@@ -24,7 +25,7 @@ export const FIT = {
 
 export class CB extends Voice {
   constructor(sr, metal) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY]);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY, ...CB_EXTRA]);
     this.metal = metal;
     this.vppNormal = 3.5; this.vppAccent = 12;
     const F = FIT;
@@ -38,7 +39,8 @@ export class CB extends Voice {
     // PITCH: a private pair of oscillators retuned by m (TM1/TM2 territory);
     // DECAY: both envelope capacitors (C9, C34) by d
     const F = FIT, d = decayMul(this.p.decay);
-    this.pitchBank(pitchMul(this.p.pitch));
+    this.pitchBank(pitchMul(this.p.pitch), spreadExp(this.p.detune), [4, 5]);
+    this.bp.set(F.bpF, F.bpQ * spanMul(this.p.ring, 3));
     this.kF = decayCoef(F.fast * d, this.sr); this.kS = decayCoef(F.slow * d, this.sr);
   }
   trigger(accent = 0) {

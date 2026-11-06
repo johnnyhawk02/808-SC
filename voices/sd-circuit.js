@@ -19,7 +19,12 @@
 // The stage-1 -> stage-2 cut is the VR9 wiper, passed as its Thevenin
 // equivalent (TS is driven from 100 R during the hit).
 import { CircuitVoice, Pot, aTaper } from './circuit-voice.js';
-import { PITCH, DECAY, pitchMul, decayMul } from '../dsp/core.js';
+import { PITCH, DECAY, pitchMul, decayMul, knob, spanMul } from '../dsp/core.js';
+
+// extra knobs: WIRES is the snare noise's Sallen-Key high-pass (C66/C67
+// scaled by 1/m, +-1 octave: brighter or darker wires); SNAP DEC is C51, the
+// snappy envelope (x1/3 .. x3). DECAY is the drum body only.
+export const SD_EXTRA = [knob('wires', 'Wires'), knob('snapdec', 'Snap dec')];
 
 // The schematic's "PORTION CHANGED" box (p.9): later boards use C58 .056u,
 // C61 .015u, R191 10k and R200 shorted. The manual's voice-check table
@@ -39,7 +44,7 @@ export class SDCircuit extends CircuitVoice {
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'tone', name: 'Tone', def: 0.5 },
       { id: 'snappy', name: 'Snappy', def: 0.5 },
-      PITCH, DECAY,
+      PITCH, DECAY, ...SD_EXTRA,
     ], shared);
     // ---- stage 1: drum
     const P = SD_PARTS[SD_REVISION];
@@ -67,7 +72,7 @@ export class SDCircuit extends CircuitVoice {
     b.Rsrc('VC', 100, 15); b.C('VC', 'gnd', 47e-6);           // R193, C55
     b.R('C47', 'VC', 330); b.NPN('B47', 'C47', 'E47');       // R187, Q47
     this.rail(b, 'P15', 15);
-    this.part(b, b.C('E47', 'gnd', 0.47e-6), 'env');          // C51 (DECAY scales it)
+    this.part(b, b.C('E47', 'gnd', 0.47e-6), 'env');          // C51 (SNAP DEC scales it)
     b.R('E47', 'N52', 15e3); b.C('N52', 'gnd', 0.1e-6);       // R184, C52
     b.R('N52', 'NE', 15e3); b.C('NE', 'gnd', 0.001e-6);       // R185, C53
     b.D('NE', 'C48');                                         // D54
@@ -76,7 +81,7 @@ export class SDCircuit extends CircuitVoice {
     b.C('W', 'B48', 0.022e-6); b.Rsrc('B48', 2.2e6, 15);      // C56, R194
     b.NPN('B48', 'C48', 'E48');                               // Q48
     b.R('E48', 'gnd', 100); b.C('C48', 'gnd', 0.0027e-6);     // R188, C54 (collector to gnd)
-    b.C('NE', 'F1', 0.0018e-6); b.C('F1', 'B49', 0.0018e-6);  // C66, C67
+    this.part(b, b.C('NE', 'F1', 0.0018e-6), 'wires'); this.part(b, b.C('F1', 'B49', 0.0018e-6), 'wires'); // C66, C67
     b.R('B49', 'gnd', 47e3); b.R('F1', 'E49', 22e3);          // R202, R201
     b.NPN('B49', 'P15', 'E49');                               // Q49 follower
     b.Rsrc('E49', 22e3, -15);                                 // R203
@@ -101,7 +106,8 @@ export class SDCircuit extends CircuitVoice {
     if (this.wiper) { this.wiper.g = 1 / (33e3 + (lo * hi) / 11e3); this.s2.touch(); }
     this.tone?.set(1 - this.p.tone);
     const m = pitchMul(this.p.pitch), d = decayMul(this.p.decay);
-    this.scale('pitch', 1 / m); this.scale('qUp', d); this.scale('qDn', 1 / d); this.scale('env', d);
+    this.scale('pitch', 1 / m); this.scale('qUp', d); this.scale('qDn', 1 / d);
+    this.scale('env', spanMul(this.p.snapdec, 3)); this.scale('wires', 1 / spanMul(this.p.wires, 2));
     this.scale('inDiv', 1 / d);
     if (this.vr7) { this.vr7.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.s3.touch(); }
   }

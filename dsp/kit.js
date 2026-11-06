@@ -2,6 +2,7 @@
 // accurate trigger queue and the master bus. Host-agnostic (worklet,
 // ScriptProcessor or Node).
 import { MetalBank } from './metal.js';
+import { KNOB_TRIM } from './knob-trim.js';
 import { CALIBRATION, LEVEL } from './calibration.js';
 import { SampleVoice } from './sampler.js';
 import { BD } from '../voices/bd.js';
@@ -62,6 +63,7 @@ export class Kit {
       const c = CALIBRATION[id];
       if (c) { v.trimN = c[0]; v.trimA = c[1]; }
       v.levelPts = LEVEL[id];
+      v.knobTrim = KNOB_TRIM[id];
     }
     // Every voice exists twice: the behavioural model above and the
     // component-level circuit simulation. `model[id]` picks which one plays.

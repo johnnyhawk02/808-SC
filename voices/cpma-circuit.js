@@ -55,7 +55,11 @@
 // what the recording asks for, not readings.
 // The BA662's bias pin sits two diodes above -15 V.
 import { CircuitVoice, aTaper } from './circuit-voice.js';
-import { PITCH, DECAY, pitchMul, decayMul } from '../dsp/core.js';
+import { PITCH, DECAY, pitchMul, decayMul, knob, spanMul } from '../dsp/core.js';
+
+// extra knob, CP: SPACING is R365, which charges the C144 sawtooth, so it
+// sets the time between the claps (x1/2 .. x2)
+export const CP_EXTRA = [knob('spacing', 'Spacing')];
 
 const VT = 0.02585;
 
@@ -71,7 +75,7 @@ function mixer(v, m, level) {
 
 export class CPCircuit extends CircuitVoice {
   constructor(sr, shared) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, { id: 'snap', name: 'Snap', def: 0 }, PITCH, DECAY], shared);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, { id: 'snap', name: 'Snap', def: 0 }, PITCH, DECAY, ...CP_EXTRA], shared);
     this.accGain = 1;
     // C.P. OFFSET trimmer TM3 (see CP_PARTS)
     this.tm3 = CP_PARTS.TM3;
@@ -98,7 +102,7 @@ export class CPCircuit extends CircuitVoice {
     this.rail(c, 'M15', -15);
     c.R('OC', 'gnd', 1e6); c.C('OC', 'gnd', CP_PARTS.C140);           // R350, C140
     c.R('OB', 'Dm', 2.7e3); c.R('Dm', 'gnd', 5.6e3);             // R355, R354
-    c.R('OA', 'gnd', 82e3); c.D('OA', 'SAW');                    // R365, D71
+    this.part(c, c.R('OA', 'gnd', 82e3), 'spacing'); c.D('OA', 'SAW'); // R365, D71
     c.C('SAW', 'gnd', CP_PARTS.C144);                                  // C144
     c.R('SAW', 'Dp', 1e6); c.C('OD', 'Dp', 220e-12);             // R356, C142
     c.R('OD', 'gnd', 10e3); c.R('OD', 'B73', 68e3);              // R359, R358
@@ -152,6 +156,7 @@ export class CPCircuit extends CircuitVoice {
     // 0 = as built, 1 = the claps alone
     if (this.r376) { this.r376.g = Math.max(1e-12, 1 - this.p.snap) / 47e3; this.mix.touch(); }
     this.scale('pitch', 1 / pitchMul(this.p.pitch)); this.scale('env', decayMul(this.p.decay));
+    this.scale('spacing', spanMul(this.p.spacing, 2));
     if (this.tm) { this.tm.v = -15 * this.tm3; }
     if (this.vr17) { this.vr17.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.mix.touch(); }
   }

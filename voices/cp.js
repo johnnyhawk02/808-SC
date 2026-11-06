@@ -11,7 +11,8 @@
 //  * the "reverb": Q70 amplifies the same noise under a slower envelope
 //    (C139/C138), with the C146 roll-off on its collector
 //  * a little of the sawtooth itself leaks into the mix as a low thump
-import { Voice, Biquad, OnePole, Noise, rail, decayCoef, lerp, clamp, PITCH, DECAY, pitchMul, decayMul } from '../dsp/core.js';
+import { Voice, Biquad, OnePole, Noise, rail, decayCoef, lerp, clamp, PITCH, DECAY, pitchMul, decayMul, spanMul } from '../dsp/core.js';
+import { CP_EXTRA } from './cpma-circuit.js';
 
 export const meta = { id: 'cp', name: 'Hand Clap', short: 'CP' };
 
@@ -29,16 +30,16 @@ export const FIT = {
 
 export class CP extends Voice {
   constructor(sr) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, { id: 'snap', name: 'Snap', def: 0 }, PITCH, DECAY]);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, { id: 'snap', name: 'Snap', def: 0 }, PITCH, DECAY, ...CP_EXTRA]);
     this.vppNormal = 6; this.vppAccent = 10;
     const F = FIT;
     this.noise = new Noise(1981);
     this.bp = new Biquad(sr, 'bp', F.bpF, F.bpQ);
     this.vLp = new OnePole(sr, F.vLp, 'lp');
     this.thHp = new OnePole(sr, 20, 'hp');
-    this.fast = decayCoef(F.tTau, sr); this.slow = decayCoef(F.lTau, sr);
+    this.slow = decayCoef(F.lTau, sr);
     this.vAk = decayCoef(F.vAtt, sr);
-    this.toothN = Math.max(1, Math.round(F.tooth * sr)); this.winN = Math.round(F.win * sr);
+    this.winN = Math.round(F.win * sr);
     this.ek = Math.exp(F.expK) - 1;
     this.saw = 0; this.t = 1e9; this.a = 0; this.vC = 0; this.vS = 0;
     this.onParam();
@@ -48,6 +49,9 @@ export class CP extends Voice {
     const F = FIT;
     this.bp.set(F.bpF * pitchMul(this.p.pitch), F.bpQ);
     this.vDk = decayCoef(F.vDec * decayMul(this.p.decay), this.sr);
+    // SPACING: R365 charges C144, so the teeth (and their fall) stretch with it
+    const k = spanMul(this.p.spacing, 2);
+    this.fast = decayCoef(F.tTau * k, this.sr); this.toothN = Math.max(1, Math.round(F.tooth * k * this.sr));
   }
   trigger(accent = 0) {
     this.a = lerp(this.trimN, this.trimA, clamp(accent, 0, 1));

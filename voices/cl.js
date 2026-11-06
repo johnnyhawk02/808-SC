@@ -39,7 +39,7 @@ export class CL extends Voice {
   }
   trigger(accent = 0) {
     const F = FIT, vb = busVoltage(accent) * lerp(this.trimN, this.trimA, clamp(accent, 0, 1));
-    this.pulse.fire(this.res.pulseHeight(vb * F.k, 0.2e-3), 0.2e-3);
+    this.pulse.fire(this.res.pulseHeight(vb * F.k, 0.2e-3, F.f), 0.2e-3); // kick sized at the stock pitch
     this.m = 1; this.t = 0; this.vb = vb;
   }
   render(out, n) {

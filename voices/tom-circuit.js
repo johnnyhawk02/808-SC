@@ -23,7 +23,11 @@
 // R259 820k; noise C85/C84/C87/C88, Q55, R261 100k. HT: C99, R282 22k,
 // R281 5.6k; C103/C105 (+C104), R284, R286 820k; noise via Q58, R288 100k.
 import { CircuitVoice, aTaper } from './circuit-voice.js';
-import { PITCH, DECAY, pitchMul, decayMul } from '../dsp/core.js';
+import { PITCH, DECAY, pitchMul, decayMul, knob, amtMul } from '../dsp/core.js';
+
+// extra knob, toms only: NOISE is R232, where the Q52 noise burst joins the
+// drum (its conductance: none at 0, stock at centre, x8 at full)
+export const TOM_EXTRA = [knob('noise', 'Noise')];
 
 const PARTS = {
   lt: { cIn: 0.0068e-6, rIn: 22e3, rX: 4.7e3, c1: 0.056e-6, c2: 0.012e-6 + 0.047e-6, rf: 820e3, rs: 1e3, rfb: 820e3, cOut: 0.047e-6,
@@ -65,7 +69,7 @@ class TomCircuit extends CircuitVoice {
     super(sr, [
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'tuning', name: 'Tuning', def: 0.5 },
-      PITCH, DECAY,
+      PITCH, DECAY, ...(PARTS[key].noise ? TOM_EXTRA : []),
     ], shared);
     const P = PARTS[key];
     this.key = key;
@@ -103,7 +107,7 @@ class TomCircuit extends CircuitVoice {
       m.R('P15', 'C52', N.r221); m.NPN('B52', 'C52', 'gnd');  // R221, Q52
       m.C('C52', 'N223', N.c74); m.R('N223', 'gnd', N.r223);  // C74, R223
       m.R('N223', 'N75', N.r222); m.C('N75', 'gnd', N.c75);   // R222, C75
-      m.R('N75', 'J', 100e3);                                 // R232
+      this.r232 = m.R('N75', 'J', 100e3); this.r232.g0 = 1 / 100e3; // R232 (NOISE knob)
       m.tol = 1e-4;
     }
     this.iOut = m.idx.OUT;
@@ -115,6 +119,7 @@ class TomCircuit extends CircuitVoice {
     if (this.vrA) { this.vrA.g = 1 / Math.max(1, 500 - r); this.vrB.g = 1 / Math.max(1, r); this.s1.touch(); }
     const [dr, phi] = tomDecay(this.key, this.p.decay);
     this.scale('pitch', 1 / pitchMul(this.p.pitch)); this.scale('fb', 1 / phi); this.scale('env', dr);
+    if (this.r232) { this.r232.g = Math.max(1e-12, this.r232.g0 * (this.p.noise < 0.5 ? amtMul(this.p.noise) : 8 ** (2 * this.p.noise - 1))); this.s2.touch(); }
     if (this.vr10) { this.vr10.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.s2.touch(); }
   }
   output() { return this.s2.v[this.iOut]; }

@@ -32,11 +32,15 @@
 // inside the 2SK30A's -0.4..-5 V spread, meets the table's 25 ms (-1 V gave
 // 42 ms). On-resistance |Vp| / (2 Idss), Idss 2 mA (Y rank) = 875 R.
 import { CircuitVoice, aTaper } from './circuit-voice.js';
-import { PITCH, DECAY, pitchMul, decayMul } from '../dsp/core.js';
+import { PITCH, DECAY, pitchMul, decayMul, knob, spanMul } from '../dsp/core.js';
+
+// extra knob, RS only: CLICK is R317, the load on the oscillator sum that
+// drives Q62 (x1/3 .. x3): more drive chops the tones harder
+export const RS_EXTRA = [knob('click', 'Click')];
 
 class RSCLCircuit extends CircuitVoice {
   constructor(sr, shared, mode) {
-    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY], shared);
+    super(sr, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY, ...(mode === 'rs' ? RS_EXTRA : [])], shared);
     this.mode = mode;
     const a = (this.s1 = this.stage(['TR', 'N307', 'N301', 'X21', 'P21', 'M21', 'O21',
       'N306', 'N310', 'X20', 'P20', 'M20', 'O20a', 'I20b', 'O20b', 'B61', 'G61', 'M15']));
@@ -70,7 +74,7 @@ class RSCLCircuit extends CircuitVoice {
       b.R('E24', 'N108', 10e3); b.D('N108', 'K62');                            // R108, D63
       b.NPN('B62', 'K62', 'gnd');                                              // Q62
       b.Rsrc('B62', 2.2e6, 15); b.C('B62', 'N317', 10e-6);                     // R321, C120
-      b.R('N317', 'gnd', 10e3);                                                // R317
+      this.part(b, b.R('N317', 'gnd', 10e3), 'click');                        // R317
       this.link(b, 'N317', 220e3, a, 'O21');                                   // R318
       this.link(b, 'N317', 22e3, a, 'O20b');                                   // R320
       b.C('K62', 'N322', 0.0047e-6); b.C('N322', 'B63', 0.0047e-6);            // C121, C122
@@ -102,6 +106,7 @@ class RSCLCircuit extends CircuitVoice {
   }
   onParam() {
     this.scale('pitch', 1 / pitchMul(this.p.pitch)); this.scale('env', decayMul(this.p.decay));
+    this.scale('click', spanMul(this.p.click, 3));
     if (this.vr16) { this.vr16.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.s3.touch(); }
   }
   output() { return this.s3.v[this.iOut]; }

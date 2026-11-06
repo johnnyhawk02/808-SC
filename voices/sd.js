@@ -14,9 +14,9 @@
 //  * the gated white noise goes through the C66/C67 Sallen-Key high-pass
 //    (2.75 kHz, Q 0.73, from the parts) and C69/R205 into the mixer
 //  * IC13a's 220p feedback cap is the final low-pass
-import { Voice, BridgedT, Pulse, Biquad, OnePole, Noise, rail, clamp, decayCoef, lerp, PITCH, DECAY, pitchMul, decayMul } from '../dsp/core.js';
+import { Voice, BridgedT, Pulse, Biquad, OnePole, Noise, rail, clamp, decayCoef, lerp, PITCH, DECAY, pitchMul, decayMul, spanMul } from '../dsp/core.js';
 import { busVoltage } from '../dsp/mna.js';
-import { SD_REVISION } from './sd-circuit.js';
+import { SD_REVISION, SD_EXTRA } from './sd-circuit.js';
 
 export const meta = { id: 'sd', name: 'Snare Drum', short: 'SD' };
 
@@ -38,7 +38,7 @@ export class SD extends Voice {
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'tone', name: 'Tone', def: 0.5 },
       { id: 'snappy', name: 'Snappy', def: 0.5 },
-      PITCH, DECAY,
+      PITCH, DECAY, ...SD_EXTRA,
     ]);
     this.vppNormal = 3; this.vppAccent = 10;
     const F = FIT, orig = SD_REVISION === 'original';
@@ -46,7 +46,8 @@ export class SD extends Voice {
     this.lo = new BridgedT(sr); this.hi = new BridgedT(sr);
     this.pLo = new Pulse(sr); this.pHi = new Pulse(sr);
     this.noise = new Noise(808);
-    this.nHp = new Biquad(sr, 'hp', 1 / (2 * Math.PI * 1.8e-9 * Math.sqrt(22e3 * 47e3)), 0.5 * Math.sqrt(47e3 / 22e3));
+    this.nHpF = 1 / (2 * Math.PI * 1.8e-9 * Math.sqrt(22e3 * 47e3)); this.nHpQ = 0.5 * Math.sqrt(47e3 / 22e3);
+    this.nHp = new Biquad(sr, 'hp', this.nHpF, this.nHpQ);
     this.nHp2 = new OnePole(sr, 1 / (2 * Math.PI * 27e3 * 0.01e-6), 'hp'); // C69 / R205
     this.nLp = new OnePole(sr, F.nLp, 'lp');
     this.out = new OnePole(sr, F.outLp, 'lp');
@@ -64,7 +65,8 @@ export class SD extends Voice {
     // discharge (snappy) by d, as the circuit's part changes do
     const F = FIT, m = pitchMul(this.p.pitch), d = decayMul(this.p.decay);
     this.lo.set(this.fL * m, F.qLo * d); this.hi.set(this.fH * m, F.qHi * d);
-    this.dec = decayCoef(F.nDec * d, this.sr);
+    this.dec = decayCoef(F.nDec * spanMul(this.p.snapdec, 3), this.sr);  // SNAP DEC: C51
+    this.nHp?.set(this.nHpF * spanMul(this.p.wires, 2), this.nHpQ);       // WIRES: C66/C67
   }
   trigger(accent = 0) {
     const F = FIT, vb = busVoltage(accent), a = lerp(this.trimN, this.trimA, clamp(accent, 0, 1));

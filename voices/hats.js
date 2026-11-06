@@ -16,7 +16,8 @@
 //    dumps C62, so the decay knob mostly sets when the hat is cut off.
 //    CH chokes OH through Q23 the same way
 //  * CH envelope: C63 charged by the hit, discharging into the VCA
-import { Voice, BridgedT, Biquad, OnePole, swingVCA, map3, rail, decayCoef, lerp, clamp, PITCH, DECAY, pitchMul, decayMul } from '../dsp/core.js';
+import { Voice, BridgedT, Biquad, OnePole, swingVCA, map3, rail, decayCoef, lerp, clamp, PITCH, DECAY, pitchMul, decayMul, spreadExp, spanMul } from '../dsp/core.js';
+import { HAT_EXTRA } from './hats-circuit.js';
 import { voicingTrigger } from './cb-circuit.js';
 
 const HI = BridgedT.fromParts(560, 82e3, 0.0033e-6, 0.0033e-6);
@@ -33,7 +34,7 @@ class Hat extends Voice {
     super(sr, spec);
     this.metal = metal; this.key = key; const F = FIT[key];
     this.bp = new BridgedT(sr); this.bp.set(F.bpF, F.bpQ);
-    this.hp = new Biquad(sr, 'hp', hp.f, F.hpQ);
+    this.hp = new Biquad(sr, 'hp', hp.f, F.hpQ); this.hpF = hp.f;
     this.lp = new OnePole(sr, F.lp, 'lp');
     this.aK = decayCoef(F.att, sr); this.dK = decayCoef(F.dec, sr);
     this.eC = 0; this.e = 0; this.t = 1e9; this.cutN = 1e12; this.cutK = 1;
@@ -42,7 +43,8 @@ class Hat extends Voice {
   // PITCH: a private six-oscillator bank retuned by m; DECAY (CH only, its
   // C63): the envelope by d
   onParam() {
-    this.pitchBank(pitchMul(this.p.pitch));
+    this.pitchBank(pitchMul(this.p.pitch), spreadExp(this.p.spread));
+    this.hp.set(this.hpF * spanMul(this.p.tone, 2), FIT[this.key].hpQ);
     this.dec = FIT[this.key].dec * (this.key === 'ch' ? decayMul(this.p.decay) : 1);
   }
   fire(accent) {
@@ -69,7 +71,7 @@ export class OH extends Hat {
     super(sr, metal, [
       { id: 'level', name: 'Level', def: 0.8 },
       { id: 'decay', name: 'Decay', def: 0.5 },
-      PITCH,
+      PITCH, ...HAT_EXTRA,
     ], 'oh', skHP(2.7e3, 68e3, 1.5e-9));
     this.vppNormal = 3.5; this.vppAccent = 7;
   }
@@ -85,7 +87,7 @@ OH.meta = { id: 'oh', name: 'Open Hi-Hat', short: 'OH' };
 
 export class CH extends Hat {
   constructor(sr, metal) {
-    super(sr, metal, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY], 'ch', skHP(2.7e3, 68e3, 1e-9));
+    super(sr, metal, [{ id: 'level', name: 'Level', def: 0.8 }, PITCH, DECAY, ...HAT_EXTRA], 'ch', skHP(2.7e3, 68e3, 1e-9));
     this.vppNormal = 3; this.vppAccent = 6;
   }
   trigger(accent = 0) { this.fire(accent); }

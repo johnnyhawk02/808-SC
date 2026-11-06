@@ -75,14 +75,14 @@ export class CircuitVoice extends Voice {
   // stock tuning. Costs one extra bank while the voice plays, and only when
   // the knob is off centre. ic3 = false skips the IC3 band-pass solve when
   // the voice only uses the raw oscillators (cowbell).
-  pitchMetal(m, ic3 = true) {
-    if (Math.abs(m - 1) < 1e-6) { this.ownMetal = null; return; }
+  pitchMetal(m, ic3 = true, spread = 1, idx) {
+    if (Math.abs(m - 1) < 1e-6 && Math.abs(spread - 1) < 1e-6) { this.ownMetal = null; return; }
     if (!this.ownMetal) {
       const Bank = this.shared.metal.constructor;
       this.ownMetal = new Bank(this.sr);
       this.ownMetal.active = () => ic3;
     }
-    this.ownMetal.setPitch(m);
+    this.ownMetal.setPitch(m, spread, idx);
   }
   stage(nodes) {
     const c = new Circuit(nodes);
