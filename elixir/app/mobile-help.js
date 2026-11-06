@@ -51,7 +51,7 @@ const HELP = [
   ['rec', 'recording', `<ul><li><b>rec</b> records a WAV: press it to start (it starts playing too), again to stop, and the file downloads.</li>
 <li>Hold or right-click <b>rec</b> to choose what it records: <b>free</b>, or an exact loop of 1, 2, 4, 8, 16, 32, 64 or 128 bars. A loop starts at the next bar, shows its progress on the button and downloads by itself, cut to repeat seamlessly in any other app.</li></ul>`],
   ['keys', 'keyboard and mouse', `<ul><li><b>space</b> play and stop. <b>enter</b> record, <b>l</b> record a loop.</li>
-<li><b>1</b> everything, <b>2</b> kit, <b>3</b> alter, <b>4</b> pattern, <b>5</b> crossfeed, <b>6</b> random fx, <b>7</b> alter fx (the bar's order), <b>u</b> undo. <b>m</b> randomise on next bar.</li>
+<li><b>1</b> to <b>8</b> pick the grid's pattern; <b>cmd</b> (or <b>ctrl</b>) + <b>c</b> copies the pattern, <b>cmd</b> + <b>v</b> pastes it over the one picked. <b>u</b> undo.</li>
 <li><b>z x c v b n</b> mute drum 1, 2, 3, snare, cymbal, hihat; <b>a s d f g h</b> mute their echo sends; <b>q w e r t y</b> their reverb sends.</li>
 <li><b>shift</b> + <b>1</b> to <b>6</b> show the voice page with that drum; <b>[</b> and <b>]</b> step through its tabs.</li>
 <li><b>o</b> presets, <b>/</b> search presets, <b>?</b> help. <b>esc</b> closes whatever is open.</li>

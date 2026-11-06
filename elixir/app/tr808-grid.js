@@ -199,6 +199,16 @@ document.addEventListener('selectstart', (e) => { const t = e.target.nodeType ==
 const g8Gen = generate;
 generate = function () { const r = g8Gen.apply(this, arguments); if (g8.mode === 'gen') g8Draw(); return r; };
 perfDraws.push(g8Draw);
+// Cmd+C (Ctrl+C) copies the pattern playing (or the generator's) and Cmd+V (Ctrl+V) pastes it over the pattern picked:
+// copy on 1, press 3, paste. (Kept in this page only, not the system clipboard.)
+let g8Clip = null;
+function g8Note(t) { const w = $('m-g8-what'); w.textContent = t; clearTimeout(w._t); w._t = setTimeout(g8Draw, 1200); }
+addEventListener('keydown', (e) => {
+  if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || e.target.closest?.('input, select, textarea') || $('m-menu')) return;
+  const k = e.key.toLowerCase();
+  if (k === 'c') { e.preventDefault(); g8Clip = g8Clean(g8Shown()); g8Note(`copied ${g8.mode === 'lanes' ? `pattern ${g8.cur + 1}` : 'the generator'}`); }
+  else if (k === 'v' && g8Clip) { e.preventDefault(); g8.mode = 'lanes'; g8.lanes = g8Clean(g8Clip); g8Send(); g8Draw(); g8Note(`pasted into pattern ${g8.cur + 1}`); }
+});
 M_PAGE_NAMES.grid = 'grid';
 g8Order();
 g8Send();

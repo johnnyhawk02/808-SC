@@ -209,4 +209,11 @@ function t8Draw() {
   }
 }
 M_PAGE_NAMES.t808 = '808';
+// The 808 page is hidden for now (the grid's controls panel edits every sound); true brings its tab back
+const T8_PAGE = false;
+if (!T8_PAGE) {
+  $('m').classList.add('m-no808');
+  document.querySelector('[data-m-tab="t808"]').hidden = true;
+  document.querySelector('[data-m-panel="t808"]').hidden = true;
+}
 t8Draw();
