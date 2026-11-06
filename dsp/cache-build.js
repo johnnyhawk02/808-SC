@@ -17,7 +17,9 @@ export const SR = 48000, OUT_SR = 32000; // circuit runs at 48 kHz, hits stored 
 const MAXLEN = { cy: 3, oh: 2.5, bd: 2, lt: 1.5, mt: 1.5, ht: 1.5 }; // s, before trimming
 const LIVE = ['level', 'snap'];          // knobs the cached player handles itself
 
-export function buildCache(id, values = {}, onProgress) {
+// variants: hits per accent level (16 for the shipped cache and the bench; Elixir 808's cache button records 4)
+export function buildCache(id, values = {}, onProgress, variants = VARIANTS) {
+  const VN = variants;
   const kit = new Kit(SR, { circuits: false });
   const v = (kit.circuit[id] = new CIRCUITS[id](SR, kit.shared));
   kit.setModel(id, 'circuit'); kit.solo = id; kit.master = 1;
@@ -56,12 +58,12 @@ export function buildCache(id, values = {}, onProgress) {
     for (let i = 0; i < n; i++) out[i] /= VOLT_SCALE; // volts, as the voice outputs them
     return out;
   };
-  const total = 2 * VARIANTS * (hasSnap ? 2 : 1) + 9;
+  const total = 2 * VN * (hasSnap ? 2 : 1) + 9;
   let done = 0;
   const tick = () => onProgress?.(++done, total);
   rest();
   const hits = { normal: [], accent: [], dryNormal: [], dryAccent: [] };
-  for (const key of ['normal', 'accent']) for (let k = 0; k < VARIANTS; k++) {
+  for (const key of ['normal', 'accent']) for (let k = 0; k < VN; k++) {
     const st = variant(), acc = key === 'accent' ? 1 : 0, full = trim(resample(hit(acc))); rest(); tick();
     hits[key].push(full);
     if (hasSnap) {
@@ -87,8 +89,8 @@ export function buildCache(id, values = {}, onProgress) {
   const len = all.reduce((a, x) => a + x.length, 0), pcm = new Int16Array(len), ranges = [];
   let o = 0;
   for (const x of all) { ranges.push([o, x.length]); for (let i = 0; i < x.length; i++) pcm[o + i] = Math.round(x[i] / scale * 32767); o += x.length; }
-  const info = { sr: OUT_SR, scale: +scale.toFixed(6), normal: ranges.slice(0, VARIANTS), accent: ranges.slice(VARIANTS, 2 * VARIANTS), level };
-  if (hasSnap) { info.dryNormal = ranges.slice(2 * VARIANTS, 3 * VARIANTS); info.dryAccent = ranges.slice(3 * VARIANTS); }
+  const info = { sr: OUT_SR, scale: +scale.toFixed(6), normal: ranges.slice(0, VN), accent: ranges.slice(VN, 2 * VN), level };
+  if (hasSnap) { info.dryNormal = ranges.slice(2 * VN, 3 * VN); info.dryAccent = ranges.slice(3 * VN); }
   if (Object.keys(knobs).length) info.knobs = knobs;
   return { info, pcm };
 }

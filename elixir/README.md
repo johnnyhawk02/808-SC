@@ -1,25 +1,30 @@
 # Elixir 808
 
-A copy of [Elixir Desktop](https://github.com/johnnyhawk02/elixir-desktop) (commit 8f45f44) with the TR-808 voices from
-this repo on its tracks. **Play it: https://johnnyhawk02.github.io/Tr808/elixir/**
+A copy of [Elixir Desktop](https://github.com/johnnyhawk02/elixir-desktop) (commit 8f45f44) that plays the TR-808 voices
+from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.github.io/Tr808/elixir/**
 
-- **808 page** (the `808` button over the right-hand pages): each of the seven tracks (dr1, dr2, dr3, sn, cy, cl, op)
-  plays its LXR voice or any of the sixteen 808 voices. `808 kit` puts BD, LT, HT, SD, CY, CH, OH on them; `all lxr`
-  puts every track back on the LXR engine.
-- Each 808 voice plays as the **circuit** simulation (every knob works, costs CPU) or **cached** hits (16 normal + 16
+- **808 page**: each of the seven tracks (dr1, dr2, dr3, sn, cy, cl, op) plays one of the sixteen 808 voices. The
+  `808 kit` button puts back BD, LT, HT, SD, CY, CH, OH.
+- Each voice plays as the **circuit** simulation (every knob works, costs CPU) or **cached** hits (16 normal + 16
   accented hits rendered by the circuit; level, decay and the clap's snap stay live; almost no CPU), with its own knobs.
-- **Cache** renders the voice's hits through the circuit at its current knobs in a worker (a few seconds to a minute,
-  the cymbal longest) and plays them as cached; **revert** goes back to the shipped hits (`../cache/`). They're kept in
+- **Cache**, on every voice, records 4 normal + 4 accented hits through the circuit at its current knobs in a worker (a
+  few seconds, the cymbal longest) and plays them as cached, random robin (picked at random, never the same one twice
+  running); **revert** goes back to the shipped 16 + 16 hits (`../cache/`). They're kept in
   this browser under the bench's own IndexedDB store, so a cache made on the bench shows up here and the other way round.
-- An 808 voice takes the track's place in the engine's output, so the sequencer, accents (the circuit's own accent, not
-  the accent fader's turn-down), level, pan, echo and reverb sends, drum 1 sidechain, master chain, meters and the
-  recorder all work on it. Crossfeed doesn't reach the 808 voices.
+- No LXR-02 voices: they're silenced in the player, and the voice page, crossfeed, the kit / alter / crossfeed
+  randomisers and the LXR sound macros (pitch, decay, filter, fm) are gone. What's left of Elixir is the sequencer and
+  pattern generator, the mixer, and its effects (echo, reverb, distortion, compressor; the echo and distortion are the
+  LXR-02 firmware's FX code, which the mix still runs through).
+- An 808 voice takes its track's place in the engine's output, so level, pan, sends, the drum 1 sidechain, the master
+  chain, meters and the recorder work on it. Accents are the circuit's own accent.
 - The 808 setup (voice per track, models, knobs) is kept in this browser, not in presets. Presets, settings and
-  favourites are kept apart from Elixir Desktop's (keys start `elixir808-`); on first run its saved presets are copied in.
+  favourites are kept apart from Elixir Desktop's (keys start `elixir808-`); on first run its saved presets are copied
+  in (only their pattern, tempo, mix and FX matter here).
 
 The 808 code is not copied: `tr808-bundle.mjs` bundles `../dsp` and `../voices` into the page at build time
 (`node elixir/build.mjs`), so it is always the bench's current code. Changes from Elixir Desktop: `app/tr808.js`,
-`app/tr808.css`, the 808 hooks in `app/player.js` (`hit`, `render808`), the tab in `index.src.html`, `build.mjs`, storage keys.
+`app/tr808.css`, the 808 hooks in `app/player.js` (`hit`, `render808`), the tab in `index.src.html`, the perf knob and
+x/y defaults (`app/mobile-slots.js`, `app/mobile-xy.js`), `app/desktop-keys.js`, `build.mjs`, storage keys.
 
 Elixir Desktop's own README follows.
 

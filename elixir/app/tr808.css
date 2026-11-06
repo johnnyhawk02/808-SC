@@ -2,10 +2,10 @@
 .m-808-card { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 10px; min-height: 0; padding: 10px 2px; }
 .m-808-tracks { grid-template-columns: repeat(7, 1fr); }
 .m .m-808-tracks .m-btn { text-transform: lowercase; white-space: pre; }
-.m-808-pick { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 4px; }
+.m-808-pick { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
 .m .m-808-pick .m-toggle { min-width: 0; min-height: 34px; padding: 0; font-size: var(--fs-xs) !important; text-transform: uppercase; }
 .m-808-body { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px; min-height: 0; padding: 8px 4px 6px; border: 2px solid var(--ink); }
-.m-808-body[hidden], .m-808-lxr[hidden], .m-808-set[hidden] { display: none; }
+.m-808-set[hidden] { display: none; }
 .m-808-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .m-808-head b { font-family: var(--display); font-weight: 400; letter-spacing: .08em; text-transform: uppercase; }
 .m-808-models { display: flex; gap: 4px; }
@@ -20,8 +20,13 @@
 .m .m-808-cache .m-btn, .m .m-808-all .m-btn { min-height: 40px; padding: 0 14px; font-size: var(--fs-s, var(--fs-xs)) !important; }
 .m-808-cache .m-btn[hidden] { display: none; }
 .m-808-status { flex: 1; font-size: var(--fs-xs); opacity: .8; }
-.m-808-lxr { margin: 0; padding: 12px 4px; font-size: var(--fs-xs); border: 2px dashed var(--ink); opacity: .8; }
 .m-808-all { display: flex; gap: 8px; align-items: center; }
-/* (one more page button: 808) */
-.m > .m-tabs { grid-template-columns: repeat(9, minmax(0, 1fr)); }
-@media (min-width: 1000px) { .m > .m-tabs { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
+/* ---- no LXR-02 voices: the voice page, crossfeed and the kit, alter and crossfeed randomisers are gone; the 808 page
+   takes the voice page's place ---- */
+.m > .m-tabs button[data-m-tab="dice"], .m > .m-tabs button[data-m-tab="xf"], #m-kit, #m-alter, #m-xrand, .m-fx-row.m-xrow { display: none !important; }
+.m > .m-tabs { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+@media (min-width: 1000px) { .m > .m-tabs { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+@media (min-width: 1000px) {
+  .m .m-rand > #m-everything { grid-column: 1; } .m .m-rand > #m-pattern { grid-column: 2; }
+  .m .m-rand > #m-fx-rand { grid-column: 3; } .m .m-rand > #m-fx-alter { grid-column: 4; }
+}

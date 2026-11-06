@@ -33,7 +33,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<meta name="description" content="Elixir 808: Elixir Desktop's drum machine with the TR-808 circuit-modelled voices on its tracks, beside the LXR-02 engine port.">
+<meta name="description" content="Elixir 808: Elixir Desktop's drum machine playing the TR-808 circuit-modelled voices.">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=VT323&display=swap">
@@ -1595,10 +1595,10 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m-808-card { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 10px; min-height: 0; padding: 10px 2px; }
 .m-808-tracks { grid-template-columns: repeat(7, 1fr); }
 .m .m-808-tracks .m-btn { text-transform: lowercase; white-space: pre; }
-.m-808-pick { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 4px; }
+.m-808-pick { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
 .m .m-808-pick .m-toggle { min-width: 0; min-height: 34px; padding: 0; font-size: var(--fs-xs) !important; text-transform: uppercase; }
 .m-808-body { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px; min-height: 0; padding: 8px 4px 6px; border: 2px solid var(--ink); }
-.m-808-body[hidden], .m-808-lxr[hidden], .m-808-set[hidden] { display: none; }
+.m-808-set[hidden] { display: none; }
 .m-808-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .m-808-head b { font-family: var(--display); font-weight: 400; letter-spacing: .08em; text-transform: uppercase; }
 .m-808-models { display: flex; gap: 4px; }
@@ -1613,16 +1613,21 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m .m-808-cache .m-btn, .m .m-808-all .m-btn { min-height: 40px; padding: 0 14px; font-size: var(--fs-s, var(--fs-xs)) !important; }
 .m-808-cache .m-btn[hidden] { display: none; }
 .m-808-status { flex: 1; font-size: var(--fs-xs); opacity: .8; }
-.m-808-lxr { margin: 0; padding: 12px 4px; font-size: var(--fs-xs); border: 2px dashed var(--ink); opacity: .8; }
 .m-808-all { display: flex; gap: 8px; align-items: center; }
-/* (one more page button: 808) */
-.m > .m-tabs { grid-template-columns: repeat(9, minmax(0, 1fr)); }
-@media (min-width: 1000px) { .m > .m-tabs { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
+/* ---- no LXR-02 voices: the voice page, crossfeed and the kit, alter and crossfeed randomisers are gone; the 808 page
+   takes the voice page's place ---- */
+.m > .m-tabs button[data-m-tab="dice"], .m > .m-tabs button[data-m-tab="xf"], #m-kit, #m-alter, #m-xrand, .m-fx-row.m-xrow { display: none !important; }
+.m > .m-tabs { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+@media (min-width: 1000px) { .m > .m-tabs { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+@media (min-width: 1000px) {
+  .m .m-rand > #m-everything { grid-column: 1; } .m .m-rand > #m-pattern { grid-column: 2; }
+  .m .m-rand > #m-fx-rand { grid-column: 3; } .m .m-rand > #m-fx-alter { grid-column: 4; }
+}
 </style>
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i>13</small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i>14</small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1675,10 +1680,9 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
         <div class="m-808-head"><b id="m-808-name"></b>
           <span class="m-808-models" role="group" aria-label="model"><button class="m-toggle" type="button" data-m808="circuit" title="The component-level circuit simulation: every knob works, costs CPU">circuit</button><button class="m-toggle" type="button" data-m808="cached" title="16 normal + 16 accented hits rendered by the circuit, one picked at random per hit. Level, decay and the clap's snap stay live. Almost no CPU">cached</button></span></div>
         <div class="m-808-knobs" id="m-808-knobs"></div>
-        <div class="m-808-cache"><button class="m-btn" id="m-808-cache-go" type="button" title="Render 16 normal + 16 accented hits through the circuit at these knob settings, keep them in this browser and play them as cached">cache</button><span class="m-808-status" id="m-808-status" aria-live="polite"></span><button class="m-btn" id="m-808-revert" type="button" hidden title="Forget your cached hits and go back to the shipped ones (default knobs)">revert</button></div>
+        <div class="m-808-cache"><button class="m-btn" id="m-808-cache-go" type="button" title="Record 4 normal + 4 accented hits through the circuit at these knob settings, keep them in this browser and play them as cached, picked at random, never the same one twice running">cache</button><span class="m-808-status" id="m-808-status" aria-live="polite"></span><button class="m-btn" id="m-808-revert" type="button" hidden title="Forget your cached hits and go back to the shipped ones (default knobs)">revert</button></div>
       </div>
-      <p class="m-808-lxr" id="m-808-lxr" hidden>This track plays its LXR voice (the voice page). Pick an 808 voice above to swap it.</p>
-      <div class="m-808-all"><button class="m-btn" id="m-808-kit" type="button" title="Every track on its 808 voice: BD, LT, HT, SD, CY, CH, OH">808 kit</button><button class="m-btn" id="m-808-alllxr" type="button" title="Every track back on its LXR voice">all lxr</button></div>
+      <div class="m-808-all"><button class="m-btn" id="m-808-kit" type="button" title="The standard kit on the tracks: BD, LT, HT, SD, CY, CH, OH">808 kit</button></div>
     </section>
   </div>
 
@@ -1732,7 +1736,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v13, 6 Nov, 15:23</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v14, 6 Nov, 18:06</footer>
     </section>
   </div>
   </div>
@@ -1837,7 +1841,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 
 <div class="wrap" aria-hidden="true">
   <header class="topbar">
-    <h1><button class="title" id="about-open" type="button" aria-haspopup="dialog" title="About Elixir"><b>elixir</b> <small>six-voice drum machine</small></button></h1>
+    <h1><button class="title" id="about-open" type="button" aria-haspopup="dialog" title="About Elixir"><b>elixir</b> <small>TR-808 drum machine</small></button></h1>
     <div class="kitbar">
       <label class="field" for="kit"><span class="lbl">preset</span> <select id="kit" aria-label="Preset"></select></label>
       <span class="stepper"><button class="btn" id="kit-prev" type="button" aria-label="Previous preset">‹</button><button class="btn" id="kit-next" type="button" aria-label="Next preset">›</button></span>
@@ -8976,7 +8980,9 @@ const SR = 48000, OUT_SR = 32000; // circuit runs at 48 kHz, hits stored at 32 k
 const MAXLEN = { cy: 3, oh: 2.5, bd: 2, lt: 1.5, mt: 1.5, ht: 1.5 }; // s, before trimming
 const LIVE = ['level', 'snap'];          // knobs the cached player handles itself
 
-function buildCache(id, values = {}, onProgress) {
+// variants: hits per accent level (16 for the shipped cache and the bench; Elixir 808's cache button records 4)
+function buildCache(id, values = {}, onProgress, variants = VARIANTS) {
+  const VN = variants;
   const kit = new Kit(SR, { circuits: false });
   const v = (kit.circuit[id] = new CIRCUITS[id](SR, kit.shared));
   kit.setModel(id, 'circuit'); kit.solo = id; kit.master = 1;
@@ -9015,12 +9021,12 @@ function buildCache(id, values = {}, onProgress) {
     for (let i = 0; i < n; i++) out[i] /= VOLT_SCALE; // volts, as the voice outputs them
     return out;
   };
-  const total = 2 * VARIANTS * (hasSnap ? 2 : 1) + 9;
+  const total = 2 * VN * (hasSnap ? 2 : 1) + 9;
   let done = 0;
   const tick = () => onProgress?.(++done, total);
   rest();
   const hits = { normal: [], accent: [], dryNormal: [], dryAccent: [] };
-  for (const key of ['normal', 'accent']) for (let k = 0; k < VARIANTS; k++) {
+  for (const key of ['normal', 'accent']) for (let k = 0; k < VN; k++) {
     const st = variant(), acc = key === 'accent' ? 1 : 0, full = trim(resample(hit(acc))); rest(); tick();
     hits[key].push(full);
     if (hasSnap) {
@@ -9046,8 +9052,8 @@ function buildCache(id, values = {}, onProgress) {
   const len = all.reduce((a, x) => a + x.length, 0), pcm = new Int16Array(len), ranges = [];
   let o = 0;
   for (const x of all) { ranges.push([o, x.length]); for (let i = 0; i < x.length; i++) pcm[o + i] = Math.round(x[i] / scale * 32767); o += x.length; }
-  const info = { sr: OUT_SR, scale: +scale.toFixed(6), normal: ranges.slice(0, VARIANTS), accent: ranges.slice(VARIANTS, 2 * VARIANTS), level };
-  if (hasSnap) { info.dryNormal = ranges.slice(2 * VARIANTS, 3 * VARIANTS); info.dryAccent = ranges.slice(3 * VARIANTS); }
+  const info = { sr: OUT_SR, scale: +scale.toFixed(6), normal: ranges.slice(0, VN), accent: ranges.slice(VN, 2 * VN), level };
+  if (hasSnap) { info.dryNormal = ranges.slice(2 * VN, 3 * VN); info.dryAccent = ranges.slice(3 * VN); }
   if (Object.keys(knobs).length) info.knobs = knobs;
   return { info, pcm };
 }
@@ -9330,22 +9336,24 @@ class Player {
     else if (m.type === 'model808') { this.want808[m.id] = m.model; K.setModel(m.id, m.model); }
     else if (m.type === 'cache808') { K.loadCache(m.id, m.info, new Int16Array(m.pcm)); K.setModel(m.id, this.want808[m.id] || 'cached'); }
   }
-  // a hit on track t: its 808 voice if it has one (accented or not), else the LXR voice at the velocity. (An 808 voice
-  // takes the accent in its circuit, as the TR-808 does, so the accent fader's turn-down of unaccented hits skips it)
+  // a hit on track t: its 808 voice, accented or not (Elixir 808 plays no LXR voices). (The 808 voice takes the accent in
+  // its circuit, as the TR-808 does, so the accent fader's turn-down of unaccented hits skips it)
   hit(t, vel, acc) {
     const id = this.k808 && this.t808[t];
-    if (!id) { this.e.trigger(t, vel, 60); return; }
+    if (!id) return;
     this.k808._fire(id, acc ? 1 : 0);
     // the 808 voice takes the track's pan as the LXR voice would on its trigger
     const e = this.e, v = [e.drums[0], e.drums[1], e.drums[2], e.snare, e.cymbal, e.hat][Math.min(t, 5)];
     v.triggeredPanL = Math.fround(Math.sqrt(Math.fround((127 - v.pan) / 127)));
     v.triggeredPanR = Math.fround(Math.sqrt(Math.fround(v.pan / 127)));
   }
-  // each 808 voice renders on its own (kit.split), then joins its track's LXR output (int16, as the engine gives it) at
-  // the track's level, so the mixer, sends, sidechain, meters and recorder take it like any voice
+  // each 808 voice renders on its own (kit.split) and takes its track's place in the engine's output (int16, as the
+  // engine gives it; the LXR voices are silent) at the track's level, so the mixer, sends, sidechain, meters and recorder
+  // take it like any voice
   render808(out) {
     const K = this.k808, B = this.b808, e = this.e, T = this.t808;
     for (const id in B) B[id].fill(0);
+    for (let c = 0; c < 6; c++) out[c].fill(0);
     K.render(this.mix808, 64);
     const vols = [e.drums[0], e.drums[1], e.drums[2], e.snare, e.cymbal, e.hat];
     for (let t = 0; t < 7; t++) {
@@ -9427,7 +9435,7 @@ class Player {
     }
     this.clock += 64;
     const out = this.e.renderBlock(), e = this.e;
-    if (this.k808) this.render808(out);
+    if (this.k808) this.render808(out); else for (let c = 0; c < 6; c++) out[c].fill(0);
     const pans = [e.drums[0], e.drums[1], e.drums[2], e.snare, e.cymbal, e.hat];
     const [L, R] = dst;
     L.fill(0); R.fill(0);
@@ -12898,18 +12906,19 @@ const XY_PLACES = (() => {
     g.params.map(([text, pn]) => { const par = PAR[pn]; return { label: nice(text), min: 0, max: spec(par).max, get: () => values[par], set: (x) => setValue(par, x), par }; })]) }));
   // a page's faders, by their row
   const faders = (rows) => rows.map(([heading, box]) => [heading, mFaders.filter((f) => f.key.startsWith(box + ':')).map((f) => ({ label: f.label, min: f.min, max: f.hiOf(), get: f.get, set: (x) => f.put(x), fd: f }))]);
-  return [...drums,
+  void drums; // (Elixir 808: no LXR drum parameters)
+  return [
     { name: 'beat', groups: faders([['beat', 'm-beat-faders'], ['density', 'm-dens-faders']]) },
-    { name: 'perf', groups: faders([['perf', 'm-perf-src']]) },
+    { name: 'perf', groups: faders([['perf', 'm-perf-src']]).map(([h, axes]) => [h, axes.filter((a) => ['tempo', 'sidechain'].includes(a.label))]) },
     { name: 'fx', groups: faders([['echo', 'm-fx-echo'], ['reverb', 'm-fx-ring']]) },
     { name: 'mix', groups: faders([['echo send', 'm-mix-echo'], ['verb send', 'm-mix-ring'], ['pan', 'm-mix-pan'], ['level', 'm-mix-vol']]) },
     { name: 'master', groups: faders([['sidechain', 'm-duck'], ['distortion', 'm-dist'], ['compressor', 'm-comp']]) }];
 })();
 // two pads, one above the other, each with its own x and y picks: [pad][axis] = [place, group, item]
-const XY_KEY = 'elixir808-xy';
+const XY_KEY = 'elixir808-xy2';
 let mXY = (() => { try { return JSON.parse(localStorage.getItem(XY_KEY)); } catch (e) { return null; } })();
-if (!Array.isArray(mXY) || !Array.isArray(mXY[0]) || !Array.isArray(mXY[0][0])) mXY = [mXY && Array.isArray(mXY[0]) ? mXY : [[0, 0, 0], [0, 1, 1]], [[0, 5, 0], [0, 5, 1]]];
-if (!mXY[1]) mXY[1] = [[0, 5, 0], [0, 5, 1]];
+if (!Array.isArray(mXY) || !Array.isArray(mXY[0]) || !Array.isArray(mXY[0][0])) mXY = [[[0, 0, 3], [0, 0, 4]], [[2, 0, 0], [2, 1, 0]]]; // (energy x fills; echo x reverb send)
+if (!mXY[1]) mXY[1] = [[2, 0, 0], [2, 1, 0]];
 const xyAxis = (n, k) => { const [pl, g, i] = mXY[n][k], P = XY_PLACES[pl] || XY_PLACES[0], G = P.groups[g] || P.groups[0]; return { place: P.name, ...(G[1][i] || G[1][0]) }; };
 function xyPick() { try { localStorage.setItem(XY_KEY, JSON.stringify(mXY)); } catch (e) {} mDrawAll(); }
 [0, 1].forEach((n) => {
@@ -13034,11 +13043,12 @@ $('m-rs-reset').addEventListener('click', () => { const key = RS_PAGES[mRsPage][
 // (1..12 unless changed in the user settings; any channel) move knobs 1..12. The ASSIGN box (in the randomise column) turns on assign mode, where tapping a fader opens a chooser of where (a drum, beat, perf, fx, mix, master) and then what,
 // grouped as on that page. The picks are kept in this browser, as [place, group, name], so they survive list changes ----
 // (the picks are kept under a new key when the defaults are remade, so everyone gets the new ones; the old key is cleared)
-const SLOT_KEY = 'elixir808-perfmap2';
-try { localStorage.removeItem('elixir808-perfmap'); } catch (e) {}
+const SLOT_KEY = 'elixir808-perfmap3';
+try { localStorage.removeItem('elixir808-perfmap'); localStorage.removeItem('elixir808-perfmap2'); } catch (e) {}
 // the defaults, four a row: the perform controls and energy, then the best of the beat page
-const SLOT0 = [['perf', 'perf', 'tempo'], ['perf', 'perf', 'sidechain'], ['perf', 'perf', 'pitch'], ['perf', 'perf', 'decay'],
-  ['perf', 'perf', 'filter'], ['perf', 'perf', 'fm'], ['perf', 'perf', 'crossfeed'], ['beat', 'beat', 'energy'],
+// (Elixir 808: no LXR sound macros, so the beat page and the two sends fill their places)
+const SLOT0 = [['perf', 'perf', 'tempo'], ['perf', 'perf', 'sidechain'], ['beat', 'beat', 'energy'], ['beat', 'beat', 'velocity'],
+  ['beat', 'beat', 'groove'], ['beat', 'beat', 'accent'], ['fx', 'echo', 'send'], ['fx', 'reverb', 'send'],
   ['beat', 'beat', 'genre'], ['beat', 'beat', 'beat'], ['beat', 'beat', 'fills'], ['beat', 'beat', 'rush']];
 let mSlots = (() => { try { const v = JSON.parse(localStorage.getItem(SLOT_KEY)); return Array.isArray(v) && v.length >= 7 ? v : null; } catch (e) { return null; } })() || SLOT0.map((x) => x.slice());
 while (mSlots.length < SLOT0.length) mSlots.push(SLOT0[mSlots.length].slice());
@@ -13706,7 +13716,8 @@ addEventListener('click', (e) => {
 // with cmd, ctrl or alt, are left alone ----
 // (the randomisers on 1..7 in the bar's order; enter records, l records a loop even where rec is set to free; the
 // letter rows are the mutes: z..n the drums, a..h their echo sends, q..y their reverb sends)
-const KEYS = { ' ': 'm-play', Enter: 'm-rec', l: 'm-loop', 1: 'm-everything', 2: 'm-kit', 3: 'm-alter', 4: 'm-pattern', 5: 'm-xrand',
+// (Elixir 808: no kit, alter or crossfeed randomisers, which only moved the LXR voices)
+const KEYS = { ' ': 'm-play', Enter: 'm-rec', l: 'm-loop', 1: 'm-everything', 4: 'm-pattern',
   6: 'm-fx-rand', 7: 'm-fx-alter', u: 'm-undo' };
 // (the open pop-up, if any: Escape presses its done button; on the laptop the step sequencer is a strip under the knobs,
 // not a pop-up, so the keys still play while it's open)
@@ -13724,10 +13735,9 @@ addEventListener('keydown', (e) => {
   }
   if (pop) return; // (the other keys wait until the pop-up is closed)
   // (arrows and enter stay with a focused control, so a fader still steps with the arrows)
-  // (shift with 1..6: the voice page with that drum)
-  if (e.shiftKey && /^Digit[1-6]$/.test(e.code)) { e.preventDefault(); mTab('dice'); $('m-voice').children[Number(e.code[5]) - 1].click(); }
+  // (shift with 1..7: the 808 page with that track)
+  if (e.shiftKey && /^Digit[1-7]$/.test(e.code)) { e.preventDefault(); mTab('t808'); $('m-808-tracks').children[Number(e.code[5]) - 1].click(); }
   else if (KEYS[k]) { e.preventDefault(); const b = $(KEYS[k]); if (!b.disabled) b.click(); }
-  else if (k === '[' || k === ']') { e.preventDefault(); mTab('dice'); const n = $('m-vsec').children.length; $('m-vsec').children[(mVSec + (k === ']' ? 1 : n - 1)) % n].click(); }
   else if (k === 'm') { e.preventDefault(); $('m-nextbar').click(); }
   else if (MUTE_KEYS.includes(k)) { e.preventDefault(); mMuteToggle(MUTE_KEYS.indexOf(k)); }
   else if (SEND_KEYS.fx.includes(k)) { e.preventDefault(); mSendToggle('fx', SEND_KEYS.fx.indexOf(k)); }
@@ -13737,8 +13747,8 @@ addEventListener('keydown', (e) => {
   else if (k === '?') { e.preventDefault(); $('m-help-open').click(); }
 }, { capture: true });
 // ---- the 808 page: the TR-808 voices (the bench's own code, bundled as TR808 by tr808-bundle.mjs) on Elixir's tracks ----
-// Each of the seven tracks plays its LXR voice or one of the sixteen 808 voices, which then takes the track's place in
-// the engine's output (app/player.js: hit, render808), so the sequencer, accents, mixer, sends, sidechain and recorder
+// Each of the seven tracks plays one of the sixteen 808 voices (no LXR voices: the LXR-02 engine is only the effects and
+// the mix now), which takes the track's place in the engine's output (app/player.js: hit, render808), so the sequencer, accents, mixer, sends, sidechain and recorder
 // work on it as on any voice. Each 808 voice plays as the circuit simulation or as cached hits, with its own knobs; the
 // cache button renders a voice's hits at its current knobs in a worker, as on the bench, kept in this browser
 // (IndexedDB tr808-cache, the bench's own, so caches made on either show up in both); revert brings the shipped ones back.
@@ -13751,6 +13761,9 @@ const T8_LIVE = ['level', 'snap']; // knobs cached plays live; the cache button 
 const T8_TRACKS = ['dr1', 'dr2', 'dr3', 'sn', 'cy', 'cl', 'op'];
 const T8_KIT = ['bd', 'lt', 'ht', 'sd', 'cy', 'ch', 'oh'];
 const T8_KEY = 'elixir808-tr808';
+// the cache button records this many hits a voice, plain and accented each, played in random order, never the same one
+// twice running (the shipped cache has 16)
+const T8_HITS = 4;
 // shipped cached hits: the bench's cache/ folder, beside this app's folder
 const T8_CACHE_URL = new URL('../cache/', location.href);
 
@@ -13759,7 +13772,7 @@ const t8 = { map: T8_KIT.slice(), models: Object.fromEntries(T8_IDS.map((id) => 
 try {
   const s = JSON.parse(localStorage.getItem(T8_KEY));
   if (s) {
-    if (Array.isArray(s.map) && s.map.length === 7) t8.map = s.map.map((id) => (T8_IDS.includes(id) ? id : null));
+    if (Array.isArray(s.map) && s.map.length === 7) t8.map = s.map.map((id, t) => (T8_IDS.includes(id) ? id : T8_KIT[t]));
     for (const id of T8_IDS) {
       if (s.models?.[id] === 'circuit' || s.models?.[id] === 'cached') t8.models[id] = s.models[id];
       for (const p of T8_PARAMS[id]) if (typeof s.values?.[id]?.[p.id] === 'number') t8.values[id][p.id] = s.values[id][p.id];
@@ -13844,13 +13857,13 @@ function t8SetKnob(id, p, x, save = true) {
 let t8WorkerUrl = null;
 function t8Worker() {
   t8WorkerUrl ??= URL.createObjectURL(new Blob([document.getElementById('engine').textContent, `
-self.onmessage = ({ data: { id, values } }) => {
+self.onmessage = ({ data: { id, values, variants } }) => {
   try {
     let last = 0;
     const { info, pcm } = TR808.buildCache(id, values, (done, total) => {
       const now = Date.now();
       if (now - last > 150 || done === total) { last = now; self.postMessage({ t: 'progress', id, done, total }); }
-    });
+    }, variants);
     self.postMessage({ t: 'done', id, info, pcm: pcm.buffer }, [pcm.buffer]);
   } catch (err) { self.postMessage({ t: 'error', id, message: String(err && err.message || err) }); }
 };`], { type: 'text/javascript' }));
@@ -13877,7 +13890,7 @@ function t8MakeCache(id) {
     t8Sent.delete(id); delete t8Loading[id];
     t8SetModel(id, 'cached');
   };
-  w.postMessage({ id, values: { ...t8.values[id] } });
+  w.postMessage({ id, values: { ...t8.values[id] }, variants: T8_HITS });
 }
 async function t8Revert(id) {
   if (!t8Custom[id]) return;
@@ -13898,10 +13911,10 @@ const t8TrackBtns = T8_TRACKS.map((name, t) => {
   $('m-808-tracks').append(b);
   return b;
 });
-const t8PickBtns = [null, ...T8_IDS].map((id) => {
+const t8PickBtns = T8_IDS.map((id) => {
   const b = document.createElement('button');
-  b.type = 'button'; b.className = 'm-toggle'; b.textContent = id || 'lxr';
-  b.title = id ? T8_NAME[id] : 'the LXR voice';
+  b.type = 'button'; b.className = 'm-toggle'; b.textContent = id;
+  b.title = T8_NAME[id];
   b.addEventListener('click', () => {
     t8.map[t8.track] = id; t8Save(); t8SendMap();
     if (id && t8.models[id] === 'cached') t8LoadCached(id);
@@ -13932,28 +13945,26 @@ $('m-808-kit').addEventListener('click', () => {
   for (const id of T8_KIT) if (t8.models[id] === 'cached') t8LoadCached(id);
   t8Draw();
 });
-$('m-808-alllxr').addEventListener('click', () => { t8.map.fill(null); t8Save(); t8SendMap(); t8Draw(); });
 
 const t8KnobText = (id, knobs) => T8_PARAMS[id].filter((p) => knobs?.[p.id] !== undefined).map((p) => `${p.name.toLowerCase()} ${Math.round(knobs[p.id] * 100)}`).join(' · ');
 function t8Draw() {
   const id = t8.map[t8.track];
-  t8TrackBtns.forEach((b, t) => { b.setAttribute('aria-selected', t === t8.track); b.textContent = `${T8_TRACKS[t]} ${t8.map[t] || 'lxr'}`; });
-  t8PickBtns.forEach((b, i) => b.setAttribute('aria-pressed', (i ? T8_IDS[i - 1] : null) === id));
-  $('m-808-body').hidden = !id; $('m-808-lxr').hidden = !!id;
+  t8TrackBtns.forEach((b, t) => { b.setAttribute('aria-selected', t === t8.track); b.textContent = `${T8_TRACKS[t]} ${t8.map[t]}`; });
+  t8PickBtns.forEach((b, i) => b.setAttribute('aria-pressed', T8_IDS[i] === id));
   for (const k in t8KnobBoxes) t8KnobBoxes[k].hidden = k !== id;
-  if (!id) return;
   $('m-808-name').textContent = T8_NAME[id];
   document.querySelectorAll('[data-m808]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.m808 === t8.models[id]));
-  // the cache row: only for voices with knobs the cache bakes in (not rim shot, claves, maracas, cowbell, closed hat)
+  // the cache row, on every voice (one with only a level knob just gets new hits)
   const bake = T8_PARAMS[id].some((p) => !T8_LIVE.includes(p.id)), j = t8Jobs[id], c = t8Custom[id], st = $('m-808-status');
-  $('m-808-cache-go').hidden = !bake; $('m-808-cache-go').disabled = !!j && !j.error;
+  $('m-808-cache-go').disabled = !!j && !j.error;
   $('m-808-revert').hidden = !c || !!j;
   if (j) st.textContent = j.error ? `failed: ${j.error}` : j.total ? `rendering ${Math.round(100 * j.done / j.total)}%…` : 'starting…';
   else if (t8Missing.has(id) && !c) st.textContent = 'shipped hits not found: cached plays the synth model';
-  else if (!c) st.textContent = bake ? 'shipped hits (default knobs)' : 'shipped hits';
+  else if (!c) st.textContent = bake ? 'shipped hits, 16 (default knobs)' : 'shipped hits, 16';
   else {
     const k = c.info.knobs ?? {}, moved = Object.keys(k).some((p) => Math.abs((t8.values[id][p] ?? k[p]) - k[p]) > 1e-9);
-    st.textContent = moved ? 'your hits (knobs moved since)' : 'your hits';
+    const n = c.info.normal.length;
+    st.textContent = moved ? `your ${n} hits (knobs moved since)` : `your ${n} hits, random robin`;
     st.title = `cached plays your hits: ${t8KnobText(id, k)}`;
   }
 }

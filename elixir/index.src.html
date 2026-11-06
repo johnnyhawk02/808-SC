@@ -33,7 +33,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<meta name="description" content="Elixir 808: Elixir Desktop's drum machine with the TR-808 circuit-modelled voices on its tracks, beside the LXR-02 engine port.">
+<meta name="description" content="Elixir 808: Elixir Desktop's drum machine playing the TR-808 circuit-modelled voices.">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=VT323&display=swap">
@@ -96,10 +96,9 @@
         <div class="m-808-head"><b id="m-808-name"></b>
           <span class="m-808-models" role="group" aria-label="model"><button class="m-toggle" type="button" data-m808="circuit" title="The component-level circuit simulation: every knob works, costs CPU">circuit</button><button class="m-toggle" type="button" data-m808="cached" title="16 normal + 16 accented hits rendered by the circuit, one picked at random per hit. Level, decay and the clap's snap stay live. Almost no CPU">cached</button></span></div>
         <div class="m-808-knobs" id="m-808-knobs"></div>
-        <div class="m-808-cache"><button class="m-btn" id="m-808-cache-go" type="button" title="Render 16 normal + 16 accented hits through the circuit at these knob settings, keep them in this browser and play them as cached">cache</button><span class="m-808-status" id="m-808-status" aria-live="polite"></span><button class="m-btn" id="m-808-revert" type="button" hidden title="Forget your cached hits and go back to the shipped ones (default knobs)">revert</button></div>
+        <div class="m-808-cache"><button class="m-btn" id="m-808-cache-go" type="button" title="Record 4 normal + 4 accented hits through the circuit at these knob settings, keep them in this browser and play them as cached, picked at random, never the same one twice running">cache</button><span class="m-808-status" id="m-808-status" aria-live="polite"></span><button class="m-btn" id="m-808-revert" type="button" hidden title="Forget your cached hits and go back to the shipped ones (default knobs)">revert</button></div>
       </div>
-      <p class="m-808-lxr" id="m-808-lxr" hidden>This track plays its LXR voice (the voice page). Pick an 808 voice above to swap it.</p>
-      <div class="m-808-all"><button class="m-btn" id="m-808-kit" type="button" title="Every track on its 808 voice: BD, LT, HT, SD, CY, CH, OH">808 kit</button><button class="m-btn" id="m-808-alllxr" type="button" title="Every track back on its LXR voice">all lxr</button></div>
+      <div class="m-808-all"><button class="m-btn" id="m-808-kit" type="button" title="The standard kit on the tracks: BD, LT, HT, SD, CY, CH, OH">808 kit</button></div>
     </section>
   </div>
 
@@ -258,7 +257,7 @@
 
 <div class="wrap" aria-hidden="true">
   <header class="topbar">
-    <h1><button class="title" id="about-open" type="button" aria-haspopup="dialog" title="About Elixir"><b>elixir</b> <small>six-voice drum machine</small></button></h1>
+    <h1><button class="title" id="about-open" type="button" aria-haspopup="dialog" title="About Elixir"><b>elixir</b> <small>TR-808 drum machine</small></button></h1>
     <div class="kitbar">
       <label class="field" for="kit"><span class="lbl">preset</span> <select id="kit" aria-label="Preset"></select></label>
       <span class="stepper"><button class="btn" id="kit-prev" type="button" aria-label="Previous preset">‹</button><button class="btn" id="kit-next" type="button" aria-label="Next preset">›</button></span>

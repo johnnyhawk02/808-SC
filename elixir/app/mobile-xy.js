@@ -9,18 +9,19 @@ const XY_PLACES = (() => {
     g.params.map(([text, pn]) => { const par = PAR[pn]; return { label: nice(text), min: 0, max: spec(par).max, get: () => values[par], set: (x) => setValue(par, x), par }; })]) }));
   // a page's faders, by their row
   const faders = (rows) => rows.map(([heading, box]) => [heading, mFaders.filter((f) => f.key.startsWith(box + ':')).map((f) => ({ label: f.label, min: f.min, max: f.hiOf(), get: f.get, set: (x) => f.put(x), fd: f }))]);
-  return [...drums,
+  void drums; // (Elixir 808: no LXR drum parameters)
+  return [
     { name: 'beat', groups: faders([['beat', 'm-beat-faders'], ['density', 'm-dens-faders']]) },
-    { name: 'perf', groups: faders([['perf', 'm-perf-src']]) },
+    { name: 'perf', groups: faders([['perf', 'm-perf-src']]).map(([h, axes]) => [h, axes.filter((a) => ['tempo', 'sidechain'].includes(a.label))]) },
     { name: 'fx', groups: faders([['echo', 'm-fx-echo'], ['reverb', 'm-fx-ring']]) },
     { name: 'mix', groups: faders([['echo send', 'm-mix-echo'], ['verb send', 'm-mix-ring'], ['pan', 'm-mix-pan'], ['level', 'm-mix-vol']]) },
     { name: 'master', groups: faders([['sidechain', 'm-duck'], ['distortion', 'm-dist'], ['compressor', 'm-comp']]) }];
 })();
 // two pads, one above the other, each with its own x and y picks: [pad][axis] = [place, group, item]
-const XY_KEY = 'elixir808-xy';
+const XY_KEY = 'elixir808-xy2';
 let mXY = (() => { try { return JSON.parse(localStorage.getItem(XY_KEY)); } catch (e) { return null; } })();
-if (!Array.isArray(mXY) || !Array.isArray(mXY[0]) || !Array.isArray(mXY[0][0])) mXY = [mXY && Array.isArray(mXY[0]) ? mXY : [[0, 0, 0], [0, 1, 1]], [[0, 5, 0], [0, 5, 1]]];
-if (!mXY[1]) mXY[1] = [[0, 5, 0], [0, 5, 1]];
+if (!Array.isArray(mXY) || !Array.isArray(mXY[0]) || !Array.isArray(mXY[0][0])) mXY = [[[0, 0, 3], [0, 0, 4]], [[2, 0, 0], [2, 1, 0]]]; // (energy x fills; echo x reverb send)
+if (!mXY[1]) mXY[1] = [[2, 0, 0], [2, 1, 0]];
 const xyAxis = (n, k) => { const [pl, g, i] = mXY[n][k], P = XY_PLACES[pl] || XY_PLACES[0], G = P.groups[g] || P.groups[0]; return { place: P.name, ...(G[1][i] || G[1][0]) }; };
 function xyPick() { try { localStorage.setItem(XY_KEY, JSON.stringify(mXY)); } catch (e) {} mDrawAll(); }
 [0, 1].forEach((n) => {
