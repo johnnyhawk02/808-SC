@@ -1528,7 +1528,7 @@ export class LxrEngine {
    * Returns this.fxOut: the bus's stereo output (interleaved int16) for the last renderBlock().
    * gains[n], if given, scales voice n first (mute, accent; not in the firmware).
    */
-  renderFx(gains = null, width = null) {
+  renderFx(gains = null, width = null, extra = null) {
     const fx = this.fx, inp = fx.input, out = this.fxOut;
     inp.fill(0); out.fill(0);
     const pans = [this.drums[0], this.drums[1], this.drums[2], this.snare, this.cymbal, this.hat];
@@ -1543,6 +1543,8 @@ export class LxrEngine {
         inp[2 * i + 1] = qadd16(toI16(f(s * v.triggeredPanR)), inp[2 * i + 1]);
       }
     }
+    // Not in the firmware: extra stereo input (int16 scale, interleaved), the 808 sounds' own echo sends (Elixir 808)
+    if (extra) for (let i = 0; i < 2 * BLOCK; i++) inp[i] = qadd16(ssat16(Math.round(extra[i])), inp[i]);
     // Not in the firmware (width 0..2, 1 or null = as the firmware): the delay's stereo width.
     // Ping-pong: below 1 the side of its input is narrowed (0 = mono, no bounce); above 1 the mid is
     // pushed left, since the firmware's ping-pong only bounces what reaches it off-centre (2 = a centred

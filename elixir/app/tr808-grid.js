@@ -5,9 +5,6 @@
 // first edit copies it into the lanes. The lanes are kept in this browser.
 // Presets: each lane's 16 steps as a string, '.' off, 'x' on, 'X' accent, plus the tempo
 const G8_PRESETS = [
-  { name: 'electro', bpm: 122, l: { bd: 'X.....x...X.....', sd: '....X.......X...', cp: '....x.......x...', ch: 'x.x.x.x.x.x.x.x.', oh: '..............x.' } },
-  { name: 'boom bap', bpm: 90, l: { bd: 'X.........x..x..', rs: '.......x........', sd: '....X.......X...', ch: 'x.x.x.x.x.x.x.x.' } },
-  { name: 'house', bpm: 124, l: { bd: 'X...X...X...X...', cp: '....x.......x...', ch: 'x...x...x...x...', oh: '..x...x...x...x.' } },
   { name: 'trap', bpm: 140, l: { bd: 'X......x..X.....', sd: '........X.......', cp: '........X.......', ch: 'x.x.xxx.x.x.xxxx' } },
   { name: 'miami', bpm: 130, l: { bd: 'X..x..X...X..x..', sd: '....X.......X...', cp: '....x.......x...', ch: 'x.xxx.xxx.xxx.xx' } },
   { name: 'breaks', bpm: 128, l: { bd: 'X.x.......x.....', sd: '....X..x.x..X...', ch: 'x.x.x.x.x.x.x...', oh: '..............X.' } },
@@ -19,13 +16,13 @@ const G8_PRESETS = [
 const G8_IDS = T8_ORDER;
 const G8_KEY = 'elixir808-lanes';
 const g8Empty = () => Object.fromEntries(G8_IDS.map((id) => [id, { on: new Array(16).fill(0), acc: new Array(16).fill(0) }]));
-const g8 = { mode: 'lanes', lanes: null, preset: 'electro' };
+const g8 = { mode: 'lanes', lanes: null, preset: null, sel: 'bd' };
 try {
   const s = JSON.parse(localStorage.getItem(G8_KEY));
   if (s && s.lanes) {
     g8.lanes = g8Empty();
     for (const id of G8_IDS) for (let i = 0; i < 16; i++) { g8.lanes[id].on[i] = s.lanes[id]?.on?.[i] ? 1 : 0; g8.lanes[id].acc[i] = s.lanes[id]?.acc?.[i] ? 1 : 0; }
-    g8.mode = s.mode === 'gen' ? 'gen' : 'lanes'; g8.preset = s.preset ?? null;
+    g8.mode = s.mode === 'gen' ? 'gen' : 'lanes'; g8.preset = s.preset ?? null; if (T8_ORDER.includes(s.sel)) g8.sel = s.sel;
   }
 } catch (e) {}
 const g8Save = () => { try { localStorage.setItem(G8_KEY, JSON.stringify(g8)); } catch (e) {} };
@@ -56,7 +53,7 @@ const g8Cells = {}, g8Labs = {};
   for (const id of G8_IDS) {
     const lab = document.createElement('button');
     lab.type = 'button'; lab.className = 'm-g8-lab'; lab.textContent = id; lab.title = `${T8_NAME[id]}: tap to hear it`;
-    lab.addEventListener('click', () => t8Audition(id));
+    lab.addEventListener('click', () => { t8Audition(id); g8Select(id); });
     box.append(lab); g8Labs[id] = lab;
     g8Cells[id] = [];
     for (let s = 0; s < 16; s++) {
@@ -66,7 +63,7 @@ const g8Cells = {}, g8Labs = {};
         g8Take();
         const L = g8.lanes[id];
         // off -> on -> accent -> off
-        if (!L.on[s]) { L.on[s] = 1; L.acc[s] = 0; } else if (!L.acc[s]) L.acc[s] = 1; else { L.on[s] = 0; L.acc[s] = 0; }
+        if (!L.on[s]) { L.on[s] = 1; L.acc[s] = 0; g8Select(id); } else if (!L.acc[s]) L.acc[s] = 1; else { L.on[s] = 0; L.acc[s] = 0; }
         g8Send(); g8Draw();
       });
       box.append(c); g8Cells[id].push(c);
@@ -80,6 +77,9 @@ const g8Cells = {}, g8Labs = {};
   });
   $('m-g8-gen').addEventListener('click', () => { g8.mode = 'gen'; setSource('perform'); generate(); sendSeq(); g8Send(); g8Draw(); });
 }
+// the side panel: the controls of the sound last put on a lane (or whose name was tapped)
+for (const id of T8_ORDER) t8Card(id, $('m-g8-side'));
+function g8Select(id) { g8.sel = id; g8Save(); g8Draw(); }
 function g8Load(pr) {
   g8.lanes = g8Empty();
   for (const id in pr.l) for (let s = 0; s < 16; s++) {
@@ -93,8 +93,9 @@ function g8Load(pr) {
 let g8Now = -1;
 function g8Draw() {
   const L = g8Shown(), lanes = g8.mode === 'lanes';
+  [...$('m-g8-side').children].forEach((c, i) => { c.hidden = T8_ORDER[i] !== g8.sel; });
   for (const id of G8_IDS) {
-    g8Labs[id].classList.toggle('used', L[id].on.some(Boolean));
+    g8Labs[id].classList.toggle('used', L[id].on.some(Boolean)); g8Labs[id].classList.toggle('sel', id === g8.sel);
     g8Cells[id].forEach((c, s) => {
       const on = !!L[id].on[s], acc = on && !!L[id].acc[s];
       c.classList.toggle('on', on); c.classList.toggle('acc', acc); c.classList.toggle('now', s === g8Now);
@@ -112,6 +113,6 @@ const g8Gen = generate;
 generate = function () { const r = g8Gen.apply(this, arguments); if (g8.mode === 'gen') g8Draw(); return r; };
 perfDraws.push(g8Draw);
 M_PAGE_NAMES.grid = 'grid';
-// first run: the electro preset (its tempo too)
+// first run: the first preset (its tempo too)
 if (!g8.lanes) g8Load(G8_PRESETS[0]); else g8Send();
 g8Draw();

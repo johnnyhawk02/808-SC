@@ -162,8 +162,9 @@ async function t8Audition(id) {
   if (t8.models[id] === 'cached') await t8LoadCached(id);
   send({ type: 'hit808', id, acc: false });
 }
-const t8Cards = {};
-for (const id of T8_ORDER) {
+// (a sound's box is built twice: on the 808 page and in the grid page's side panel; t8Draw keeps both)
+const t8Cards = Object.fromEntries(T8_ORDER.map((id) => [id, []]));
+function t8Card(id, into) {
   const card = document.createElement('div');
   card.className = 'm-808-v';
   card.innerHTML = `<button class="m-808-vname" type="button" title="${T8_NAME[id]}: tap to hear it">${id}</button>`
@@ -173,7 +174,7 @@ for (const id of T8_ORDER) {
     + '<button class="m-btn m-808-go" type="button" title="Record 4 normal + 4 accented hits through the circuit at these knobs, kept in this browser, played at random, never the same one twice running">cache</button>'
     + '<span class="m-808-status"></span>'
     + '<button class="m-808-revert" type="button" hidden title="Forget your hits and go back to the shipped ones (default knobs)">revert</button>';
-  $('m-808-all').append(card);
+  into.append(card);
   card.querySelector('.m-808-vname').addEventListener('click', () => t8Audition(id));
   card.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => t8SetModel(id, b.dataset.m)));
   card.querySelector('.m-808-go').addEventListener('click', () => t8MakeCache(id));
@@ -181,15 +182,17 @@ for (const id of T8_ORDER) {
   const box = card.querySelector('.m-808-set');
   for (const p of T8_PARAMS[id]) {
     mFader(box, p.name.toLowerCase(), { knob: true, min: 0, max: 100, get: () => Math.round(t8.values[id][p.id] * 100), show: String, dflt: Math.round(p.def * 100),
-      set: (v) => { t8SetKnob(id, p.id, v / 100); t8Draw(); } });
+      set: (v) => { t8SetKnob(id, p.id, v / 100); t8Draw(); mDrawAll(); } });
   }
-  t8Cards[id] = card;
+  t8Cards[id].push(card);
+  return card;
 }
+for (const id of T8_ORDER) t8Card(id, $('m-808-all'));
 
 const t8KnobText = (id, knobs) => T8_PARAMS[id].filter((p) => knobs?.[p.id] !== undefined).map((p) => `${p.name.toLowerCase()} ${Math.round(knobs[p.id] * 100)}`).join(' · ');
 function t8Draw() {
-  for (const id in t8Cards) {
-    const card = t8Cards[id], j = t8Jobs[id], c = t8Custom[id], st = card.querySelector('.m-808-status');
+  for (const id in t8Cards) for (const card of t8Cards[id]) {
+    const j = t8Jobs[id], c = t8Custom[id], st = card.querySelector('.m-808-status');
     card.querySelectorAll('[data-m]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.m === t8.models[id]));
     card.querySelector('.m-808-go').disabled = !!j && !j.error;
     card.querySelector('.m-808-revert').hidden = !c || !!j;

@@ -4,13 +4,14 @@ A copy of [Elixir Desktop](https://github.com/johnnyhawk02/elixir-desktop) (comm
 from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.github.io/Tr808/elixir/**
 
 - **Grid page** (opens first): a lane for each of the sixteen 808 sounds, sixteen steps; tap a step for on, accent,
-  off, tap a sound's name to hear it. Ten 808 pattern presets over it (electro, boom bap, house, trap, miami, breaks,
-  toms, congas, cowbell, empty) set the lanes and the tempo; **generator** goes back to the beat page's generated
+  off, tap a sound's name to hear it. Seven 808 pattern presets over it (trap, miami, breaks, toms, congas, cowbell,
+  empty) set the lanes and the tempo; beside it, the controls of the sound last put on a lane (or tapped); **generator** goes back to the beat page's generated
   pattern (on the seven tracks, one sound each: BD, LT, HT, SD, CY, CH, OH), shown in their lanes, and the first edit
   copies it into the lanes. The lanes are kept in this browser.
 - **808 page**: all sixteen sounds at once, each with circuit/cached, its knobs and its cache button.
-- Each lane plays on a track of the mixer (`BUS808` in `app/player.js`): BD on drum 1 (the sidechain key), toms on
-  drum 2, congas, claves, maracas and cowbell on drum 3, snare, rim shot and clap on the snare, then cymbal and hats.
+- **Mix page**: a strip for each of the sixteen sounds (echo send, reverb send, pan, level), mixed per sound in the
+  player (`vmix808`; the echo takes them through `renderFx`'s extra input in `lxr.js`). The kick keys the sidechain and
+  the rest duck. Each sound still has a track (`BUS808`) for mutes and the rush.
 - Looks: 80s magenta.
 - Each voice plays as the **circuit** simulation (every knob works, costs CPU) or **cached** hits (16 normal + 16
   accented hits rendered by the circuit; level, decay and the clap's snap stay live; almost no CPU), with its own knobs.
