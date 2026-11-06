@@ -22,9 +22,7 @@ addEventListener('keydown', (e) => {
   }
   if (pop) return; // (the other keys wait until the pop-up is closed)
   // (arrows and enter stay with a focused control, so a fader still steps with the arrows)
-  // (shift with 1..7: the 808 page with that track)
-  if (e.shiftKey && /^Digit[1-7]$/.test(e.code)) { e.preventDefault(); mTab('t808'); $('m-808-tracks').children[Number(e.code[5]) - 1].click(); }
-  else if (KEYS[k]) { e.preventDefault(); const b = $(KEYS[k]); if (!b.disabled) b.click(); }
+  if (KEYS[k]) { e.preventDefault(); const b = $(KEYS[k]); if (!b.disabled) b.click(); }
   else if (k === 'm') { e.preventDefault(); $('m-nextbar').click(); }
   else if (MUTE_KEYS.includes(k)) { e.preventDefault(); mMuteToggle(MUTE_KEYS.indexOf(k)); }
   else if (SEND_KEYS.fx.includes(k)) { e.preventDefault(); mSendToggle('fx', SEND_KEYS.fx.indexOf(k)); }
