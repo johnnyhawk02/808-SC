@@ -30,7 +30,8 @@
 
 /* ---- the grid page: presets, then seven rows of sixteen steps, a beat a column group ---- */
 .m-g8-card { display: grid; grid-template-columns: minmax(0, 1fr) 170px; grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px 14px; min-height: 0; padding: 10px 2px; }
-.m-g8-presets { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.m-g8-presets { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
+.m .m-g8-presets .m-toggle:not(.used):not([aria-pressed="true"]) { opacity: .5; }
 .m .m-g8-presets .m-toggle { min-width: 0; min-height: 34px; padding: 0 2px; font-size: var(--fs-xs) !important; text-transform: uppercase; }
 .m-g8-grid { display: grid; grid-template-columns: 48px repeat(16, minmax(0, 1fr)); grid-template-rows: repeat(16, minmax(0, 1fr)); gap: 2px; min-height: 0; }
 .m .m-g8-lab { min-width: 0; min-height: 0; padding: 0 0 0 2px; border: 0 !important; background: none !important; box-shadow: none !important; color: var(--ink);
