@@ -28,7 +28,7 @@ const g8Clean = (src) => {
   for (const id of G8_IDS) for (let i = 0; i < 16; i++) { L[id].on[i] = src?.[id]?.on?.[i] ? 1 : 0; L[id].acc[i] = src?.[id]?.acc?.[i] ? 1 : 0; }
   return L;
 };
-const g8 = { mode: 'lanes', pats: G8_SEEDS.map(g8FromText), cur: 0, sel: 'bd' };
+const g8 = { mode: 'lanes', pats: G8_SEEDS.map(g8FromText), cur: 0, sel: 'bd', bdTop: false };
 // (the pattern picked: g8.lanes)
 Object.defineProperty(g8, 'lanes', { get: () => g8.pats[g8.cur], set: (L) => { g8.pats[g8.cur] = L; }, enumerable: false });
 try {
@@ -36,7 +36,7 @@ try {
   if (s && Array.isArray(s.pats)) {
     for (let i = 0; i < G8_N; i++) if (s.pats[i]) g8.pats[i] = g8Clean(s.pats[i]);
     if (s.cur >= 0 && s.cur < G8_N) g8.cur = s.cur;
-    g8.mode = s.mode === 'gen' ? 'gen' : 'lanes'; if (T8_ORDER.includes(s.sel)) g8.sel = s.sel;
+    g8.mode = s.mode === 'gen' ? 'gen' : 'lanes'; if (T8_ORDER.includes(s.sel)) g8.sel = s.sel; g8.bdTop = s.bdTop === true;
   } else {
     // (from before the eight patterns: the one pattern becomes pattern 1)
     const o = JSON.parse(localStorage.getItem('elixir808-lanes'));
@@ -130,6 +130,16 @@ t8SetModel = function (id, m) { if (m === 'circuit' && g8Auto?.id === id) g8Auto
 const g8Revert = t8Revert;
 t8Revert = async function (id) { if (g8Auto?.id === id) g8Auto = null; g8Quiet++; try { return await g8Revert(id); } finally { g8Quiet--; } };
 new MutationObserver(() => g8Unauto()).observe($('m'), { attributes: true, attributeFilter: ['data-page'] });
+// the lanes' order: the kick at the bottom, the hats at the top (as a drum machine's rows run up the kit), or, in the
+// options menu, the kick at the top
+function g8Order() {
+  G8_IDS.forEach((id, i) => {
+    const row = String(g8.bdTop ? i + 1 : G8_IDS.length - i);
+    g8Labs[id].style.gridRow = row; g8Labs[id].style.gridColumn = '1';
+    g8Cells[id].forEach((c, s) => { c.style.gridRow = row; c.style.gridColumn = String(s + 2); });
+  });
+}
+function g8SetBdTop(on) { g8.bdTop = on; g8Save(); g8Order(); }
 function g8Pick(i) {
   g8.cur = i; g8.mode = 'lanes';
   g8Send(); g8Draw();
@@ -157,5 +167,6 @@ const g8Gen = generate;
 generate = function () { const r = g8Gen.apply(this, arguments); if (g8.mode === 'gen') g8Draw(); return r; };
 perfDraws.push(g8Draw);
 M_PAGE_NAMES.grid = 'grid';
+g8Order();
 g8Send();
 g8Draw();
