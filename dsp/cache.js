@@ -1,5 +1,7 @@
-// Cached circuit hits: each voice played back from hits rendered offline by
-// the circuit model (test/cache-render.mjs) at the default knob settings.
+// Cached circuit hits: each voice played back from hits rendered by the
+// circuit model (dsp/cache-build.js): offline at the default knob settings
+// (test/cache-render.mjs, the shipped cache/), or in the browser at the
+// user's own settings (the bench's Cache button, kept in IndexedDB).
 // 16 slightly different hits per voice and accent level (other noise and
 // metal-oscillator states, trigger level +-1.5%); every trigger picks one at
 // random, never the same one twice in a row. Costs next to nothing.
@@ -7,13 +9,14 @@
 // Knobs: LEVEL follows the circuit's own level response (measured when the
 // cache was rendered). DECAY, where the voice has one, shortens the hit with
 // an exponential fade below its default setting; at or above the default the
-// hit plays as rendered. Pitch and tone knobs are ignored. A closed hat
+// hit plays as rendered. Pitch and tone knobs are baked in. A closed hat
 // chokes a ringing open hat with a 10 ms fade.
 //
 // Files: cache/<id>.wav (16-bit mono, the hits back to back, normal ones
 // first) and cache/index.json ({ <id>: { sr, scale, normal: [[start, len]..],
 // accent: [..], level: [gain at level 0, 1/8 .. 1], and for a voice with a
-// SNAP knob dryNormal / dryAccent: the same hits with SNAP full } }).
+// SNAP knob dryNormal / dryAccent: the same hits with SNAP full, and for a
+// cache rendered at other knob settings, knobs: { <knob>: position } }).
 import { Voice, clamp } from './core.js';
 
 export const VARIANTS = 16;
@@ -81,9 +84,10 @@ export class CachedVoice extends Voice {
     const t = this.info.level, x = clamp(this.p.level ?? 1, 0, 1) * (t.length - 1), i = Math.min(t.length - 2, Math.floor(x));
     return t[i] + (t[i + 1] - t[i]) * (x - i);
   }
-  // fade rate (per second): 0 at or above the default DECAY
+  // fade rate (per second): 0 at or above the DECAY the hits were rendered at
+  // (the default, or the setting baked in by the bench's Cache button)
   _fade(len) {
-    const def = this.params.find((q) => q.id === 'decay')?.def;
+    const def = this.info.knobs?.decay ?? this.params.find((q) => q.id === 'decay')?.def;
     if (def === undefined) return 0;
     const d = clamp(this.p.decay, 0, 1);
     return d >= def ? 0 : 3 * (def / Math.max(d, 0.01) - 1) / (len / this.info.sr);

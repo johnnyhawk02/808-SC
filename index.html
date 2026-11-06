@@ -109,6 +109,15 @@ input[type=range] { accent-color: var(--fam, var(--fam-c)); width: 100%; margin:
 }
 .pad:hover { border-color: var(--fam); }
 .pad.acc { background: var(--fam); color: #1d1c1b; border-color: var(--fam); }
+.cachebar { display: flex; align-items: center; gap: 8px; min-height: 26px; }
+.cachebar[hidden] { display: none; }
+.cachebar button { background: var(--panel-3); border: 1px solid var(--line); border-radius: 4px; padding: 6px 10px; cursor: pointer; font: 600 11px/1 var(--f-mono); letter-spacing: .07em; text-transform: uppercase; color: var(--ink); }
+.cachebar button:hover:not(:disabled) { border-color: var(--fam); }
+.cachebar button:disabled { opacity: .5; cursor: progress; }
+.cachebar .cache-revert { color: var(--ink-dim); }
+.cache-status { flex: 1; min-width: 0; font: 11px/1.2 var(--f-mono); color: var(--ink-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card.custom .cache-status { color: var(--fam); }
+.card.custom .model button[data-m=cached]::after { content: "*"; }
 .card.loading .model button[data-m=sample] { opacity: .5; }
 .card.nosample .model button[data-m=sample] { text-decoration: line-through; }
 .card.hit { animation: hit .35s ease-out; }
@@ -157,7 +166,7 @@ input[type=range] { accent-color: var(--fam, var(--fam-c)); width: 100%; margin:
   <div class="top">
     <div class="intro">
       <div>
-        <p class="lede">All sixteen TR-808 voices from the 1981 service notes, each in four versions. <b>Circuit</b> simulates every resistor, capacitor, diode, transistor and op-amp on the schematic, sample by sample. <b>Cached</b> plays hits the circuit rendered in advance, at almost no CPU (level and decay work, pitch and tone don't). <b>Synth</b> rebuilds the same sound from a few oscillators, filters and envelopes fitted to the circuit model, at a fraction of the CPU. <b>808</b> plays recordings of a real TR-808 at the nearest knob setting.</p>
+        <p class="lede">All sixteen TR-808 voices from the 1981 service notes, each in four versions. <b>Circuit</b> simulates every resistor, capacitor, diode, transistor and op-amp on the schematic, sample by sample. <b>Cached</b> plays hits the circuit rendered in advance, at almost no CPU (level and decay work, pitch and tone don't). To cache your own sound, set a voice's knobs and press its <b>Cache</b> button: the circuit renders fresh hits at those settings and Cached plays them from then on (kept in this browser; Revert goes back). <b>Synth</b> rebuilds the same sound from a few oscillators, filters and envelopes fitted to the circuit model, at a fraction of the CPU. <b>808</b> plays recordings of a real TR-808 at the nearest knob setting.</p>
       </div>
       <div class="transport">
         <label class="ctl" for="master">Master<input type="range" id="master" min="0" max="1.5" step="0.01" value="0.8"></label>
