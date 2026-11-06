@@ -135,71 +135,7 @@ document.querySelectorAll('[data-m-undo]').forEach((b) => b.addEventListener('cl
 }));
 new MutationObserver(mUndo).observe($('undo'), { attributes: true, attributeFilter: ['disabled'] });
 
-// ---- the voice page: every parameter of a drum. The top strip picks the drum, the second one of four pages, each the
-// desktop's sections grouped by job: tone (oscillator, fm), shape (amp eg, the pitch envelope, the click), filter (and
-// the voice's mix) and mod (lfo, velocity). A drum's page is made the first time it's shown and kept (so a fader's
-// step sequencer stays with it) ----
-const vpNice = (t) => t.toLowerCase().replace(/_/g, ' ');
-// each fader's label on its page, by section and the desktop's name (anything not here: the name, lower case)
-const VP_LABEL = {
-  oscillator: { WAVEFORM: 'wave', MIX: 'noise mix' },
-  fm: { FM_AMOUNT: 'fm amt', FM_FREQ: 'fm freq', WAVEFORM: 'fm wave', MODE: 'fm mode', MOD_OSC1_FREQ: 'mod1 freq', MOD_OSC2_FREQ: 'mod2 freq',
-    MOD_OSC1_GAIN: 'mod1 gain', MOD_OSC2_GAIN: 'mod2 gain' },
-  amp: { EG_SLOPE: 'slope', DECAY_CLOSED: 'decay cl', DECAY_OPEN: 'decay op' },
-  pitch: { PITCH_DECAY: 'pitch dec', EG_SLOPE: 'pitch slope', MOD_AMOUNT: 'pitch amt' },
-  click: { TRANSIENT_WAVE: 'click', TRANSIENT_VOLUME: 'click vol', TRANSIENT_FREQ: 'click freq' },
-  filter: { FILTER_F: 'cutoff', FILTER_RESO: 'reso', FILTER_TYPE: 'type', FILTER_DRIVE: 'flt drive' },
-  mix: { SAMPLE_RATE: 'sample rate' },
-  lfo: { FREQ_LFO: 'lfo freq', SYNC_LFO: 'lfo sync', MOD_LFO: 'lfo amt', WAVE_LFO: 'lfo wave', RETRIGGER_LFO: 'retrigger', OFFSET_LFO: 'lfo offset' },
-  velocity: { VEL_DEST: 'vel dest', VEL_AMT: 'vel amt', VEL_MOD_VOL: 'vel vol' },
-};
-const VP_PAGES = [['tone', ['oscillator', 'fm']], ['shape', ['amp', 'pitch', 'click']], ['filter', ['filter', 'mix']], ['mod', ['lfo', 'velocity']]];
-// a drum's four pages: [name, [[label, parameter name], ...]]
-function vpSections(v) {
-  const sec = {};
-  for (const g of VOICE_PAGES[v].groups) {
-    const n = vpNice(g.name.replace(/ \(.*\)/, ''));
-    const into = (k, ps) => { sec[k] = (sec[k] || []).concat(ps.map(([t, pn]) => [VP_LABEL[k]?.[t] ?? vpNice(t), pn])); };
-    if (n === 'modulation') { into('pitch', g.params.filter(([t]) => !t.startsWith('VEL_'))); into('velocity', g.params.filter(([t]) => t.startsWith('VEL_'))); }
-    else into({ 'amp eg': 'amp', 'transient sample': 'click' }[n] || n, g.params);
-  }
-  // (two waves on the cymbal's and hi-hat's fm: one for each mod oscillator)
-  for (const ps of Object.values(sec)) { const w = ps.filter(([l]) => l === 'fm wave'); if (w.length === 2) { w[0][0] = 'mod1 wave'; w[1][0] = 'mod2 wave'; } }
-  return VP_PAGES.map(([name, parts]) => ({ name, params: parts.flatMap((k) => sec[k] || []) }));
-}
-let mVoice = 0, mVSec = 0;
-const mVBoxes = {};
-XN.forEach((name, v) => {
-  const b = document.createElement('button');
-  b.type = 'button'; b.className = 'm-btn'; b.textContent = name; b.setAttribute('role', 'tab');
-  b.addEventListener('click', () => { mVoice = v; mVoiceShow(); });
-  $('m-voice').append(b);
-});
-function mVoiceBox(v, k) {
-  const id = `m-voice-${v + 1}-${VP_PAGES[k][0]}`;
-  if (mVBoxes[id]) return mVBoxes[id];
-  const sec = vpSections(v)[k], box = document.createElement('div');
-  box.className = 'm-faders m-vset'; box.id = id; $('m-vsets').append(box);
-  for (const [label, pn] of sec.params) {
-    const par = PAR[pn], sp = spec(par);
-    mFader(box, label, { min: 0, max: sp.max, get: () => values[par], set: (x) => { setValue(par, x); setDirty(true); },
-      show: (x) => String(sp.show ? sp.show(x) : x), dflt: () => initValues[par] });
-  }
-  return (mVBoxes[id] = box);
-}
-function mVoiceShow() {
-  [...$('m-voice').children].forEach((b, v) => b.setAttribute('aria-selected', v === mVoice));
-  const secs = vpSections(mVoice), strip = $('m-vsec'); strip.innerHTML = '';
-  secs.forEach((sc, k) => {
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'm-btn'; b.setAttribute('role', 'tab');
-    b.textContent = sc.name; b.setAttribute('aria-selected', k === mVSec);
-    b.addEventListener('click', () => { mVSec = k; mVoiceShow(); }); strip.append(b);
-  });
-  const cur = mVoiceBox(mVoice, mVSec);
-  for (const box of Object.values(mVBoxes)) box.hidden = box !== cur;
-  mDrawAll();
-}
-mVoiceShow();
+// (Elixir 808: no voice page; the 808 page, app/tr808.js, has each voice's knobs)
 const mPct = (v) => (v ? Math.round(v) + '%' : 'off');
 // the same send on every drum (the mixer's per-drum sends, all at once); an echo send routes the drum to the echo bus
 const mAllSend = (k) => ({ min: 0, max: 100, get: () => Math.max(...mix[k]), show: (v) => `send ${mPct(v)}`,

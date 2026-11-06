@@ -13,10 +13,6 @@ lvmDraw = function (m) {
 };
 
 
-// ---- crossfeed on its own page (laptop): the matrix moves from the fx page to the crossfeed page while the screen is
-// wide, and back for the phone layout ----
-const mXfPlace = () => (mWide.matches ? $('m-xf-card') : document.querySelector('[data-m-panel="fx"] .m-fx-card')).append(document.querySelector('.m-xrow'));
-mXfPlace(); mWide.addEventListener('change', mXfPlace);
 
 // every slider's name fitted to its column (shortened as the perf knobs' are), on the laptop, as the pages come into view
 // or change size
