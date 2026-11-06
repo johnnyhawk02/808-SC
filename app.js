@@ -181,7 +181,7 @@ function setModel(id, m) {
 for (const b of document.querySelectorAll('#all-models button')) b.addEventListener('click', () => { for (const v of spec) setModel(v.id, b.dataset.m); });
 
 // Cached circuit hits: fetched per voice the first time Cached is picked
-// (cache/<id>.wav, 32 kHz 16-bit), then handed to the audio engine.
+// (cache/<id>.wav, 48 kHz 16-bit), then handed to the audio engine.
 let cacheIndex = null;
 const cacheSent = new Set(), cacheLoading = {};
 async function loadCached(id) {

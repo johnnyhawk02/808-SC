@@ -2,8 +2,8 @@
 // accented hits through the circuit model at the given knob settings (LEVEL
 // full), each with the noise generator and the free-running metal oscillators
 // in another state and the trigger level +-1.5%, tails trimmed at -60 dB;
-// plus the LEVEL knob's gain curve. Stored at 32 kHz (windowed-sinc
-// conversion, flat to ~14 kHz, -60 dB by 16 kHz): the sampler-era top end.
+// plus the LEVEL knob's gain curve. Stored at 48 kHz, the rate the circuit
+// runs at, so the whole top end is kept (no rate conversion).
 //
 // Host-agnostic: test/cache-render.mjs runs it in Node for the shipped cache
 // (default knobs), cache-worker.js runs it in the browser for the Cache button.
@@ -13,7 +13,7 @@ import { Kit, VOLT_SCALE } from './kit.js';
 import { CIRCUITS } from '../voices/circuits.js';
 import { VARIANTS } from './cache.js';
 
-export const SR = 48000, OUT_SR = 32000; // circuit runs at 48 kHz, hits stored at 32 kHz
+export const SR = 48000, OUT_SR = 48000; // circuit runs at 48 kHz, hits stored at 48 kHz
 const MAXLEN = { cy: 3, oh: 2.5, bd: 2, lt: 1.5, mt: 1.5, ht: 1.5 }; // s, before trimming
 const LIVE = ['level', 'snap'];          // knobs the cached player handles itself
 
@@ -95,8 +95,9 @@ export function buildCache(id, values = {}, onProgress, variants = VARIANTS) {
   return { info, pcm };
 }
 
-// 48 -> 32 kHz: Blackman-windowed sinc, cutoff 15 kHz, 64 taps at 48 kHz
+// SR -> OUT_SR: Blackman-windowed sinc, cutoff 15 kHz, 64 taps (nothing to do while they're the same)
 function resample(x) {
+  if (OUT_SR === SR) return x;
   const r = SR / OUT_SR, fc = 15000 / SR, H = 32, n = Math.floor(x.length / r), y = new Float32Array(n);
   for (let m = 0; m < n; m++) {
     const t = m * r, k0 = Math.ceil(t - H), k1 = Math.floor(t + H);

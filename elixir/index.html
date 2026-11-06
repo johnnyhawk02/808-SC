@@ -1653,7 +1653,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i>23</small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i>25</small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1757,7 +1757,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v23, 6 Nov, 18:43</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v25, 6 Nov, 18:47</footer>
     </section>
   </div>
   </div>
@@ -8985,8 +8985,8 @@ __m["dsp/cache-build.js"] = (() => {
 // accented hits through the circuit model at the given knob settings (LEVEL
 // full), each with the noise generator and the free-running metal oscillators
 // in another state and the trigger level +-1.5%, tails trimmed at -60 dB;
-// plus the LEVEL knob's gain curve. Stored at 32 kHz (windowed-sinc
-// conversion, flat to ~14 kHz, -60 dB by 16 kHz): the sampler-era top end.
+// plus the LEVEL knob's gain curve. Stored at 48 kHz, the rate the circuit
+// runs at, so the whole top end is kept (no rate conversion).
 //
 // Host-agnostic: test/cache-render.mjs runs it in Node for the shipped cache
 // (default knobs), cache-worker.js runs it in the browser for the Cache button.
@@ -8996,7 +8996,7 @@ const { Kit, VOLT_SCALE } = __m["dsp/kit.js"];
 const { CIRCUITS } = __m["voices/circuits.js"];
 const { VARIANTS } = __m["dsp/cache.js"];
 
-const SR = 48000, OUT_SR = 32000; // circuit runs at 48 kHz, hits stored at 32 kHz
+const SR = 48000, OUT_SR = 48000; // circuit runs at 48 kHz, hits stored at 48 kHz
 const MAXLEN = { cy: 3, oh: 2.5, bd: 2, lt: 1.5, mt: 1.5, ht: 1.5 }; // s, before trimming
 const LIVE = ['level', 'snap'];          // knobs the cached player handles itself
 
@@ -9078,8 +9078,9 @@ function buildCache(id, values = {}, onProgress, variants = VARIANTS) {
   return { info, pcm };
 }
 
-// 48 -> 32 kHz: Blackman-windowed sinc, cutoff 15 kHz, 64 taps at 48 kHz
+// SR -> OUT_SR: Blackman-windowed sinc, cutoff 15 kHz, 64 taps (nothing to do while they're the same)
 function resample(x) {
+  if (OUT_SR === SR) return x;
   const r = SR / OUT_SR, fc = 15000 / SR, H = 32, n = Math.floor(x.length / r), y = new Float32Array(n);
   for (let m = 0; m < n; m++) {
     const t = m * r, k0 = Math.ceil(t - H), k1 = Math.floor(t + H);

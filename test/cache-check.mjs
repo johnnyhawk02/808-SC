@@ -15,7 +15,7 @@ for (const [id] of VOICES) {
   kit.loadCache(id, index[id], pcm); kit.setModel(id, 'cached');
   bytes += b.length; secs += pcm.length / index[id].sr;
 }
-console.log(`cache: ${(bytes / 1e6).toFixed(1)} MB of WAV, ${secs.toFixed(0)} s of audio, ~${(secs * SR * 4 / 1e6).toFixed(0)} MB as float32 at the host's 48 kHz (${(secs * index.bd.sr * 4 / 1e6).toFixed(0)} MB at 32 kHz)`);
+console.log(`cache: ${(bytes / 1e6).toFixed(1)} MB of WAV, ${secs.toFixed(0)} s of audio, ~${(secs * SR * 4 / 1e6).toFixed(0)} MB as float32 at the host's 48 kHz (${(secs * index.bd.sr * 4 / 1e6).toFixed(0)} MB at the stored rate)`);
 const pat = { bd: 'x...x...x...x...', sd: '....x.......x...', ch: 'x.x.x.x.x.x.x.x.', oh: '..............x.',
   lt: '.........x......', mt: '..........x.....', ht: '...........x....', cp: '....x.......x...', rs: '...x......x.....',
   cb: '......x.......x.', cy: 'x...............', ma: '.x.x.x.x.x.x.x.x', cl: '.......x........', lc: '..x.............', mc: '.....x..........', hc: '.............x..' };
