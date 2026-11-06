@@ -80,6 +80,14 @@
     <section class="m-card m-beat-card"><div class="m-faders" id="m-beat-faders"></div><div class="m-dens"><b>density</b><div class="m-faders" id="m-dens-faders"></div></div></section>
   </div>
 
+  <div class="m-panel" data-m-panel="grid">
+    <section class="m-card m-g8-card" aria-label="pattern grid">
+      <div class="m-g8-presets" id="m-g8-presets" role="group" aria-label="pattern presets"></div>
+      <div class="m-g8-grid" id="m-grid"></div>
+      <div class="m-g8-foot"><button class="m-toggle" id="m-g8-gen" type="button" title="Play the generator's pattern again (genre, beat, energy, fills on the beat page)">generator</button><span>playing: <b id="m-g8-what"></b></span><span class="m-g8-key">tap a step: on, accent, off</span></div>
+    </section>
+  </div>
+
   <div class="m-panel" data-m-panel="t808">
     <section class="m-card m-808-card" aria-label="TR-808 voices">
       <div class="m-voice m-808-tracks" id="m-808-tracks" role="tablist" aria-label="track"></div>
@@ -229,6 +237,7 @@
 
   <nav class="m-tabs" role="tablist" aria-label="pages">
     <button type="button" role="tab" data-m-tab="play" aria-selected="true">perf</button>
+    <button type="button" role="tab" data-m-tab="grid" aria-selected="false">grid</button>
     <button type="button" role="tab" data-m-tab="beat" aria-selected="false">beat</button>
     <button type="button" role="tab" data-m-tab="t808" aria-selected="false">808</button>
     <button type="button" role="tab" data-m-tab="xy" aria-selected="false">x/y</button>

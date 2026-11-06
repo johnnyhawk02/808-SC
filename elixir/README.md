@@ -3,6 +3,9 @@
 A copy of [Elixir Desktop](https://github.com/johnnyhawk02/elixir-desktop) (commit 8f45f44) that plays the TR-808 voices
 from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.github.io/Tr808/elixir/**
 
+- **Grid page** (opens first): the pattern that plays, seven drums by sixteen steps; tap a step for on, accent, off.
+  Ten 808 pattern presets over it (electro, boom bap, house, trap, miami, breaks, toms, congas, cowbell, empty) each set
+  the pattern, the drum on each track and the tempo; **generator** goes back to the beat page's generated pattern.
 - **808 page**: each of the seven tracks (dr1, dr2, dr3, sn, cy, cl, op) plays one of the sixteen 808 voices. The
   `808 kit` button puts back BD, LT, HT, SD, CY, CH, OH.
 - Each voice plays as the **circuit** simulation (every knob works, costs CPU) or **cached** hits (16 normal + 16

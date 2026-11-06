@@ -50,7 +50,7 @@ function mTab(t) {
 }
 // the tab that shows which page is in view
 // the page's name, beside the title
-const M_PAGE_NAMES = { play: 'perform', beat: 'beat',  xy: 'x/y', fx: 'effects', mix: 'mixer', comp: 'master', presets: 'presets' };
+const M_PAGE_NAMES = { play: 'perform', grid: 'grid', beat: 'beat',  xy: 'x/y', fx: 'effects', mix: 'mixer', comp: 'master', presets: 'presets' };
 function mShown(t) {
   if (t === mCur) return;
   mCur = t;
@@ -69,7 +69,7 @@ function mSettled() {
 mPages.addEventListener('scroll', () => { clearTimeout(mSettle); mSettle = setTimeout(mSettled, 150); }, { passive: true });
 mPages.addEventListener('scrollend', mSettled);
 document.querySelectorAll('[data-m-tab]').forEach((b) => b.addEventListener('click', () => mTab(b.dataset.mTab)));
-if (mWide.matches) mTab('beat');
+if (mWide.matches) mTab('grid');
 
 // ---- transport ----
 const mPlay = $('m-play'), mRec = $('m-rec');
