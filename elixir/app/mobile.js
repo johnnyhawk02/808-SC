@@ -113,21 +113,25 @@ function mFader(box, label, { min, max, step = 1, get, set, show, dflt, travel =
   // a move of the fader: its base while a sequencer runs, else its value
   const move = (v) => { if (fd.base !== null) { fd.base = snap(v); mSeqApply(fd); } else put(v); };
   let drag = null, hold = 0;
+  // (Elixir 808: a click doesn't keep the control focused or open its step sequencer, and holding it still just drags)
   tr.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); // (no focus, no selection)
     tr.setPointerCapture(e.pointerId); el.classList.add('held');
     drag = { y: e.clientY, v: fd.base !== null ? fd.base : get(), h: knob || num ? 160 : tr.getBoundingClientRect().height };
-    clearTimeout(hold);
-    hold = setTimeout(() => { if (!drag) return; const v = drag.v; end(); move(v); mSeqOpen(fd); }, 500);
   });
   tr.addEventListener('pointermove', (e) => {
     if (!drag) return;
     if (Math.abs(drag.y - e.clientY) > 6) clearTimeout(hold);
     move(drag.v + (drag.y - e.clientY) / (drag.h * travel) * (hiOf() - min));
   });
-  const end = () => { clearTimeout(hold); drag = null; el.classList.remove('held'); };
+  const end = () => { clearTimeout(hold); drag = null; el.classList.remove('held'); if (document.activeElement === tr) tr.blur(); };
   tr.addEventListener('pointerup', end); tr.addEventListener('pointercancel', end);
-  let wheel = null;
+  let wheel = null, over = 0;
+  // (a scroll that was already going when the pointer slid onto it scrolls on past: it turns only once the pointer has
+  // been on it a moment)
+  tr.addEventListener('pointerenter', () => { over = performance.now(); });
   tr.addEventListener('wheel', (e) => {
+    if (performance.now() - over < 300) return;
     e.preventDefault();
     // (scrolled distance kept between events, so slow trackpad scrolls still add up to steps)
     const now = fd.base !== null ? fd.base : get();
