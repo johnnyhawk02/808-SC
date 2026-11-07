@@ -78,7 +78,7 @@
 
   <h2>fx: echo, reverb, crossfeed (xfeed)</h2>
   <ul><li><b>echo</b>: send, time (musical lengths), tone, feedback and width; tick <b>ping pong</b> to bounce it left and right.</li>
-<li><b>reverb</b>: a convolution reverb, a recorded space (its impulse response, IR) put on the sound. Pick the IR in its header: a plate and a gated 80s one made here, or ten recorded rooms (wood shop to cathedral, from the OpenAIR library). <b>load IR</b> takes your own (a wav or other audio file; up to 5 s of it is used); it's kept in this browser under its file name, with <b>remove</b> to drop it. Knobs: pre (the delay before it, 0 to 150 ms), length (how much of the IR, faded out), low cut, tone (a low-pass) and width.</li>
+<li><b>reverb</b>: a convolution reverb, a recorded space (its impulse response, IR) put on the sound. Pick the IR in its header: a plate and a gated 80s one made here, or ten recorded rooms (wood shop to cathedral, from the OpenAIR library). <b>load IR</b> takes your own (a wav or other audio file; up to 5 s of it is used); it's kept in this browser under its file name, with <b>remove</b> to drop it. Knobs: pre (the delay before it, 0 to 150 ms), length (how much of the IR, faded out), low cut, tone (a low-pass), width, and the <b>gate</b>: each hit into the reverb opens it for a note length at the tempo (1/64 to a bar, T triplets, . dotted; off at the bottom), and <b>gate fine</b> stretches or shortens that by up to 50%.</li>
 <li><b>crossfeed</b>: drums feeding each other. A row is the drum it comes from, a column the drum it goes into; click a column's name to pick what it changes there (fm, filter or ring). Drag a cell up or down to set it; double-click to clear.</li></ul>
 
   <h2>mix: the channel strips</h2>

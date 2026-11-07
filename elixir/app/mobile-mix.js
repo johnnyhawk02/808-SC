@@ -30,6 +30,10 @@ fxF('m-fx-ring', 'length', verbP('len', (v) => `${Math.round((0.1 + 0.9 * v / 12
 fxF('m-fx-ring', 'low cut', verbP('low', (v) => hz(20 * Math.pow(25, v / 127))));
 fxF('m-fx-ring', 'tone', verbP('tone', (v) => hz(1000 * Math.pow(20, v / 127))));
 fxF('m-fx-ring', 'width', verbP('width', (v) => `${Math.round(v / 64 * 100)}%`));
+// the gate: each hit opens it for a note length at the tempo (off, 1/64 .. 1 bar; T triplet, . dotted), fine tuned -50..+50%
+const GATE_N = ['off', '1/64', '1/32', '1/16T', '1/16', '1/8T', '1/16.', '1/8', '1/4T', '1/8.', '1/4', '1/2T', '1/4.', '1/2', '1/2.', '1 bar'];
+fxF('m-fx-ring', 'gate', { ...verbP('gate', (v) => GATE_N[v]), max: GATE_N.length - 1 });
+fxF('m-fx-ring', 'gate fine', { ...verbP('gfine', (v) => `${v > 0 ? '+' : ''}${v}%`), min: -50, max: 50 });
 
 // ---- the master page's distortion: the whole mix through it (after the sidechain's duck), into the compressor; the
 // page runs top to bottom in signal order: sidechain, distortion, compressor. Mix (0 bypasses it), type (tube,
@@ -83,7 +87,7 @@ function mFxRandomise(q) {
   q.pp = rChance(F.pingpong) ? 1 : 0;
   q.p3 = rRange(F.toneLo, F.toneHi); q.p4 = rChance(F.fbWild) ? rIn(70, 105) : rRange(F.fbLo, F.fbHi);
   q.fx3.echo.pct = rRange(F.widthLo, F.widthHi);
-  q.fx3.verb = { pre: rIn(0, 40), len: rIn(40, 127), low: rIn(30, 90), tone: rIn(60, 120), width: rIn(50, 110) };
+  q.fx3.verb = { ...FX3_0.verb, ...q.fx3.verb, pre: rIn(0, 40), len: rIn(40, 127), low: rIn(30, 90), tone: rIn(60, 120), width: rIn(50, 110) };
 }
 $('m-fx-rand').addEventListener('click', async () => { await startAudio(); fxChange(mFxRandomise); });
 $('m-fx-alter').addEventListener('click', async () => {
@@ -94,7 +98,7 @@ $('m-fx-alter').addEventListener('click', async () => {
     q.pos = Math.max(0, Math.min(1, q.pos + (Math.random() * 2 - 1) * a / 2));
     q.p3 = nudge(q.p3, 0, 127); q.p4 = nudge(q.p4, 0, 127);
     q.fx3.echo.pct = nudge(q.fx3.echo.pct, 0, 200);
-    const vb = q.fx3.verb || { ...FX3_0.verb }; q.fx3.verb = Object.fromEntries(Object.entries(vb).map(([k, v]) => [k, nudge(v, 0, 127)]));
+    const vb = q.fx3.verb || { ...FX3_0.verb }; q.fx3.verb = Object.fromEntries(Object.entries(vb).map(([k, v]) => [k, k === 'gate' || k === 'gfine' ? v : nudge(v, 0, 127)]));
   });
 });
 

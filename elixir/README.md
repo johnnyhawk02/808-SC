@@ -11,7 +11,8 @@ from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.git
 - **Reverb** (fx page): a convolution reverb. The IR is picked in its header: plate and gated 80s (made in the app), ten
   recorded spaces in `irs/` (OpenAIR and Reverb.js, public domain and Creative Commons: `irs/README.md`), or your own
   (**load IR**, any audio file, up to 5 s; kept in this browser's IndexedDB, `elixir808-irs`). Knobs: pre-delay, length,
-  low cut, tone, width. It runs in the player (`IrVerb`: FFT convolution in two stages, 64-sample parts for the first
+  low cut, tone, width, and a gate (each hit into it opens it for a note division at the tempo, plus a fine tune of
+  -50..+50%). It runs in the player (`IrVerb`: FFT convolution in two stages, 64-sample parts for the first
   4096 samples so there's no added latency, 2048-sample parts after).
 - **Mix page**: a strip for each of the sixteen sounds (echo send, reverb send, pan, level), mixed per sound in the
   player (`vmix808`; the echo takes them through `renderFx`'s extra input in `lxr.js`). The kick keys the sidechain and
