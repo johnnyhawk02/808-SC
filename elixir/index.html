@@ -1746,11 +1746,15 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 .m-g8-foot > .m-g8-key { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; opacity: .8; }
 .m .m-g8-presets .m-toggle.rec { background: var(--ink) !important; color: var(--panel); animation: g8rec 1s steps(2) infinite; }
 @keyframes g8rec { 50% { opacity: .55; } }
+/* the pick buttons light as their sound hits, and fade (the one picked, already dark, lights the other way) */
+.m .m-g8-picks .m-toggle { transition: background-color .3s ease-out, color .3s ease-out, opacity .3s ease-out; }
+.m .m-g8-picks .m-toggle.hit { background: var(--ink) !important; color: var(--panel); opacity: 1; text-shadow: none; transition: none; }
+.m .m-g8-picks .m-toggle[aria-pressed="true"].hit { background: var(--panel) !important; color: var(--ink); }
 </style>
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.34<!--/v--></small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.35<!--/v--></small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1847,7 +1851,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.34<!--/v-->, 7 Nov, 00:18</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.35<!--/v-->, 7 Nov, 00:24</footer>
     </section>
   </div>
   </div>
@@ -14630,14 +14634,15 @@ function g8Draw() {
 // the playhead, and redraws when the generator changes the pattern
 const g8Mark = markStep;
 markStep = (s, bar) => { g8Mark(s); g8Now = s; g8StepAt = performance.now(); g8PlayPage = s < 0 || bar === undefined ? -1 : bar % g8Len(); g8Flash(s); if ($('m').dataset.page === 'grid' || !mWide.matches) g8Draw(); };
-// each sound's name, in its controls box (here and on the 808 page), lights for a moment as its step plays
+// each sound's name, in its controls box (here and on the 808 page) and on its pick button, lights for a moment as its
+// step plays
 function g8Flash(s) {
   if (s < 0) return;
   const L = g8Shown(), k = Math.max(0, g8PlayPage) * 16 + (s % 16);
   for (const id of G8_IDS) {
     if (!L[id].on[k]) continue;
-    for (const card of t8Cards[id] || []) {
-      const n = card.querySelector('.m-808-vname'); if (!n) continue;
+    for (const n of [...(t8Cards[id] || []).map((card) => card.querySelector('.m-808-vname')), g8Picks[id]]) {
+      if (!n) continue;
       n.classList.add('hit'); clearTimeout(n._hit); n._hit = setTimeout(() => n.classList.remove('hit'), 60);
     }
   }

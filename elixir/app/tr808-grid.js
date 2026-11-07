@@ -236,14 +236,15 @@ function g8Draw() {
 // the playhead, and redraws when the generator changes the pattern
 const g8Mark = markStep;
 markStep = (s, bar) => { g8Mark(s); g8Now = s; g8StepAt = performance.now(); g8PlayPage = s < 0 || bar === undefined ? -1 : bar % g8Len(); g8Flash(s); if ($('m').dataset.page === 'grid' || !mWide.matches) g8Draw(); };
-// each sound's name, in its controls box (here and on the 808 page), lights for a moment as its step plays
+// each sound's name, in its controls box (here and on the 808 page) and on its pick button, lights for a moment as its
+// step plays
 function g8Flash(s) {
   if (s < 0) return;
   const L = g8Shown(), k = Math.max(0, g8PlayPage) * 16 + (s % 16);
   for (const id of G8_IDS) {
     if (!L[id].on[k]) continue;
-    for (const card of t8Cards[id] || []) {
-      const n = card.querySelector('.m-808-vname'); if (!n) continue;
+    for (const n of [...(t8Cards[id] || []).map((card) => card.querySelector('.m-808-vname')), g8Picks[id]]) {
+      if (!n) continue;
       n.classList.add('hit'); clearTimeout(n._hit); n._hit = setTimeout(() => n.classList.remove('hit'), 60);
     }
   }
