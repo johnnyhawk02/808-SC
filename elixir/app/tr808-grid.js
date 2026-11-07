@@ -1,5 +1,6 @@
 // ---- the grid page: eight patterns, a lane for each of the sixteen 808 sounds, sixteen steps ----
-// A tap steps a cell through off, on, accent, off. The pattern buttons over the grid pick which of the eight patterns
+// A tap turns a step on (normal level) or off; cmd+tap (ctrl+tap) turns its accent on or off (on an empty step, an
+// accented note). The pattern buttons over the grid pick which of the eight patterns
 // plays and is edited (straight away, also while playing). The lanes play instead of the tracks' pattern
 // (app/player.js: lanes808), each sound on its own track for the mixer (BUS808 there). "generator" hands back to the
 // beat page's generated pattern on the tracks (one 808 sound a track, t8.map); the grid shows it in the sounds' lanes,
@@ -77,11 +78,11 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
     for (let s = 0; s < 16; s++) {
       const c = document.createElement('button');
       c.type = 'button'; c.className = 'm-g8-cell' + (s % 4 === 0 ? ' beat' : '');
-      c.addEventListener('click', () => {
+      c.addEventListener('click', (e) => {
         g8Take();
         const L = g8.lanes[id];
-        // off -> on -> accent -> off
-        if (!L.on[s]) { L.on[s] = 1; L.acc[s] = 0; g8Select(id); } else if (!L.acc[s]) L.acc[s] = 1; else { L.on[s] = 0; L.acc[s] = 0; }
+        if (e.metaKey || e.ctrlKey) { if (!L.on[s]) { L.on[s] = 1; L.acc[s] = 1; g8Select(id); } else L.acc[s] = L.acc[s] ? 0 : 1; }
+        else if (!L.on[s]) { L.on[s] = 1; L.acc[s] = 0; g8Select(id); } else { L.on[s] = 0; L.acc[s] = 0; }
         g8Send(); g8Draw();
       });
       box.append(c); g8Cells[id].push(c);
