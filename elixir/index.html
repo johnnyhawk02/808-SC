@@ -1754,7 +1754,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.38<!--/v--></small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.39<!--/v--></small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1851,7 +1851,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.38<!--/v-->, 7 Nov, 00:49</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.39<!--/v-->, 7 Nov, 00:52</footer>
     </section>
   </div>
   </div>
@@ -6061,6 +6061,23 @@ function blep(t, dt) {
 const PITCH_SEMIS = 12, DECAY_SPAN = 3;
 const PITCH = { id: 'pitch', name: 'Pitch', def: 0.5, extra: true, fmt: (v) => { const s = Math.round((v - 0.5) * 2 * PITCH_SEMIS); return s > 0 ? `+${s}` : `${s}`; } };
 const DECAY = { id: 'decay', name: 'Decay', def: 0.5, extra: true, fmt: (v) => `x${decayMul(v).toFixed(v < 0.5 ? 2 : 1)}` };
+// DRIVE: the voice's output op-amp (its mixing amp, after LEVEL) given
+// more gain, up to x24, so it runs into its +-15 V rails. The circuit models
+// scale the amp's feedback network (dsp/mna.js clips it); the synth and the
+// 808 recordings go through the same op-amp law here (dsp/kit.js). The
+// output is scaled back so a 4 V peak stays a 4 V peak: it squares off and
+// thickens rather than just getting louder. 0 = stock.
+const VSAT = 13.5, KNEE = 0.8; // as dsp/mna.js
+function railClip(x, vsat = VSAT) {
+  const xl = KNEE * vsat, ax = Math.abs(x);
+  if (ax <= xl) return x;
+  const w = vsat - xl;
+  return Math.sign(x) * (xl + w * Math.tanh((ax - xl) / w));
+}
+const DRIVE_PEAK = 4; // V
+const driveGain = (v) => 1 + 23 * Math.max(0, Math.min(1, v)) ** 2;
+const driveComp = (k) => DRIVE_PEAK / railClip(k * DRIVE_PEAK);
+const DRIVE = { id: 'drive', name: 'Drive', def: 0, kit: true, fmt: (v) => `x${driveGain(v).toFixed(driveGain(v) < 10 ? 1 : 0)}` };
 const pitchMul = (v) => 2 ** (((clamp(v ?? 0.5, 0, 1) - 0.5) * 2 * PITCH_SEMIS) / 12);
 const decayMul = (v) => DECAY_SPAN ** ((clamp(v ?? 0.5, 0, 1) - 0.5) * 2);
 // amount knobs: 0 = none, centre = stock, full = twice the stock value
@@ -6081,9 +6098,10 @@ function spreadFactors(freqs, s, idx = freqs.map((_, i) => i)) {
 class Voice {
   constructor(sr, spec) {
     this.sr = sr;
-    this.params = spec;
+    // every voice gets DRIVE (see above) unless its list already has it
+    this.params = spec.some((q) => q.id === 'drive') ? spec : [...spec, DRIVE];
     this.p = {};
-    for (const s of spec) this.p[s.id] = s.def;
+    for (const s of this.params) this.p[s.id] = s.def;
     this.trimN = 1; this.trimA = 1; // output calibration, see dsp/calibration.js
   }
   set(id, v) { this.p[id] = v; this.onParam?.(id, v); }
@@ -6127,7 +6145,7 @@ function levelLaw(pts, l) {
   return g50 * Math.pow(1 / g50, (l - 0.5) / 0.5);
 }
 
-return { LN10: typeof LN10 === 'undefined' ? undefined : LN10, tauFromDecay: typeof tauFromDecay === 'undefined' ? undefined : tauFromDecay, decayCoef: typeof decayCoef === 'undefined' ? undefined : decayCoef, qFromDecay: typeof qFromDecay === 'undefined' ? undefined : qFromDecay, lerp: typeof lerp === 'undefined' ? undefined : lerp, clamp: typeof clamp === 'undefined' ? undefined : clamp, map3: typeof map3 === 'undefined' ? undefined : map3, BridgedT: typeof BridgedT === 'undefined' ? undefined : BridgedT, Pulse: typeof Pulse === 'undefined' ? undefined : Pulse, Biquad: typeof Biquad === 'undefined' ? undefined : Biquad, OnePole: typeof OnePole === 'undefined' ? undefined : OnePole, RCEnv: typeof RCEnv === 'undefined' ? undefined : RCEnv, swingVCA: typeof swingVCA === 'undefined' ? undefined : swingVCA, Noise: typeof Noise === 'undefined' ? undefined : Noise, PinkNoise: typeof PinkNoise === 'undefined' ? undefined : PinkNoise, rail: typeof rail === 'undefined' ? undefined : rail, v: typeof v === 'undefined' ? undefined : v, SchmittOsc: typeof SchmittOsc === 'undefined' ? undefined : SchmittOsc, PITCH_SEMIS: typeof PITCH_SEMIS === 'undefined' ? undefined : PITCH_SEMIS, DECAY_SPAN: typeof DECAY_SPAN === 'undefined' ? undefined : DECAY_SPAN, PITCH: typeof PITCH === 'undefined' ? undefined : PITCH, DECAY: typeof DECAY === 'undefined' ? undefined : DECAY, pitchMul: typeof pitchMul === 'undefined' ? undefined : pitchMul, decayMul: typeof decayMul === 'undefined' ? undefined : decayMul, amtMul: typeof amtMul === 'undefined' ? undefined : amtMul, spanMul: typeof spanMul === 'undefined' ? undefined : spanMul, spreadExp: typeof spreadExp === 'undefined' ? undefined : spreadExp, knob: typeof knob === 'undefined' ? undefined : knob, spreadFactors: typeof spreadFactors === 'undefined' ? undefined : spreadFactors, Voice: typeof Voice === 'undefined' ? undefined : Voice, levelLaw: typeof levelLaw === 'undefined' ? undefined : levelLaw };
+return { LN10: typeof LN10 === 'undefined' ? undefined : LN10, tauFromDecay: typeof tauFromDecay === 'undefined' ? undefined : tauFromDecay, decayCoef: typeof decayCoef === 'undefined' ? undefined : decayCoef, qFromDecay: typeof qFromDecay === 'undefined' ? undefined : qFromDecay, lerp: typeof lerp === 'undefined' ? undefined : lerp, clamp: typeof clamp === 'undefined' ? undefined : clamp, map3: typeof map3 === 'undefined' ? undefined : map3, BridgedT: typeof BridgedT === 'undefined' ? undefined : BridgedT, Pulse: typeof Pulse === 'undefined' ? undefined : Pulse, Biquad: typeof Biquad === 'undefined' ? undefined : Biquad, OnePole: typeof OnePole === 'undefined' ? undefined : OnePole, RCEnv: typeof RCEnv === 'undefined' ? undefined : RCEnv, swingVCA: typeof swingVCA === 'undefined' ? undefined : swingVCA, Noise: typeof Noise === 'undefined' ? undefined : Noise, PinkNoise: typeof PinkNoise === 'undefined' ? undefined : PinkNoise, rail: typeof rail === 'undefined' ? undefined : rail, v: typeof v === 'undefined' ? undefined : v, SchmittOsc: typeof SchmittOsc === 'undefined' ? undefined : SchmittOsc, PITCH_SEMIS: typeof PITCH_SEMIS === 'undefined' ? undefined : PITCH_SEMIS, DECAY_SPAN: typeof DECAY_SPAN === 'undefined' ? undefined : DECAY_SPAN, PITCH: typeof PITCH === 'undefined' ? undefined : PITCH, DECAY: typeof DECAY === 'undefined' ? undefined : DECAY, VSAT: typeof VSAT === 'undefined' ? undefined : VSAT, KNEE: typeof KNEE === 'undefined' ? undefined : KNEE, railClip: typeof railClip === 'undefined' ? undefined : railClip, driveGain: typeof driveGain === 'undefined' ? undefined : driveGain, driveComp: typeof driveComp === 'undefined' ? undefined : driveComp, DRIVE: typeof DRIVE === 'undefined' ? undefined : DRIVE, pitchMul: typeof pitchMul === 'undefined' ? undefined : pitchMul, decayMul: typeof decayMul === 'undefined' ? undefined : decayMul, amtMul: typeof amtMul === 'undefined' ? undefined : amtMul, spanMul: typeof spanMul === 'undefined' ? undefined : spanMul, spreadExp: typeof spreadExp === 'undefined' ? undefined : spreadExp, knob: typeof knob === 'undefined' ? undefined : knob, spreadFactors: typeof spreadFactors === 'undefined' ? undefined : spreadFactors, Voice: typeof Voice === 'undefined' ? undefined : Voice, levelLaw: typeof levelLaw === 'undefined' ? undefined : levelLaw };
 })();
 // ---- dsp/metal.js
 __m["dsp/metal.js"] = (() => {
@@ -6912,7 +6930,7 @@ __m["voices/bd-circuit.js"] = (() => {
 //    are treated as a unity-gain buffer with a ~2 Hz high-pass.
 //  * Tolerances, temperature and op-amp slew/bandwidth are not modelled.
 const { Circuit, busVoltage, TRIG_WIDTH } = __m["dsp/mna.js"];
-const { Voice, OnePole, lerp, clamp, PITCH, pitchMul, knob, amtMul, spanMul } = __m["dsp/core.js"];
+const { Voice, OnePole, lerp, clamp, PITCH, pitchMul, knob, amtMul, spanMul, driveGain, driveComp, railClip } = __m["dsp/core.js"];
 
 // extra knobs: CLICK is C40, the trigger's feed into IC12 (0 = none, centre
 // stock, full 2x); ATTACK is C38, the Q42 mono-stable that holds the start of
@@ -6934,6 +6952,7 @@ class BDCircuit extends Voice {
       PITCH, ...BD_EXTRA,
     ]);
     this.vppNormal = 3.5; this.vppAccent = 10;
+    this.ownsDrive = true; // DRIVE clips in render()
     this.oversample = globalThis.BD_OS ?? 1;
     const c = (this.ckt = new Circuit(NODES));
     const V15 = 15;
@@ -6990,6 +7009,8 @@ class BDCircuit extends Voice {
     for (const cap of this.cT) cap.c = 0.015e-6 / pitchMul(this.p.pitch);
     this.c40.c = Math.max(1e-12, 0.015e-6 * amtMul(this.p.click));
     this.c38.c = 0.1e-6 * spanMul(this.p.attack, 3);
+    // DRIVE: the output op-amp after the level pot with dk more gain
+    this.dk = driveGain(this.p.drive); this.dComp = driveComp(this.dk);
     this.ckt.touch();
   }
   _settle() { this.ckt.settle(2000); }
@@ -7012,7 +7033,8 @@ class BDCircuit extends Voice {
         c.step();
         y += c.v[L1];
       }
-      out[i] += this.hp.tick(y / os) * lvl * DIVIDER;
+      const o = this.hp.tick(y / os) * lvl * DIVIDER;
+      out[i] += this.dk === 1 ? o : railClip(this.dk * o) * this.dComp;
     }
   }
 }
@@ -7281,7 +7303,7 @@ __m["voices/circuit-voice.js"] = (() => {
 // 1 ms. The bus voltage comes from the main board's accent circuit
 // (busVoltage in dsp/mna.js).
 const { Circuit, busVoltage, TRIG_WIDTH } = __m["dsp/mna.js"];
-const { Voice, OnePole, clamp } = __m["dsp/core.js"];
+const { Voice, OnePole, clamp, driveGain, driveComp, railClip } = __m["dsp/core.js"];
 
 // Audio (A) taper: 10% of the resistance at mid rotation.
 const aTaper = (x) => { x = clamp(x, 0, 1); return (Math.exp(4.394 * x) - 1) / (Math.exp(4.394) - 1); };
@@ -7323,6 +7345,15 @@ class CircuitVoice extends Voice {
     this.isCircuit = true;
     this.parts = {};        // knob group -> parts scaled from their schematic value
     this.ownMetal = null;   // private, retuned metal bank (PITCH off centre)
+    // DRIVE: dk = gain multiplier on the output op-amp, dComp = the level
+    // brought back after it (dsp/core.js). Voices with an inverting output
+    // mixer put its feedback network in the 'fbR' / 'fbC' groups (and
+    // multiply their LEVEL pot by dk; CB scales its buffer's output).
+    // render() reads the output through the op-amp's rail law, which the
+    // solver's own clipping (dsp/mna.js) mostly does already: it also stops
+    // the odd sample the feedback capacitors pull past the rail.
+    this.ownsDrive = true;
+    this.dk = 1; this.dComp = 1;
   }
   // Remember a part (resistor or capacitor of stage c) so a knob can scale
   // it: scale(group, k) sets every part in the group to k x its value on the
@@ -7351,6 +7382,15 @@ class CircuitVoice extends Voice {
       this.ownMetal.active = () => ic3;
     }
     this.ownMetal.setPitch(m, spread, idx);
+  }
+  set(id, v) {
+    if (id === 'drive') {
+      this.p.drive = v; this.dk = driveGain(v); this.dComp = driveComp(this.dk);
+      // feedback impedance x dk: resistors up, capacitors down, so the
+      // mixer's gain rises by dk and its time constants stay put
+      this.scale('fbR', this.dk); this.scale('fbC', 1 / this.dk);
+    }
+    super.set(id, v);
   }
   stage(nodes) {
     const c = new Circuit(nodes);
@@ -7417,7 +7457,7 @@ class CircuitVoice extends Voice {
     this.ownMetal?.render(n);
     for (let i = 0; i < n; i++) {
       this._tick(i);
-      const y = this.dcBlock.tick(this.output());
+      const y = this.dcBlock.tick(this.dk === 1 ? this.output() : railClip(this.output()) * this.dComp);
       out[i] += y;
       this.post?.(i, 1, true);
       this.quiet = Math.abs(y) < 5e-3 ? this.quiet + 1 : 0; // 5 mV: ~-68 dB below a 12 V peak
@@ -7525,8 +7565,8 @@ class SDCircuit extends CircuitVoice {
     m.R('WT', 'S', 100e3);                                               // R204
     this.link(m, 'I3', 1, b, 'E49'); m.C('I3', 'N69', 0.01e-6); m.R('N69', 'S', 27e3); // C69, R205
     m.OpAmp('gnd', 'S', 'OUT');
-    m.R('S', 'OUT', 470e3); m.C('S', 'OUT', 220e-12);                    // R210, C70
-    this.vr7 = m.R('S', 'NV', 100e3); m.C('NV', 'OUT', 33e-6);           // VR7, C68
+    this.part(m, m.R('S', 'OUT', 470e3), 'fbR'); this.part(m, m.C('S', 'OUT', 220e-12), 'fbC'); // R210, C70
+    this.vr7 = m.R('S', 'NV', 100e3); this.part(m, m.C('NV', 'OUT', 33e-6), 'fbC');      // VR7, C68
     this.iOut = m.idx.OUT;
     this.finish();
   }
@@ -7541,7 +7581,7 @@ class SDCircuit extends CircuitVoice {
     this.scale('pitch', 1 / m); this.scale('qUp', d); this.scale('qDn', 1 / d);
     this.scale('env', spanMul(this.p.snapdec, 3)); this.scale('wires', 1 / spanMul(this.p.wires, 2));
     this.scale('inDiv', 1 / d);
-    if (this.vr7) { this.vr7.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.s3.touch(); }
+    if (this.vr7) { this.vr7.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level) * this.dk); this.s3.touch(); }
   }
   output() { return this.s3.v[this.iOut]; }
 }
@@ -7639,8 +7679,8 @@ class RSCLCircuit extends CircuitVoice {
     this.link(m, 'K', src[2], src[0], src[1]);
     m.C('K', 'N326', 0.01e-6); m.R('N326', 'S', 10e3);          // C125, R326
     m.OpAmp('gnd', 'S', 'OUT');
-    m.R('S', 'OUT', 470e3); m.C('S', 'OUT', 22e-12);            // R330, C153
-    m.C('S', 'NV', 33e-6);                                      // C126
+    this.part(m, m.R('S', 'OUT', 470e3), 'fbR'); this.part(m, m.C('S', 'OUT', 22e-12), 'fbC'); // R330, C153
+    this.part(m, m.C('S', 'NV', 33e-6), 'fbC');                // C126
     this.vr16 = m.R('NV', 'OUT', 100e3);                        // VR16
     this.fet = m.Dyn('NV', 'OUT');                              // Q74
     // gate: R327 470k to the output (previous sample, across a 470k)
@@ -7654,12 +7694,12 @@ class RSCLCircuit extends CircuitVoice {
     const m = this.s3.v, vs = Math.min(m[this.iNV], m[this.iOut]);
     const vgs = this.s1.v[this.iG] - vs;
     let k = 1 - vgs / -3.5; k = k < 0 ? 0 : k > 1.5 ? 1.5 : k;
-    this.fet.g = (k * k) / 875 + 1e-9;
+    this.fet.g = ((k * k) / 875 + 1e-9) / this.dk; // DRIVE: part of the feedback network
   }
   onParam() {
     this.scale('pitch', 1 / pitchMul(this.p.pitch)); this.scale('env', decayMul(this.p.decay));
     this.scale('click', spanMul(this.p.click, 3));
-    if (this.vr16) { this.vr16.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.s3.touch(); }
+    if (this.vr16) { this.vr16.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level) * this.dk); this.s3.touch(); }
   }
   output() { return this.s3.v[this.iOut]; }
 }
@@ -7741,8 +7781,8 @@ const CP_PARTS = { C144: 0.37e-6, C140: 0.021e-6, R200: 10e3, TM3: 0.706, C127: 
 
 function mixer(v, m, level) {
   m.OpAmp('gnd', 'S', 'OUT');
-  m.R('S', 'OUT', 470e3); m.C('S', 'OUT', 220e-12);           // R375, C149
-  v.vr17 = m.R('S', 'NV', 100e3); m.C('NV', 'OUT', 33e-6);    // VR17, C145
+  v.part(m, m.R('S', 'OUT', 470e3), 'fbR'); v.part(m, m.C('S', 'OUT', 220e-12), 'fbC'); // R375, C149
+  v.vr17 = m.R('S', 'NV', 100e3); v.part(m, m.C('NV', 'OUT', 33e-6), 'fbC');          // VR17, C145
   v.iOut = m.idx.OUT; v.mix = m;
 }
 
@@ -7831,7 +7871,7 @@ class CPCircuit extends CircuitVoice {
     this.scale('pitch', 1 / pitchMul(this.p.pitch)); this.scale('env', decayMul(this.p.decay));
     this.scale('spacing', spanMul(this.p.spacing, 2));
     if (this.tm) { this.tm.v = -15 * this.tm3; }
-    if (this.vr17) { this.vr17.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.mix.touch(); }
+    if (this.vr17) { this.vr17.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level) * this.dk); this.mix.touch(); }
   }
   // ACCENT. On the circuit, the accented trigger also charges C143 higher,
   // which lifts Q71's base through R362 and drives the Q71/Q72 pair flat out:
@@ -7880,7 +7920,7 @@ class MACircuit extends CircuitVoice {
   }
   onParam() {
     this.scale('pitch', 1 / pitchMul(this.p.pitch)); this.scale('env', decayMul(this.p.decay));
-    if (this.vr17) { this.vr17.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.mix.touch(); }
+    if (this.vr17) { this.vr17.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level) * this.dk); this.mix.touch(); }
   }
   output() { return this.mix.v[this.iOut]; }
 }
@@ -7971,7 +8011,7 @@ class CBCircuit extends CircuitVoice {
     const r = 5e3 * aTaper(this.p.level);
     this.vrT.g = 1 / Math.max(1, 5e3 - r); this.vrB.g = 1 / Math.max(1, r); this.s2.touch();
   }
-  output() { return this.s2.v[this.iOut]; }
+  output() { return this.s2.v[this.iOut] * this.dk; } // DRIVE: IC6 given gain dk (clipped in render())
 }
 
 return { CB_EXTRA: typeof CB_EXTRA === 'undefined' ? undefined : CB_EXTRA, voicingTrigger: typeof voicingTrigger === 'undefined' ? undefined : voicingTrigger, CBCircuit: typeof CBCircuit === 'undefined' ? undefined : CBCircuit };
@@ -8082,8 +8122,8 @@ class CYCircuit extends CircuitVoice {
     m.R('TH', 'J', 22e3); m.R('L', 'J', 15e3);                                              // R119, R129
     m.C('J', 'S', 0.01e-6);                                                                 // C90
     m.OpAmp('gnd', 'S', 'OUT');
-    m.R('S', 'OUT', 470e3); m.C('S', 'OUT', 220e-12);                                       // R128, C77
-    this.vr6 = m.R('S', 'NV', 100e3); m.C('NV', 'OUT', 33e-6);                              // VR6, C78
+    this.part(m, m.R('S', 'OUT', 470e3), 'fbR'); this.part(m, m.C('S', 'OUT', 220e-12), 'fbC'); // R128, C77
+    this.vr6 = m.R('S', 'NV', 100e3); this.part(m, m.C('NV', 'OUT', 33e-6), 'fbC');          // VR6, C78
     this.iOut = m.idx.OUT;
     for (const st of [h1, h2, lo]) st.tol = 1e-4;
     this.finish(3000, 0.3);
@@ -8096,7 +8136,7 @@ class CYCircuit extends CircuitVoice {
     // VR4 20k (B), wiper grounded: TONE up = less of the low node shunted
     const t = this.p.tone;
     this.vr4a.g = 1 / Math.max(1, 20e3 * t); this.vr4b.g = 1 / (20e3 * (1 - t) + 2.2e3);
-    this.vr6.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level));
+    this.vr6.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level) * this.dk);
     this.s1.touch(); this.s5.touch();
   }
   output() { return this.s5.v[this.iOut]; }
@@ -8146,8 +8186,8 @@ function swingHat(v, c, tag) {
 function hatMixer(v, m, rin, cin) {
   m.C('IE', 'NC', cin); m.R('NC', 'S', rin);
   m.OpAmp('gnd', 'S', 'OUT');
-  m.R('S', 'OUT', 470e3); m.C('S', 'OUT', 220e-12);
-  v.vrL = m.R('S', 'NV', 100e3); m.C('NV', 'OUT', 33e-6);
+  v.part(m, m.R('S', 'OUT', 470e3), 'fbR'); v.part(m, m.C('S', 'OUT', 220e-12), 'fbC');
+  v.vrL = m.R('S', 'NV', 100e3); v.part(m, m.C('NV', 'OUT', 33e-6), 'fbC');
   v.iOut = m.idx.OUT; v.mix = m;
 }
 
@@ -8200,7 +8240,7 @@ class OHCircuit extends CircuitVoice {
     this.scale('hp', 1 / spanMul(this.p.tone, 2));
     if (!this.vrL) return;
     this.vr3.g = 1 / (100e3 + 2e6 * this.p.decay);
-    this.vrL.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level));
+    this.vrL.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level) * this.dk);
     this.s1.touch(); this.mix.touch();
   }
   output() { return this.mix.v[this.iOut]; }
@@ -8241,7 +8281,7 @@ class CHCircuit extends CircuitVoice {
     this.pitchMetal(pitchMul(this.p.pitch), true, spreadExp(this.p.spread)); this.scale('env', decayMul(this.p.decay));
     this.scale('hp', 1 / spanMul(this.p.tone, 2));
     if (!this.vrL) return;
-    this.vrL.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level));
+    this.vrL.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level) * this.dk);
     this.mix.touch();
   }
   output() { return this.mix.v[this.iOut]; }
@@ -8346,8 +8386,8 @@ class TomCircuit extends CircuitVoice {
     this.link(m, 'J', 100e3, a, 'O1');                        // R233
     m.C('J', 'S', P.cOut);                                    // C81 into the mixer's (-)
     m.OpAmp('gnd', 'S', 'OUT');
-    m.R('S', 'OUT', 470e3); m.C('S', 'OUT', 0.001e-6);        // R235, C83
-    this.vr10 = m.R('S', 'NV', 100e3); m.C('NV', 'OUT', 33e-6); // VR10, C82
+    this.part(m, m.R('S', 'OUT', 470e3), 'fbR'); this.part(m, m.C('S', 'OUT', 0.001e-6), 'fbC'); // R235, C83
+    this.vr10 = m.R('S', 'NV', 100e3); this.part(m, m.C('NV', 'OUT', 33e-6), 'fbC');   // VR10, C82
     if (P.noise) {
       const N = P.noise, pn = this.shared.noise;
       this.link(m, 'TTc', 4.7e3, a, 'TT');                    // R219 (D55 blocks the return)
@@ -8373,7 +8413,7 @@ class TomCircuit extends CircuitVoice {
     const [dr, phi] = tomDecay(this.key, this.p.decay);
     this.scale('pitch', 1 / pitchMul(this.p.pitch)); this.scale('fb', 1 / phi); this.scale('env', dr);
     if (this.r232) { this.r232.g = Math.max(1e-12, this.r232.g0 * (this.p.noise < 0.5 ? amtMul(this.p.noise) : 8 ** (2 * this.p.noise - 1))); this.s2.touch(); }
-    if (this.vr10) { this.vr10.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.s2.touch(); }
+    if (this.vr10) { this.vr10.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level) * this.dk); this.s2.touch(); }
   }
   output() { return this.s2.v[this.iOut]; }
 }
@@ -8463,6 +8503,7 @@ class CachedVoice extends Voice {
     this.plays = [];          // { hit: [normal, accent], mix, pos, gain }
     this.last = -1;
     this.rng = 0x9e3779b9;
+    this.ownsDrive = true; // DRIVE is baked into the hits by the circuit
   }
   get loaded() { return !!this.data; }
   load(info, int16) {
@@ -9245,6 +9286,7 @@ __m["dsp/kit.js"] = (() => {
 // The kit: owns the shared metal oscillators, all 16 voices, a sample-
 // accurate trigger queue and the master bus. Host-agnostic (worklet,
 // ScriptProcessor or Node).
+const { DRIVE, driveGain, driveComp, railClip } = __m["dsp/core.js"];
 const { MetalBank } = __m["dsp/metal.js"];
 const { KNOB_TRIM } = __m["dsp/knob-trim.js"];
 const { CALIBRATION, LEVEL } = __m["dsp/calibration.js"];
@@ -9275,22 +9317,16 @@ const VOICES = [
   ['oh', 'Open Hi-Hat', OH], ['ch', 'Closed Hi-Hat', CH],
 ];
 const VOLT_SCALE = 1 / 24;
-// Knobs every voice gets from the kit, on top of its own (same in all three
-// versions). Both are neutral at their defaults.
+// Knob every voice gets from the kit, on top of its own (same in all three
+// versions), neutral at its default:
 //   ACCENT: how much of the accent level this voice takes (1 = stock; the
 //           circuit models see it as a lower accent bus voltage)
-//   DRIVE:  soft clipping after the voice, from warm to crushed; the curve is
-//           scaled so a 6 V peak comes out at about the same peak, so it
-//           thickens rather than just getting louder
+// DRIVE (dsp/core.js) is a voice knob: the circuit models clip in their own
+// output op-amp (baked in by the Cache button); the synth and the
+// recordings go through the same op-amp law in _voiceOut below.
 const COMMON = [
   { id: 'accent', name: 'Accent', def: 1, kit: true },
-  { id: 'drive', name: 'Drive', def: 0, kit: true },
 ];
-const DRIVE_PEAK = 6; // V
-function driveCurve(drive) {
-  const k = (8 * drive * drive) / DRIVE_PEAK; // 1/V
-  return k <= 0 ? null : { k, m: (k * DRIVE_PEAK) / Math.tanh(k * DRIVE_PEAK) / k };
-}
 const NOISE_IDS = ['sd', 'lt', 'mt', 'ht', 'cp', 'ma'];
 const METAL_IDS = ['cb', 'cy', 'oh', 'ch'];
 // CH renders before OH so the circuit OH can read CH's envelope (choke)
@@ -9335,21 +9371,18 @@ class Kit {
     this.solo = null;    // render a single voice (tests)
     this.split = null;   // per-voice outputs, see _renderChunk
     this.fx = {};        // per voice: kit-level knobs (COMMON) + drive buffer
-    for (const [id] of VOICES) this.fx[id] = { accent: 1, drive: 0, curve: null, buf: new Float32Array(128) };
+    for (const [id] of VOICES) this.fx[id] = { accent: 1, buf: new Float32Array(128) };
   }
   spec() {
     return VOICES.map(([id, name]) => ({
-      id, name, params: [...this.voices[id].params, ...COMMON],
-      values: { ...this.voices[id].p, accent: this.fx[id].accent, drive: this.fx[id].drive },
+      // DRIVE last, after the kit's ACCENT
+      id, name, params: [...this.voices[id].params.filter((p) => p.id !== 'drive'), ...COMMON, DRIVE],
+      values: { ...this.voices[id].p, accent: this.fx[id].accent },
     }));
   }
   set(id, param, value) {
     const fx = this.fx[id];
-    if (fx && (param === 'accent' || param === 'drive')) {
-      fx[param] = Math.max(0, Math.min(1, value));
-      if (param === 'drive') fx.curve = driveCurve(fx.drive);
-      return;
-    }
+    if (fx && param === 'accent') { fx.accent = Math.max(0, Math.min(1, value)); return; }
     this.behavioural[id]?.set(param, value);
     this.sampled[id]?.set(param, value);
     this.circuit[id]?.set(param, value);
@@ -9386,15 +9419,18 @@ class Kit {
     }
     v.trigger(accent * (this.fx[id]?.accent ?? 1));
   }
-  // one voice model into mix, through its DRIVE if that is up
+  // one voice model into mix. DRIVE: the circuit models (and their cached
+  // hits) clip in their own output op-amp; the synth and the recordings
+  // get the same op-amp law here.
   _voiceOut(id, v, mix, n) {
-    const fx = this.fx[id], c = fx?.curve;
-    if (!c) { v.render(mix, n); return; }
+    const d = v.p?.drive ?? 0;
+    if (!(d > 0) || v.ownsDrive) { v.render(mix, n); return; }
+    const fx = this.fx[id];
     if (fx.buf.length < n) fx.buf = new Float32Array(n);
     const b = fx.buf; b.fill(0, 0, n);
     v.render(b, n);
-    const { k, m } = c;
-    for (let i = 0; i < n; i++) mix[i] += Math.tanh(k * b[i]) * m;
+    const k = driveGain(d), m = driveComp(k);
+    for (let i = 0; i < n; i++) mix[i] += railClip(k * b[i]) * m;
   }
   _usesCircuit(ids) { return ids.some((id) => this.model[id] === 'circuit' || this.circuit[id]?.awake); }
   // Render n frames of mono, digital scale, into dst (overwrites).
@@ -9438,7 +9474,7 @@ class Kit {
   }
 }
 
-return { VOICES: typeof VOICES === 'undefined' ? undefined : VOICES, VOLT_SCALE: typeof VOLT_SCALE === 'undefined' ? undefined : VOLT_SCALE, COMMON: typeof COMMON === 'undefined' ? undefined : COMMON, driveCurve: typeof driveCurve === 'undefined' ? undefined : driveCurve, Kit: typeof Kit === 'undefined' ? undefined : Kit };
+return { VOICES: typeof VOICES === 'undefined' ? undefined : VOICES, VOLT_SCALE: typeof VOLT_SCALE === 'undefined' ? undefined : VOLT_SCALE, COMMON: typeof COMMON === 'undefined' ? undefined : COMMON, Kit: typeof Kit === 'undefined' ? undefined : Kit };
 })();
 // ---- dsp/cache-build.js
 __m["dsp/cache-build.js"] = (() => {
@@ -14193,7 +14229,7 @@ const T8_IDS = TR808.VOICES.map(([id]) => id);
 const T8_NAME = Object.fromEntries(TR808.VOICES.map(([id, name]) => [id, name.toLowerCase()]));
 const T8_SPEC = new TR808.Kit(44100, { circuits: false }).spec(); // (no circuits: just the knob lists)
 const T8_PARAMS = Object.fromEntries(T8_SPEC.map((v) => [v.id, v.params]));
-const T8_LIVE = ['level', 'snap', 'accent', 'drive']; // knobs cached plays live; the cache button bakes the rest in
+const T8_LIVE = ['level', 'snap', 'accent']; // knobs cached plays live; the cache button bakes the rest in (drive too: it is in the circuit)
 // the sounds in the order the grid's lanes and the 808 page show them: kick, snares and claps, toms, congas and small
 // percussion, cymbals and hats
 const T8_ORDER = ['bd', 'sd', 'rs', 'cp', 'lt', 'mt', 'ht', 'lc', 'mc', 'hc', 'cl', 'ma', 'cb', 'cy', 'oh', 'ch'];

@@ -102,8 +102,8 @@ export class CYCircuit extends CircuitVoice {
     m.R('TH', 'J', 22e3); m.R('L', 'J', 15e3);                                              // R119, R129
     m.C('J', 'S', 0.01e-6);                                                                 // C90
     m.OpAmp('gnd', 'S', 'OUT');
-    m.R('S', 'OUT', 470e3); m.C('S', 'OUT', 220e-12);                                       // R128, C77
-    this.vr6 = m.R('S', 'NV', 100e3); m.C('NV', 'OUT', 33e-6);                              // VR6, C78
+    this.part(m, m.R('S', 'OUT', 470e3), 'fbR'); this.part(m, m.C('S', 'OUT', 220e-12), 'fbC'); // R128, C77
+    this.vr6 = m.R('S', 'NV', 100e3); this.part(m, m.C('NV', 'OUT', 33e-6), 'fbC');          // VR6, C78
     this.iOut = m.idx.OUT;
     for (const st of [h1, h2, lo]) st.tol = 1e-4;
     this.finish(3000, 0.3);
@@ -116,7 +116,7 @@ export class CYCircuit extends CircuitVoice {
     // VR4 20k (B), wiper grounded: TONE up = less of the low node shunted
     const t = this.p.tone;
     this.vr4a.g = 1 / Math.max(1, 20e3 * t); this.vr4b.g = 1 / (20e3 * (1 - t) + 2.2e3);
-    this.vr6.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level));
+    this.vr6.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level) * this.dk);
     this.s1.touch(); this.s5.touch();
   }
   output() { return this.s5.v[this.iOut]; }

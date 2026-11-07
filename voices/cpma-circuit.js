@@ -68,8 +68,8 @@ export const CP_PARTS = { C144: 0.37e-6, C140: 0.021e-6, R200: 10e3, TM3: 0.706,
 
 function mixer(v, m, level) {
   m.OpAmp('gnd', 'S', 'OUT');
-  m.R('S', 'OUT', 470e3); m.C('S', 'OUT', 220e-12);           // R375, C149
-  v.vr17 = m.R('S', 'NV', 100e3); m.C('NV', 'OUT', 33e-6);    // VR17, C145
+  v.part(m, m.R('S', 'OUT', 470e3), 'fbR'); v.part(m, m.C('S', 'OUT', 220e-12), 'fbC'); // R375, C149
+  v.vr17 = m.R('S', 'NV', 100e3); v.part(m, m.C('NV', 'OUT', 33e-6), 'fbC');          // VR17, C145
   v.iOut = m.idx.OUT; v.mix = m;
 }
 
@@ -158,7 +158,7 @@ export class CPCircuit extends CircuitVoice {
     this.scale('pitch', 1 / pitchMul(this.p.pitch)); this.scale('env', decayMul(this.p.decay));
     this.scale('spacing', spanMul(this.p.spacing, 2));
     if (this.tm) { this.tm.v = -15 * this.tm3; }
-    if (this.vr17) { this.vr17.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.mix.touch(); }
+    if (this.vr17) { this.vr17.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level) * this.dk); this.mix.touch(); }
   }
   // ACCENT. On the circuit, the accented trigger also charges C143 higher,
   // which lifts Q71's base through R362 and drives the Q71/Q72 pair flat out:
@@ -207,7 +207,7 @@ export class MACircuit extends CircuitVoice {
   }
   onParam() {
     this.scale('pitch', 1 / pitchMul(this.p.pitch)); this.scale('env', decayMul(this.p.decay));
-    if (this.vr17) { this.vr17.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.mix.touch(); }
+    if (this.vr17) { this.vr17.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level) * this.dk); this.mix.touch(); }
   }
   output() { return this.mix.v[this.iOut]; }
 }

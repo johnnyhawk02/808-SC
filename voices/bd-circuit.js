@@ -17,7 +17,7 @@
 //    are treated as a unity-gain buffer with a ~2 Hz high-pass.
 //  * Tolerances, temperature and op-amp slew/bandwidth are not modelled.
 import { Circuit, busVoltage, TRIG_WIDTH } from '../dsp/mna.js';
-import { Voice, OnePole, lerp, clamp, PITCH, pitchMul, knob, amtMul, spanMul } from '../dsp/core.js';
+import { Voice, OnePole, lerp, clamp, PITCH, pitchMul, knob, amtMul, spanMul, driveGain, driveComp, railClip } from '../dsp/core.js';
 
 // extra knobs: CLICK is C40, the trigger's feed into IC12 (0 = none, centre
 // stock, full 2x); ATTACK is C38, the Q42 mono-stable that holds the start of
@@ -39,6 +39,7 @@ export class BDCircuit extends Voice {
       PITCH, ...BD_EXTRA,
     ]);
     this.vppNormal = 3.5; this.vppAccent = 10;
+    this.ownsDrive = true; // DRIVE clips in render()
     this.oversample = globalThis.BD_OS ?? 1;
     const c = (this.ckt = new Circuit(NODES));
     const V15 = 15;
@@ -95,6 +96,8 @@ export class BDCircuit extends Voice {
     for (const cap of this.cT) cap.c = 0.015e-6 / pitchMul(this.p.pitch);
     this.c40.c = Math.max(1e-12, 0.015e-6 * amtMul(this.p.click));
     this.c38.c = 0.1e-6 * spanMul(this.p.attack, 3);
+    // DRIVE: the output op-amp after the level pot with dk more gain
+    this.dk = driveGain(this.p.drive); this.dComp = driveComp(this.dk);
     this.ckt.touch();
   }
   _settle() { this.ckt.settle(2000); }
@@ -117,7 +120,8 @@ export class BDCircuit extends Voice {
         c.step();
         y += c.v[L1];
       }
-      out[i] += this.hp.tick(y / os) * lvl * DIVIDER;
+      const o = this.hp.tick(y / os) * lvl * DIVIDER;
+      out[i] += this.dk === 1 ? o : railClip(this.dk * o) * this.dComp;
     }
   }
 }
