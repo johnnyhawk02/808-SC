@@ -179,7 +179,8 @@ function g8Order() {
 function g8SetBdTop(on) { g8.bdTop = on; g8Save(); g8Order(); }
 // Recording a pattern (right-click its button > record): it empties, its button says STOP (tap it to stop), and from the
 // next bar what is heard (whichever pattern plays, picked with keys 1 to 8 or the buttons as usual) is written into it as
-// notes, step by step, up to 64 steps (4 bars); stopping the transport stops it too
+// notes, step by step; it loops over its 64 steps (4 bars), overwriting, until its button or number key is pressed
+// (stopping the transport stops it too)
 g8.rec = -1; g8.recPos = -1;
 function g8RecStart(i) {
   g8.rec = i; g8.recPos = -1;
@@ -196,11 +197,12 @@ function g8RecStep(s) {
   if (g8.recPos < 0) { if (s !== 0) return; g8.recPos = 0; }
   const src = g8Shown(), k = Math.max(0, g8PlayPage) * 16 + s, R = g8.pats[g8.rec], j = g8.recPos;
   for (const id of G8_IDS) { R[id].on[j] = src[id].on[k] ? 1 : 0; R[id].acc[j] = src[id].acc[k] ? 1 : 0; }
-  g8.recPos++; g8.lens[g8.rec] = Math.ceil(g8.recPos / 16);
-  if (g8.recPos >= G8_STEPS) g8RecStop(); else if (g8.recPos % 16 === 0) g8Save();
+  g8.recPos++; g8.lens[g8.rec] = Math.max(g8.lens[g8.rec], Math.ceil(g8.recPos / 16));
+  if (g8.recPos % 16 === 0) g8Save();
+  if (g8.recPos >= G8_STEPS) g8.recPos = 0; // (round again, over the top)
 }
-// keys 1 to 8 pick a pattern (not the one recording)
-function g8Key(n) { if (n !== g8.rec) g8Pick(n); }
+// keys 1 to 8 pick a pattern; the recording one's key stops the recording
+function g8Key(n) { if (n === g8.rec) g8RecStop(); else g8Pick(n); }
 function g8Pick(i) {
   g8.cur = i; g8.mode = 'lanes'; g8.page = 0;
   g8Send(); g8Draw();
