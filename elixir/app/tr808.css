@@ -33,7 +33,7 @@
 }
 
 /* ---- the grid page: presets, then seven rows of sixteen steps, a beat a column group ---- */
-.m-g8-card { display: grid; grid-template-columns: minmax(0, 1fr) 330px; grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px 14px; min-height: 0; padding: 10px 2px; }
+.m-g8-card { display: grid; grid-template-columns: minmax(0, 1fr) 420px; grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px 14px; min-height: 0; padding: 10px 2px; }
 .m-g8-presets { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
 .m .m-g8-presets .m-toggle:not(.used):not([aria-pressed="true"]) { opacity: .5; }
 .m .m-g8-presets .m-toggle { min-width: 0; min-height: 34px; padding: 0 2px; font-size: var(--fs-xs) !important; text-transform: uppercase; }
@@ -127,3 +127,17 @@
 .m .m-808-vname.hit { background: var(--ink) !important; color: var(--panel); text-shadow: none; transition: none; }
 /* nothing on the page selects as text when a knob is held or dragged */
 html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+/* beside the sound's controls on the grid page: its sends and pan, over a tall level fader with its meter */
+.m-g8-side .m-808-v { grid-template-columns: minmax(0, 1fr) 76px; column-gap: 8px; }
+.m-g8-side .m-808-v > * { grid-column: 1; }
+.m-g8-side .m-808-v > .m-g8-strip { grid-column: 2; grid-row: 1 / -1; }
+.m-g8-strip { display: grid; grid-template-rows: repeat(3, auto) minmax(0, 1fr); gap: 4px; min-height: 0; padding-left: 8px; border-left: var(--rule); }
+.m .m-g8-strip .m-knob { display: flex; flex-direction: column; align-items: center; gap: 1px; min-height: 0; }
+.m .m-g8-strip .m-knob .m-vtrack { container-type: size; width: 100%; height: 40px; background: none; overflow: visible; border-radius: 0; }
+.m .m-g8-strip output, .m .m-g8-strip .m-flab { font-size: 12px !important; line-height: 1; height: auto !important; width: 100%; text-align: center; white-space: nowrap; }
+.m .m-g8-strip .m-vf:not(.m-knob) { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 0; }
+.m .m-g8-strip .m-vf:not(.m-knob) .m-vtrack { flex: 1; width: 100%; height: auto; min-height: 60px; }
+/* (the fader's fill on the left, the meter up the right) */
+.m .m-g8-strip .m-vf:not(.m-knob) .m-vtrack i { right: 42%; }
+.m-g8-meter { position: absolute; right: 0; bottom: 0; width: 34%; height: 0; background: var(--ink); opacity: .75; pointer-events: none; }

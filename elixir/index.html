@@ -1626,7 +1626,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 }
 
 /* ---- the grid page: presets, then seven rows of sixteen steps, a beat a column group ---- */
-.m-g8-card { display: grid; grid-template-columns: minmax(0, 1fr) 330px; grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px 14px; min-height: 0; padding: 10px 2px; }
+.m-g8-card { display: grid; grid-template-columns: minmax(0, 1fr) 420px; grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px 14px; min-height: 0; padding: 10px 2px; }
 .m-g8-presets { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
 .m .m-g8-presets .m-toggle:not(.used):not([aria-pressed="true"]) { opacity: .5; }
 .m .m-g8-presets .m-toggle { min-width: 0; min-height: 34px; padding: 0 2px; font-size: var(--fs-xs) !important; text-transform: uppercase; }
@@ -1720,11 +1720,25 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m .m-808-vname.hit { background: var(--ink) !important; color: var(--panel); text-shadow: none; transition: none; }
 /* nothing on the page selects as text when a knob is held or dragged */
 html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+/* beside the sound's controls on the grid page: its sends and pan, over a tall level fader with its meter */
+.m-g8-side .m-808-v { grid-template-columns: minmax(0, 1fr) 76px; column-gap: 8px; }
+.m-g8-side .m-808-v > * { grid-column: 1; }
+.m-g8-side .m-808-v > .m-g8-strip { grid-column: 2; grid-row: 1 / -1; }
+.m-g8-strip { display: grid; grid-template-rows: repeat(3, auto) minmax(0, 1fr); gap: 4px; min-height: 0; padding-left: 8px; border-left: var(--rule); }
+.m .m-g8-strip .m-knob { display: flex; flex-direction: column; align-items: center; gap: 1px; min-height: 0; }
+.m .m-g8-strip .m-knob .m-vtrack { container-type: size; width: 100%; height: 40px; background: none; overflow: visible; border-radius: 0; }
+.m .m-g8-strip output, .m .m-g8-strip .m-flab { font-size: 12px !important; line-height: 1; height: auto !important; width: 100%; text-align: center; white-space: nowrap; }
+.m .m-g8-strip .m-vf:not(.m-knob) { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 0; }
+.m .m-g8-strip .m-vf:not(.m-knob) .m-vtrack { flex: 1; width: 100%; height: auto; min-height: 60px; }
+/* (the fader's fill on the left, the meter up the right) */
+.m .m-g8-strip .m-vf:not(.m-knob) .m-vtrack i { right: 42%; }
+.m-g8-meter { position: absolute; right: 0; bottom: 0; width: 34%; height: 0; background: var(--ink); opacity: .75; pointer-events: none; }
 </style>
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.29<!--/v--></small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.30<!--/v--></small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1821,7 +1835,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.29<!--/v-->, 6 Nov, 23:58</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.30<!--/v-->, 7 Nov, 00:05</footer>
     </section>
   </div>
   </div>
@@ -9635,6 +9649,7 @@ class Player {
     // each 808 sound's own mix (the mix page, app/tr808-mix.js): level, pan, echo and reverb sends; its dry signal this
     // block (int16 scale, at its level) and peak
     this.vmix = {}; this.vbuf = {}; this.vpk = {}; this.fxExtra = new Float32Array(128);
+    this.vlv = {}; // (and each sound's own meter peak, for the grid's level fader)
     this._render(this.A); this._render(this.B);
   }
   msg(m) {
@@ -9966,6 +9981,7 @@ class Player {
           const a = v < 0 ? -v : v; if (a > lv) lv = a;
         }
         lv *= Math.max(pl, pr); if (lv > this.lvl[c]) this.lvl[c] = lv;
+        if (lv > (this.vlv[id] || 0)) this.vlv[id] = lv;
       }
     }
     if (sp) {
@@ -9978,8 +9994,8 @@ class Player {
     if (++this.lvlN >= 16) {
       this.lvlN = 0;
       const on = this.lvl.some((v) => v > 1e-4);
-      if (on || this.lvlOn) this.events.push({ type: 'lvl', l: Array.from(this.lvl) });
-      this.lvlOn = on; this.lvl.fill(0);
+      if (on || this.lvlOn) this.events.push({ type: 'lvl', l: Array.from(this.lvl), v: { ...this.vlv } });
+      this.lvlOn = on; this.lvl.fill(0); for (const id in this.vlv) this.vlv[id] = 0;
     }
     // the firmware's FX bus (distortion, ring mod, compressor or delay), sample-exact
     const fx = e.renderFx(this.fxGain, this.echoWidth, fe);
@@ -12301,7 +12317,7 @@ function markBar(b) {
 function onEvent(ev) {
   if (ev.type === 'rec' || ev.type === 'recData') return recEvent(ev);
   const delay = ctx && ctx.outputLatency ? ctx.outputLatency * 1000 : 0;
-  if (ev.type === 'lvl') { if (delay) setTimeout(() => lvmFeed(ev.l), delay); else lvmFeed(ev.l); return; }
+  if (ev.type === 'lvl') { if (delay) setTimeout(() => lvmFeed(ev.l, ev.v), delay); else lvmFeed(ev.l, ev.v); return; }
   if (ev.type !== 'step' || !playing) return;
   setTimeout(() => {
     if (!playing) return;
@@ -14601,15 +14617,54 @@ T8_ORDER.forEach(t8mSend);
     name.addEventListener('click', () => t8Audition(id));
     strip.append(name);
     const knob = (label, k, min, max, show) => mFader(strip, label, { knob: true, min, max, get: () => t8m[id][k], show, dflt: T8M_0[k],
-      set: (v) => { t8m[id][k] = v; t8mSave(); t8mSend(id); } });
+      set: (v) => { t8m[id][k] = v; t8mSave(); t8mSend(id); mDrawAll(); } });
     knob('echo', 'echo', 0, 100, (v) => (v ? String(v) : 'off'));
     knob('verb', 'verb', 0, 100, (v) => (v ? String(v) : 'off'));
     knob('pan', 'pan', 0, 127, (v) => (v === 63 ? 'C' : v < 63 ? `L${63 - v}` : `R${v - 63}`));
     mFader(strip, 'level', { min: 0, max: 127, get: () => t8m[id].vol, show: String, dflt: 127,
-      set: (v) => { t8m[id].vol = v; t8mSave(); t8mSend(id); } });
+      set: (v) => { t8m[id].vol = v; t8mSave(); t8mSend(id); mDrawAll(); } });
     box.append(strip);
   }
 }
+// the same, beside each sound's controls on the grid page: its echo and reverb sends and pan, over a tall level fader
+// with its meter in it (the sound's own peak after its level and pan, from the audio thread's 'lvl' events)
+const g8Meters = {};
+for (const id of T8_ORDER) {
+  const card = t8Cards[id].find((c) => c.closest('#m-g8-side'));
+  if (!card) continue;
+  const strip = document.createElement('div'); strip.className = 'm-g8-strip';
+  const knob = (label, k, min, max, show) => mFader(strip, label, { knob: true, min, max, get: () => t8m[id][k], show, dflt: T8M_0[k],
+    set: (v) => { t8m[id][k] = v; t8mSave(); t8mSend(id); mDrawAll(); } });
+  knob('echo', 'echo', 0, 100, (v) => (v ? String(v) : 'off'));
+  knob('verb', 'verb', 0, 100, (v) => (v ? String(v) : 'off'));
+  knob('pan', 'pan', 0, 127, (v) => (v === 63 ? 'C' : v < 63 ? `L${63 - v}` : `R${v - 63}`));
+  mFader(strip, 'level', { min: 0, max: 127, get: () => t8m[id].vol, show: String, dflt: 127,
+    set: (v) => { t8m[id].vol = v; t8mSave(); t8mSend(id); mDrawAll(); } });
+  const meter = document.createElement('u'); meter.className = 'm-g8-meter'; meter.setAttribute('aria-hidden', 'true');
+  strip.lastElementChild.querySelector('.m-vtrack').append(meter);
+  g8Meters[id] = { el: meter, in: 0, db: -60 };
+  card.append(strip);
+}
+// the meters: -48 dB to 0 dB up the fader, falling back at 30 dB a second
+let g8MRaf = 0, g8MT = 0;
+function g8MFrame(t) {
+  const dt = g8MT ? Math.min(0.1, (t - g8MT) / 1000) : 0; g8MT = t;
+  let live = false;
+  for (const id in g8Meters) {
+    const m = g8Meters[id], db = m.in > 0 ? 20 * Math.log10(m.in) : -99; m.in = 0;
+    m.db = Math.max(db, m.db - 30 * dt, -48);
+    m.el.style.height = `${((m.db + 48) / 48) * 100}%`;
+    if (m.db > -48) live = true;
+  }
+  g8MRaf = live ? requestAnimationFrame(g8MFrame) : 0; if (!live) g8MT = 0;
+}
+const g8LvmFeed = lvmFeed;
+lvmFeed = function (l, v) {
+  g8LvmFeed(l);
+  if (!v) return;
+  for (const id in v) if (g8Meters[id] && v[id] > g8Meters[id].in) g8Meters[id].in = v[id];
+  if (!g8MRaf) g8MRaf = requestAnimationFrame(g8MFrame);
+};
 // ---- the glass isn't flat: each control's ink shadow deepens a little toward the top right of the screen (--d, used
 // by the CSS), worked out once from where it sits and again when the screen's size changes ----
 function mDepth() {
