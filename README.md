@@ -156,7 +156,7 @@ Cost: the whole synth kit is 10-13% of one core in Node (the circuit kit
 recordings in `cache/808/`.
 
 Hosting: `.github/workflows/pages.yml` publishes the bench to GitHub Pages
-(https://johnnyhawk02.github.io/808-circuit/, the bench at bench/) on every push to `main`. One-time
+(https://808.johnnyhawk.org/, also https://johnnyhawk02.github.io/808-circuit/; the bench at bench/) on every push to `main`. One-time
 setup: Settings > Pages > Source: "GitHub Actions".
 
 Running locally: any static server, e.g. `python3 -m http.server`, then open
