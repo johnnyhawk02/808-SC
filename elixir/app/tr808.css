@@ -141,3 +141,13 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 /* (the fader's fill on the left, the meter up the right) */
 .m .m-g8-strip .m-vf:not(.m-knob) .m-vtrack i { right: 42%; }
 .m-g8-meter { position: absolute; right: 0; bottom: 0; width: 34%; height: 0; background: var(--ink); opacity: .75; pointer-events: none; }
+
+/* the bars of a pattern, under the grid: the one shown pressed, the ones in the pattern solid, the one playing outlined */
+.m-g8-barbox { display: flex; align-items: center; gap: 4px; }
+.m-g8-bars { display: flex; gap: 3px; }
+.m .m-g8-foot .m-g8-barbox .m-toggle { min-width: 34px; padding: 0 6px; }
+.m .m-g8-bars .m-toggle:not(.in) { opacity: .4; border-style: dashed !important; }
+.m .m-g8-bars .m-toggle.now { outline: 2px solid var(--ink); outline-offset: 2px; }
+.m-g8-foot { gap: 10px; min-width: 0; }
+.m-g8-foot > * { flex: none; }
+.m-g8-foot > .m-g8-key { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; opacity: .8; }
