@@ -19,7 +19,8 @@ const T8_KEY = 'elixir808-tr808';
 // twice running (the shipped cache has 16)
 const T8_HITS = 4;
 // shipped cached hits: the bench's cache/ folder, beside this app's folder
-const T8_CACHE_URL = new URL('../cache/', location.href);
+// the bench's cache/: one folder up when served from elixir/ (locally), bench/cache/ on the live site (the app at the root)
+const T8_CACHE_URL = new URL(location.pathname.includes('/elixir/') ? '../cache/' : 'bench/cache/', location.href);
 
 const t8 = { map: T8_KIT.slice(), models: Object.fromEntries(T8_IDS.map((id) => [id, 'cached'])),
   values: Object.fromEntries(T8_SPEC.map((v) => [v.id, { ...v.values }])) };
