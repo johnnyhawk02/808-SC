@@ -83,14 +83,15 @@ neutral at its default (a voice at defaults renders bit-identical to before):
 | Detune, Ring | CB | the two oscillators' C5/C6; IC2b's Q (R25 up, R24 down) |
 | Spread | CY OH CH | the six oscillators' capacitors, pulled together or apart |
 | Tone | OH CH | the hat's Sallen-Key high-pass |
-| Accent, Drive | all (kit level) | how much of the accent the voice takes; soft clip after the voice |
+| Accent | all (kit level) | how much of the accent the voice takes |
+| Drive | all | the voice's output op-amp (its mixing amp, after Level) given up to x24 gain so it clips on its ±15 V rails; level brought back so a 4 V peak stays 4 V. Circuit: the amp's feedback network scaled (R up, C down; BD and CB, which have none, get the same op-amp law on their output). Synth and recordings: the same op-amp law |
 
 The synth versions do the same with their own blocks; `test/knob-trim.mjs`
 measures the circuit's level change at each knob end and writes the
 difference to `dsp/knob-trim.js` (re-run after `test/ref-render.mjs all`).
 `test/match-cases.mjs <id>` lists every knob case's score. The 808
 recordings follow Pitch (resampling) and Decay (shorter only); Cached mode
-bakes the extras in when you press Cache, Accent and Drive stay live.
+bakes the extras in when you press Cache (Drive too, since it is in the circuit); Accent stays live.
 
 ## Voice API
 

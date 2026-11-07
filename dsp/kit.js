@@ -1,6 +1,7 @@
 // The kit: owns the shared metal oscillators, all 16 voices, a sample-
 // accurate trigger queue and the master bus. Host-agnostic (worklet,
 // ScriptProcessor or Node).
+import { DRIVE, driveGain, driveComp, railClip } from './core.js';
 import { MetalBank } from './metal.js';
 import { KNOB_TRIM } from './knob-trim.js';
 import { CALIBRATION, LEVEL } from './calibration.js';
@@ -31,22 +32,16 @@ export const VOICES = [
   ['oh', 'Open Hi-Hat', OH], ['ch', 'Closed Hi-Hat', CH],
 ];
 export const VOLT_SCALE = 1 / 24;
-// Knobs every voice gets from the kit, on top of its own (same in all three
-// versions). Both are neutral at their defaults.
+// Knob every voice gets from the kit, on top of its own (same in all three
+// versions), neutral at its default:
 //   ACCENT: how much of the accent level this voice takes (1 = stock; the
 //           circuit models see it as a lower accent bus voltage)
-//   DRIVE:  soft clipping after the voice, from warm to crushed; the curve is
-//           scaled so a 6 V peak comes out at about the same peak, so it
-//           thickens rather than just getting louder
+// DRIVE (dsp/core.js) is a voice knob: the circuit models clip in their own
+// output op-amp (baked in by the Cache button); the synth and the
+// recordings go through the same op-amp law in _voiceOut below.
 export const COMMON = [
   { id: 'accent', name: 'Accent', def: 1, kit: true },
-  { id: 'drive', name: 'Drive', def: 0, kit: true },
 ];
-const DRIVE_PEAK = 6; // V
-export function driveCurve(drive) {
-  const k = (8 * drive * drive) / DRIVE_PEAK; // 1/V
-  return k <= 0 ? null : { k, m: (k * DRIVE_PEAK) / Math.tanh(k * DRIVE_PEAK) / k };
-}
 const NOISE_IDS = ['sd', 'lt', 'mt', 'ht', 'cp', 'ma'];
 const METAL_IDS = ['cb', 'cy', 'oh', 'ch'];
 // CH renders before OH so the circuit OH can read CH's envelope (choke)
@@ -91,21 +86,18 @@ export class Kit {
     this.solo = null;    // render a single voice (tests)
     this.split = null;   // per-voice outputs, see _renderChunk
     this.fx = {};        // per voice: kit-level knobs (COMMON) + drive buffer
-    for (const [id] of VOICES) this.fx[id] = { accent: 1, drive: 0, curve: null, buf: new Float32Array(128) };
+    for (const [id] of VOICES) this.fx[id] = { accent: 1, buf: new Float32Array(128) };
   }
   spec() {
     return VOICES.map(([id, name]) => ({
-      id, name, params: [...this.voices[id].params, ...COMMON],
-      values: { ...this.voices[id].p, accent: this.fx[id].accent, drive: this.fx[id].drive },
+      // DRIVE last, after the kit's ACCENT
+      id, name, params: [...this.voices[id].params.filter((p) => p.id !== 'drive'), ...COMMON, DRIVE],
+      values: { ...this.voices[id].p, accent: this.fx[id].accent },
     }));
   }
   set(id, param, value) {
     const fx = this.fx[id];
-    if (fx && (param === 'accent' || param === 'drive')) {
-      fx[param] = Math.max(0, Math.min(1, value));
-      if (param === 'drive') fx.curve = driveCurve(fx.drive);
-      return;
-    }
+    if (fx && param === 'accent') { fx.accent = Math.max(0, Math.min(1, value)); return; }
     this.behavioural[id]?.set(param, value);
     this.sampled[id]?.set(param, value);
     this.circuit[id]?.set(param, value);
@@ -142,15 +134,18 @@ export class Kit {
     }
     v.trigger(accent * (this.fx[id]?.accent ?? 1));
   }
-  // one voice model into mix, through its DRIVE if that is up
+  // one voice model into mix. DRIVE: the circuit models (and their cached
+  // hits) clip in their own output op-amp; the synth and the recordings
+  // get the same op-amp law here.
   _voiceOut(id, v, mix, n) {
-    const fx = this.fx[id], c = fx?.curve;
-    if (!c) { v.render(mix, n); return; }
+    const d = v.p?.drive ?? 0;
+    if (!(d > 0) || v.ownsDrive) { v.render(mix, n); return; }
+    const fx = this.fx[id];
     if (fx.buf.length < n) fx.buf = new Float32Array(n);
     const b = fx.buf; b.fill(0, 0, n);
     v.render(b, n);
-    const { k, m } = c;
-    for (let i = 0; i < n; i++) mix[i] += Math.tanh(k * b[i]) * m;
+    const k = driveGain(d), m = driveComp(k);
+    for (let i = 0; i < n; i++) mix[i] += railClip(k * b[i]) * m;
   }
   _usesCircuit(ids) { return ids.some((id) => this.model[id] === 'circuit' || this.circuit[id]?.awake); }
   // Render n frames of mono, digital scale, into dst (overwrites).

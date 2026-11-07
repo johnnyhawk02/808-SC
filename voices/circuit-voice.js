@@ -13,7 +13,7 @@
 // 1 ms. The bus voltage comes from the main board's accent circuit
 // (busVoltage in dsp/mna.js).
 import { Circuit, busVoltage, TRIG_WIDTH } from '../dsp/mna.js';
-import { Voice, OnePole, clamp } from '../dsp/core.js';
+import { Voice, OnePole, clamp, driveGain, driveComp, railClip } from '../dsp/core.js';
 
 // Audio (A) taper: 10% of the resistance at mid rotation.
 export const aTaper = (x) => { x = clamp(x, 0, 1); return (Math.exp(4.394 * x) - 1) / (Math.exp(4.394) - 1); };
@@ -55,6 +55,15 @@ export class CircuitVoice extends Voice {
     this.isCircuit = true;
     this.parts = {};        // knob group -> parts scaled from their schematic value
     this.ownMetal = null;   // private, retuned metal bank (PITCH off centre)
+    // DRIVE: dk = gain multiplier on the output op-amp, dComp = the level
+    // brought back after it (dsp/core.js). Voices with an inverting output
+    // mixer put its feedback network in the 'fbR' / 'fbC' groups (and
+    // multiply their LEVEL pot by dk; CB scales its buffer's output).
+    // render() reads the output through the op-amp's rail law, which the
+    // solver's own clipping (dsp/mna.js) mostly does already: it also stops
+    // the odd sample the feedback capacitors pull past the rail.
+    this.ownsDrive = true;
+    this.dk = 1; this.dComp = 1;
   }
   // Remember a part (resistor or capacitor of stage c) so a knob can scale
   // it: scale(group, k) sets every part in the group to k x its value on the
@@ -83,6 +92,15 @@ export class CircuitVoice extends Voice {
       this.ownMetal.active = () => ic3;
     }
     this.ownMetal.setPitch(m, spread, idx);
+  }
+  set(id, v) {
+    if (id === 'drive') {
+      this.p.drive = v; this.dk = driveGain(v); this.dComp = driveComp(this.dk);
+      // feedback impedance x dk: resistors up, capacitors down, so the
+      // mixer's gain rises by dk and its time constants stay put
+      this.scale('fbR', this.dk); this.scale('fbC', 1 / this.dk);
+    }
+    super.set(id, v);
   }
   stage(nodes) {
     const c = new Circuit(nodes);
@@ -149,7 +167,7 @@ export class CircuitVoice extends Voice {
     this.ownMetal?.render(n);
     for (let i = 0; i < n; i++) {
       this._tick(i);
-      const y = this.dcBlock.tick(this.output());
+      const y = this.dcBlock.tick(this.dk === 1 ? this.output() : railClip(this.output()) * this.dComp);
       out[i] += y;
       this.post?.(i, 1, true);
       this.quiet = Math.abs(y) < 5e-3 ? this.quiet + 1 : 0; // 5 mV: ~-68 dB below a 12 V peak

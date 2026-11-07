@@ -213,6 +213,23 @@ function blep(t, dt) {
 export const PITCH_SEMIS = 12, DECAY_SPAN = 3;
 export const PITCH = { id: 'pitch', name: 'Pitch', def: 0.5, extra: true, fmt: (v) => { const s = Math.round((v - 0.5) * 2 * PITCH_SEMIS); return s > 0 ? `+${s}` : `${s}`; } };
 export const DECAY = { id: 'decay', name: 'Decay', def: 0.5, extra: true, fmt: (v) => `x${decayMul(v).toFixed(v < 0.5 ? 2 : 1)}` };
+// DRIVE: the voice's output op-amp (its mixing amp, after LEVEL) given
+// more gain, up to x24, so it runs into its +-15 V rails. The circuit models
+// scale the amp's feedback network (dsp/mna.js clips it); the synth and the
+// 808 recordings go through the same op-amp law here (dsp/kit.js). The
+// output is scaled back so a 4 V peak stays a 4 V peak: it squares off and
+// thickens rather than just getting louder. 0 = stock.
+export const VSAT = 13.5, KNEE = 0.8; // as dsp/mna.js
+export function railClip(x, vsat = VSAT) {
+  const xl = KNEE * vsat, ax = Math.abs(x);
+  if (ax <= xl) return x;
+  const w = vsat - xl;
+  return Math.sign(x) * (xl + w * Math.tanh((ax - xl) / w));
+}
+const DRIVE_PEAK = 4; // V
+export const driveGain = (v) => 1 + 23 * Math.max(0, Math.min(1, v)) ** 2;
+export const driveComp = (k) => DRIVE_PEAK / railClip(k * DRIVE_PEAK);
+export const DRIVE = { id: 'drive', name: 'Drive', def: 0, kit: true, fmt: (v) => `x${driveGain(v).toFixed(driveGain(v) < 10 ? 1 : 0)}` };
 export const pitchMul = (v) => 2 ** (((clamp(v ?? 0.5, 0, 1) - 0.5) * 2 * PITCH_SEMIS) / 12);
 export const decayMul = (v) => DECAY_SPAN ** ((clamp(v ?? 0.5, 0, 1) - 0.5) * 2);
 // amount knobs: 0 = none, centre = stock, full = twice the stock value
@@ -233,9 +250,10 @@ export function spreadFactors(freqs, s, idx = freqs.map((_, i) => i)) {
 export class Voice {
   constructor(sr, spec) {
     this.sr = sr;
-    this.params = spec;
+    // every voice gets DRIVE (see above) unless its list already has it
+    this.params = spec.some((q) => q.id === 'drive') ? spec : [...spec, DRIVE];
     this.p = {};
-    for (const s of spec) this.p[s.id] = s.def;
+    for (const s of this.params) this.p[s.id] = s.def;
     this.trimN = 1; this.trimA = 1; // output calibration, see dsp/calibration.js
   }
   set(id, v) { this.p[id] = v; this.onParam?.(id, v); }

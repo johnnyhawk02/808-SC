@@ -24,12 +24,12 @@ const INFO = {
   ch: ['Q28–Q31', '6 osc · 50 ms'],
 };
 const KEYS = '1234567890qwerty';
-const LIVE = ['level', 'snap', 'accent', 'drive']; // knobs Cached plays live; the rest the Cache button bakes in
+const LIVE = ['level', 'snap', 'accent']; // knobs Cached plays live; the rest (DRIVE too) the Cache button bakes in
 const HELP = {
   pitch: 'Extra: ±12 semitones around the stock tuning (double-click to reset)',
   decay: 'Decay time (an extra on voices whose panel had none: ×1/3 to ×3; the 808 recordings can only get shorter)',
   accent: 'Extra: how much of the accent level this voice takes (10 = stock)',
-  drive: 'Extra: soft clipping after the voice, from warm to crushed (0 = off)',
+  drive: 'Extra: the voice\'s output op-amp given up to x24 gain, so it clips on its ±15 V rails (0 = stock; level brought back after)',
   click: 'Extra: attack click (BD: C40, the trigger feed; RS: R317, the drive into Q62)',
   attack: 'Extra: how long the note starts at the higher pitch (C38, the 4 ms mono-stable)',
   wires: 'Extra: snare wires darker or brighter (C66/C67, the noise high-pass)',

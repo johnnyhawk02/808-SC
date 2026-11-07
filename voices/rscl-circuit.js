@@ -87,8 +87,8 @@ class RSCLCircuit extends CircuitVoice {
     this.link(m, 'K', src[2], src[0], src[1]);
     m.C('K', 'N326', 0.01e-6); m.R('N326', 'S', 10e3);          // C125, R326
     m.OpAmp('gnd', 'S', 'OUT');
-    m.R('S', 'OUT', 470e3); m.C('S', 'OUT', 22e-12);            // R330, C153
-    m.C('S', 'NV', 33e-6);                                      // C126
+    this.part(m, m.R('S', 'OUT', 470e3), 'fbR'); this.part(m, m.C('S', 'OUT', 22e-12), 'fbC'); // R330, C153
+    this.part(m, m.C('S', 'NV', 33e-6), 'fbC');                // C126
     this.vr16 = m.R('NV', 'OUT', 100e3);                        // VR16
     this.fet = m.Dyn('NV', 'OUT');                              // Q74
     // gate: R327 470k to the output (previous sample, across a 470k)
@@ -102,12 +102,12 @@ class RSCLCircuit extends CircuitVoice {
     const m = this.s3.v, vs = Math.min(m[this.iNV], m[this.iOut]);
     const vgs = this.s1.v[this.iG] - vs;
     let k = 1 - vgs / -3.5; k = k < 0 ? 0 : k > 1.5 ? 1.5 : k;
-    this.fet.g = (k * k) / 875 + 1e-9;
+    this.fet.g = ((k * k) / 875 + 1e-9) / this.dk; // DRIVE: part of the feedback network
   }
   onParam() {
     this.scale('pitch', 1 / pitchMul(this.p.pitch)); this.scale('env', decayMul(this.p.decay));
     this.scale('click', spanMul(this.p.click, 3));
-    if (this.vr16) { this.vr16.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.s3.touch(); }
+    if (this.vr16) { this.vr16.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level) * this.dk); this.s3.touch(); }
   }
   output() { return this.s3.v[this.iOut]; }
 }

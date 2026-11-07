@@ -80,5 +80,5 @@ export class CBCircuit extends CircuitVoice {
     const r = 5e3 * aTaper(this.p.level);
     this.vrT.g = 1 / Math.max(1, 5e3 - r); this.vrB.g = 1 / Math.max(1, r); this.s2.touch();
   }
-  output() { return this.s2.v[this.iOut]; }
+  output() { return this.s2.v[this.iOut] * this.dk; } // DRIVE: IC6 given gain dk (clipped in render())
 }

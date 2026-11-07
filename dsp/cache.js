@@ -52,6 +52,7 @@ export class CachedVoice extends Voice {
     this.plays = [];          // { hit: [normal, accent], mix, pos, gain }
     this.last = -1;
     this.rng = 0x9e3779b9;
+    this.ownsDrive = true; // DRIVE is baked into the hits by the circuit
   }
   get loaded() { return !!this.data; }
   load(info, int16) {

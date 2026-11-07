@@ -93,8 +93,8 @@ export class SDCircuit extends CircuitVoice {
     m.R('WT', 'S', 100e3);                                               // R204
     this.link(m, 'I3', 1, b, 'E49'); m.C('I3', 'N69', 0.01e-6); m.R('N69', 'S', 27e3); // C69, R205
     m.OpAmp('gnd', 'S', 'OUT');
-    m.R('S', 'OUT', 470e3); m.C('S', 'OUT', 220e-12);                    // R210, C70
-    this.vr7 = m.R('S', 'NV', 100e3); m.C('NV', 'OUT', 33e-6);           // VR7, C68
+    this.part(m, m.R('S', 'OUT', 470e3), 'fbR'); this.part(m, m.C('S', 'OUT', 220e-12), 'fbC'); // R210, C70
+    this.vr7 = m.R('S', 'NV', 100e3); this.part(m, m.C('NV', 'OUT', 33e-6), 'fbC');      // VR7, C68
     this.iOut = m.idx.OUT;
     this.finish();
   }
@@ -109,7 +109,7 @@ export class SDCircuit extends CircuitVoice {
     this.scale('pitch', 1 / m); this.scale('qUp', d); this.scale('qDn', 1 / d);
     this.scale('env', spanMul(this.p.snapdec, 3)); this.scale('wires', 1 / spanMul(this.p.wires, 2));
     this.scale('inDiv', 1 / d);
-    if (this.vr7) { this.vr7.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.s3.touch(); }
+    if (this.vr7) { this.vr7.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level) * this.dk); this.s3.touch(); }
   }
   output() { return this.s3.v[this.iOut]; }
 }

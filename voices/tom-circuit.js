@@ -93,8 +93,8 @@ class TomCircuit extends CircuitVoice {
     this.link(m, 'J', 100e3, a, 'O1');                        // R233
     m.C('J', 'S', P.cOut);                                    // C81 into the mixer's (-)
     m.OpAmp('gnd', 'S', 'OUT');
-    m.R('S', 'OUT', 470e3); m.C('S', 'OUT', 0.001e-6);        // R235, C83
-    this.vr10 = m.R('S', 'NV', 100e3); m.C('NV', 'OUT', 33e-6); // VR10, C82
+    this.part(m, m.R('S', 'OUT', 470e3), 'fbR'); this.part(m, m.C('S', 'OUT', 0.001e-6), 'fbC'); // R235, C83
+    this.vr10 = m.R('S', 'NV', 100e3); this.part(m, m.C('NV', 'OUT', 33e-6), 'fbC');   // VR10, C82
     if (P.noise) {
       const N = P.noise, pn = this.shared.noise;
       this.link(m, 'TTc', 4.7e3, a, 'TT');                    // R219 (D55 blocks the return)
@@ -120,7 +120,7 @@ class TomCircuit extends CircuitVoice {
     const [dr, phi] = tomDecay(this.key, this.p.decay);
     this.scale('pitch', 1 / pitchMul(this.p.pitch)); this.scale('fb', 1 / phi); this.scale('env', dr);
     if (this.r232) { this.r232.g = Math.max(1e-12, this.r232.g0 * (this.p.noise < 0.5 ? amtMul(this.p.noise) : 8 ** (2 * this.p.noise - 1))); this.s2.touch(); }
-    if (this.vr10) { this.vr10.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level)); this.s2.touch(); }
+    if (this.vr10) { this.vr10.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level) * this.dk); this.s2.touch(); }
   }
   output() { return this.s2.v[this.iOut]; }
 }

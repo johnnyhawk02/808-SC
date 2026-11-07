@@ -38,8 +38,8 @@ function swingHat(v, c, tag) {
 function hatMixer(v, m, rin, cin) {
   m.C('IE', 'NC', cin); m.R('NC', 'S', rin);
   m.OpAmp('gnd', 'S', 'OUT');
-  m.R('S', 'OUT', 470e3); m.C('S', 'OUT', 220e-12);
-  v.vrL = m.R('S', 'NV', 100e3); m.C('NV', 'OUT', 33e-6);
+  v.part(m, m.R('S', 'OUT', 470e3), 'fbR'); v.part(m, m.C('S', 'OUT', 220e-12), 'fbC');
+  v.vrL = m.R('S', 'NV', 100e3); v.part(m, m.C('NV', 'OUT', 33e-6), 'fbC');
   v.iOut = m.idx.OUT; v.mix = m;
 }
 
@@ -92,7 +92,7 @@ export class OHCircuit extends CircuitVoice {
     this.scale('hp', 1 / spanMul(this.p.tone, 2));
     if (!this.vrL) return;
     this.vr3.g = 1 / (100e3 + 2e6 * this.p.decay);
-    this.vrL.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level));
+    this.vrL.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level) * this.dk);
     this.s1.touch(); this.mix.touch();
   }
   output() { return this.mix.v[this.iOut]; }
@@ -133,7 +133,7 @@ export class CHCircuit extends CircuitVoice {
     this.pitchMetal(pitchMul(this.p.pitch), true, spreadExp(this.p.spread)); this.scale('env', decayMul(this.p.decay));
     this.scale('hp', 1 / spanMul(this.p.tone, 2));
     if (!this.vrL) return;
-    this.vrL.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level));
+    this.vrL.g = 1 / Math.max(1, 100e3 * aTaper(this.p.level) * this.dk);
     this.mix.touch();
   }
   output() { return this.mix.v[this.iOut]; }
