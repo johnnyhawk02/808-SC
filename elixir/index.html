@@ -1626,7 +1626,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 }
 
 /* ---- the grid page: presets, then seven rows of sixteen steps, a beat a column group ---- */
-.m-g8-card { display: grid; grid-template-columns: minmax(0, 1fr) 420px; grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px 14px; min-height: 0; padding: 10px 2px; }
+.m-g8-card { display: grid; grid-template-columns: minmax(0, 1fr) 470px; grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px 14px; min-height: 0; padding: 10px 2px; }
 .m-g8-presets { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
 .m .m-g8-presets .m-toggle:not(.used):not([aria-pressed="true"]) { opacity: .5; }
 .m .m-g8-presets .m-toggle { min-width: 0; min-height: 34px; padding: 0 2px; font-size: var(--fs-xs) !important; text-transform: uppercase; }
@@ -1721,15 +1721,15 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 /* nothing on the page selects as text when a knob is held or dragged */
 html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 
-/* beside the sound's controls on the grid page: its sends and pan, over a tall level fader with its meter */
-.m-g8-side .m-808-v { grid-template-columns: minmax(0, 1fr) 76px; column-gap: 8px; }
+/* beside the sound's controls on the grid page: its sends and pan, side by side with a tall level fader with its meter */
+.m-g8-side .m-808-v { grid-template-columns: minmax(0, 1fr) 128px; column-gap: 8px; }
 .m-g8-side .m-808-v > * { grid-column: 1; }
 .m-g8-side .m-808-v > .m-g8-strip { grid-column: 2; grid-row: 1 / -1; }
-.m-g8-strip { display: grid; grid-template-rows: repeat(3, auto) minmax(0, 1fr); gap: 4px; min-height: 0; padding-left: 8px; border-left: var(--rule); }
-.m .m-g8-strip .m-knob { display: flex; flex-direction: column; align-items: center; gap: 1px; min-height: 0; }
-.m .m-g8-strip .m-knob .m-vtrack { container-type: size; width: 100%; height: 40px; background: none; overflow: visible; border-radius: 0; }
+.m-g8-strip { display: grid; grid-template-columns: minmax(0, 1fr) 52px; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 6px 6px; min-height: 0; padding-left: 8px; border-left: var(--rule); }
+.m .m-g8-strip .m-knob { grid-column: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 0; }
+.m .m-g8-strip .m-knob .m-vtrack { container-type: size; width: 100%; flex: 1; height: auto; min-height: 30px; max-height: 64px; background: none; overflow: visible; border-radius: 0; }
 .m .m-g8-strip output, .m .m-g8-strip .m-flab { font-size: 12px !important; line-height: 1; height: auto !important; width: 100%; text-align: center; white-space: nowrap; }
-.m .m-g8-strip .m-vf:not(.m-knob) { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 0; }
+.m .m-g8-strip .m-vf:not(.m-knob) { grid-column: 2; grid-row: 1 / 4; display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 0; }
 .m .m-g8-strip .m-vf:not(.m-knob) .m-vtrack { flex: 1; width: 100%; height: auto; min-height: 60px; }
 /* (the fader's fill on the left, the meter up the right) */
 .m .m-g8-strip .m-vf:not(.m-knob) .m-vtrack i { right: 42%; }
@@ -1738,7 +1738,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.31<!--/v--></small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.32<!--/v--></small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1835,7 +1835,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.31<!--/v-->, 7 Nov, 00:07</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.32<!--/v-->, 7 Nov, 00:08</footer>
     </section>
   </div>
   </div>
