@@ -153,3 +153,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 .m-g8-foot > .m-g8-key { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; opacity: .8; }
 .m .m-g8-presets .m-toggle.rec { background: var(--ink) !important; color: var(--panel); animation: g8rec 1s steps(2) infinite; }
 @keyframes g8rec { 50% { opacity: .55; } }
+/* the pick buttons light as their sound hits, and fade (the one picked, already dark, lights the other way) */
+.m .m-g8-picks .m-toggle { transition: background-color .3s ease-out, color .3s ease-out, opacity .3s ease-out; }
+.m .m-g8-picks .m-toggle.hit { background: var(--ink) !important; color: var(--panel); opacity: 1; text-shadow: none; transition: none; }
+.m .m-g8-picks .m-toggle[aria-pressed="true"].hit { background: var(--panel) !important; color: var(--ink); }
