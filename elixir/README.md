@@ -14,7 +14,7 @@ from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.git
   low cut, tone, width, and a gate (each hit into it opens it for a note division at the tempo, plus a fine tune of
   -50..+50%). It runs in the player (`IrVerb`: FFT convolution in two stages, 64-sample parts for the first
   4096 samples so there's no added latency, 2048-sample parts after).
-- **Mix page**: a strip for each of the sixteen sounds (echo send, reverb send, pan, level), mixed per sound in the
+- **Mix page**: a strip for each of the sixteen sounds (its name lights as it hits; echo send, reverb send, pan, level), mixed per sound in the
   player (`vmix808`; the echo takes them through `renderFx`'s extra input in `lxr.js`). The kick keys the sidechain and
   the rest duck. Each sound still has a track (`BUS808`) for mutes and the rush.
 - Looks: 80s magenta. The version, 1.N on the cauldron (and in the presets footer), N the number of changes merged into
@@ -31,9 +31,12 @@ from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.git
   LXR-02 firmware's FX code (the reverb is Elixir 808's own), which the mix still runs through).
 - An 808 voice takes its track's place in the engine's output, so level, pan, sends, the drum 1 sidechain, the master
   chain, meters and the recorder work on it. Accents are the circuit's own accent.
-- The 808 setup (models, knobs) and the lanes are kept in this browser, not in presets. Presets, settings and
-  favourites are kept apart from Elixir Desktop's (keys start `elixir808-`); on first run its saved presets are copied
-  in (only their pattern, tempo, mix and FX matter here).
+- A preset saves everything: on top of Elixir's (tempo, FX, master), every 808 sound's knobs, its mix strip and the
+  eight grid patterns (`e808`, app/tr808-state.js); loading one re-caches any sound whose knobs differ. There are no
+  built-in presets any more, and the old saved ones were deleted once (a copy stays in `elixir808-presets-old`).
+  **Reset sound** (options) puts every sound back to its default knobs (drive off), flattens the mix strips (full level,
+  centre, no sends), resets the FX to off and turns the compressor and sidechain duck off; patterns and tempo stay.
+  Settings and favourites are kept apart from Elixir Desktop's (keys start `elixir808-`).
 
 The 808 code is not copied: `tr808-bundle.mjs` bundles `../dsp` and `../voices` into the page at build time
 (`node elixir/build.mjs`), so it is always the bench's current code. Changes from Elixir Desktop: `app/tr808.js`,

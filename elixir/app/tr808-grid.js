@@ -276,7 +276,7 @@ function g8Flash(s) {
   const L = g8Shown(), k = Math.max(0, g8PlayPage) * 16 + (s % 16);
   for (const id of G8_IDS) {
     if (!L[id].on[k]) continue;
-    for (const n of [...(t8Cards[id] || []).map((card) => card.querySelector('.m-808-vname')), g8Picks[id]]) {
+    for (const n of [...(t8Cards[id] || []).map((card) => card.querySelector('.m-808-vname')), g8Picks[id], t8mNames[id]]) {
       if (!n) continue;
       n.classList.add('hit'); clearTimeout(n._hit); n._hit = setTimeout(() => n.classList.remove('hit'), 60);
     }

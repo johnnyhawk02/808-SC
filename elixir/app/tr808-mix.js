@@ -9,6 +9,7 @@ try {
   if (s) for (const id of T8_ORDER) for (const k in T8M_0) if (typeof s[id]?.[k] === 'number') t8m[id][k] = s[id][k];
 } catch (e) {}
 const t8mSave = () => { try { localStorage.setItem(T8M_KEY, JSON.stringify(t8m)); } catch (e) {} };
+const t8mNames = {};
 const t8mSend = (id) => send({ type: 'vmix808', id, ...t8m[id] });
 T8_ORDER.forEach(t8mSend);
 {
@@ -19,7 +20,7 @@ T8_ORDER.forEach(t8mSend);
     const name = document.createElement('button');
     name.type = 'button'; name.className = 'm-808-vname'; name.textContent = id; name.title = `${T8_NAME[id]}: tap to hear it`;
     name.addEventListener('click', () => t8Audition(id));
-    strip.append(name);
+    strip.append(name); t8mNames[id] = name; // (it lights as the sound hits, as on the grid: g8Flash)
     const knob = (label, k, min, max, show) => mFader(strip, label, { knob: true, min, max, get: () => t8m[id][k], show, dflt: T8M_0[k],
       set: (v) => { t8m[id][k] = v; t8mSave(); t8mSend(id); mDrawAll(); } });
     knob('echo', 'echo', 0, 100, (v) => (v ? String(v) : 'off'));

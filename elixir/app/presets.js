@@ -29,7 +29,7 @@ for (const { kit } of sourceKits) for (let n = 1; n <= 6; n++) if (kit[PAR['TRAN
 // master gets its spacer (0), and a song too old to have its pattern pages and rush settings is dropped (the preset
 // then loads its sound alone). build.mjs refuses a built-in preset in any other version.
 const PRESET_V = 5;
-const PRESET_FIELDS = ['name', 'kit', 'xm', 'fx', 'fx3', 'dpos', 'song', 'fav'];
+const PRESET_FIELDS = ['name', 'kit', 'xm', 'fx', 'fx3', 'dpos', 'song', 'fav', 'e808'];
 function toCurrent(p) {
   if (!p || !p.kit) return null;
   const q = structuredClone(p);
@@ -58,6 +58,16 @@ const kitSel = $('kit');
 // (read once, never written)
 const SAVE_KEY = 'elixir808-presets', OLD_KEY = 'elixir-desktop-presets';
 try { if (localStorage.getItem(SAVE_KEY) === null && localStorage.getItem(OLD_KEY) !== null) localStorage.setItem(SAVE_KEY, localStorage.getItem(OLD_KEY)); } catch (e) {}
+// The old presets (the LXR-02 era's, saved before a preset held the 808's sound) were all deleted once, on this
+// version's first run; a copy stays under elixir808-presets-old (never read)
+try {
+  if (!localStorage.getItem('elixir808-presets-cleared')) {
+    const old = localStorage.getItem(SAVE_KEY);
+    if (old && old !== '[]') localStorage.setItem('elixir808-presets-old', old);
+    localStorage.setItem(SAVE_KEY, '[]'); localStorage.removeItem('elixir808-factory-edits'); localStorage.removeItem('elixir808-favs');
+    localStorage.setItem('elixir808-presets-cleared', '1');
+  }
+} catch (e) {}
 function storedPresets() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || []; } catch (e) { return []; } }
 function storePresets() {
   const list = kitList.filter((k) => k.saved).map(presetData);
@@ -141,6 +151,8 @@ function loadPreset(k) {
   kitSel.value = kitList.indexOf(k);
   barSync = true;
   try { useKit(k); if (k.song) useSong(k.song, !presetBpm.checked); } finally { barSync = false; }
+  // (and the 808's: every sound's knobs, its mix strip and the eight patterns, app/tr808-state.js)
+  if (k.e808) t8UseAll(k.e808);
   setDirty(false);
   if (playing) kitNote(`${k.name} from the next bar`);
 }
@@ -190,7 +202,7 @@ function useSong(g, keepTempo) {
 }
 $('kit-save').addEventListener('click', () => {
   const k = { name: presetName(), kit: Uint8Array.from(values), xm: { amt: xm.amt.slice(), target: xm.target.slice() }, fx: mix.fx.slice(),
-    fx3: fx3Snapshot(), dpos: delayPos, song: songSnapshot(), saved: true, userSamples: 0 };
+    fx3: fx3Snapshot(), dpos: delayPos, song: songSnapshot(), e808: t8Snapshot(), saved: true, userSamples: 0 };
   kitList.push(k); storePresets(); fillKits();
   kitSel.value = kitList.length - 1;
   initValues.set(values); buildKnobs(); // the saved sound is now the reference for changed knobs

@@ -46,7 +46,7 @@ const HELP = [
   ['prst', 'prst: presets', `<ul><li>Click a preset to load it: while playing it flashes until the next bar, then takes over. Untick the tempo box to keep your tempo.</li>
 <li>Type in the search box (or press /) to find one by name; enter loads the first found, esc clears it.</li>
 <li>The star makes it a favourite (favourites are listed first).</li>
-<li><b>save new</b> keeps what you hear; <b>save over</b> replaces the one loaded.</li>
+<li><b>save new</b> keeps what you hear, all of it: every 808 sound's knobs, levels, pans and sends, the effects, the tempo and the eight patterns; <b>save over</b> replaces the one loaded. <b>reset sound</b> in the options menu goes back to a plain 808 (default knobs, no effects) and keeps the patterns.</li>
 <li><b>export presets</b> saves your presets to a file (it never deletes anything); <b>import</b> reads one back, or drop the file anywhere on the page.</li></ul>`],
   ['rec', 'recording', `<ul><li><b>rec</b> records a WAV: press it to start (it starts playing too), again to stop, and the file downloads.</li>
 <li>Hold or right-click <b>rec</b> to choose what it records: <b>free</b>, or an exact loop of 1, 2, 4, 8, 16, 32, 64 or 128 bars. A loop starts at the next bar, shows its progress on the button and downloads by itself, cut to repeat seamlessly in any other app.</li></ul>`],

@@ -126,7 +126,7 @@ self.onmessage = ({ data: { id, values, variants } }) => {
 function t8MakeCache(id) {
   if (t8Jobs[id] && !t8Jobs[id].error) return;
   const j = (t8Jobs[id] = { done: 0, total: 0 }); t8Draw();
-  const w = t8Worker();
+  const w = t8Worker(); j.w = w; j.knobs = { ...t8.values[id] };
   const fail = (msg) => {
     w.terminate(); j.error = msg; t8Draw();
     setTimeout(() => { if (t8Jobs[id] === j) { delete t8Jobs[id]; t8Draw(); } }, 6000);
