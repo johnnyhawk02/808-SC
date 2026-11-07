@@ -1147,7 +1147,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 /* the fx page: echo and ring mod side by side (five faders and three), taking what the crossfeed matrix under them leaves */
 [data-m-panel="fx"] .m-fx-card { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; column-gap: 0; }
 #m-fx-echo { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-#m-fx-ring { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+#m-fx-ring { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 [data-m-panel="fx"] .m-fx-row + .m-fx-row { border-top: 0; padding-top: 0; border-left: var(--rule); padding-left: 4px; margin-left: 4px; }
 [data-m-panel="fx"] .m-fx-row.m-xrow { grid-column: 1 / -1; border-left: 0; padding-left: 0; margin-left: 0; border-top: var(--rule); padding-top: 6px; }
 /* the crossfeed matrix: drum names down the side (from) and along the top (into, with what it modulates); each cell
@@ -1529,7 +1529,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
   [data-m-panel="fx"] .m-fx-empty { border: 1.5px dashed var(--ghost); border-radius: 4px; display: grid; place-items: center; color: var(--muted); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .08em; }
   #m [data-m-panel="fx"] #m-fx-echo > .m-vf:first-child, #m [data-m-panel="fx"] #m-fx-ring > .m-vf:first-child { display: none; }
   #m-fx-echo { grid-template-columns: repeat(5, minmax(0, 1fr)); min-height: 0; }
-  #m-fx-ring { grid-template-columns: repeat(4, minmax(0, 1fr)); min-height: 0; }
+  #m-fx-ring { grid-template-columns: repeat(5, minmax(0, 1fr)); min-height: 0; }
   .m-fx-slot { display: none; }
   [data-m-panel="fx"] .m-fx-slot { display: grid; }
   .m > .m-tabs button[data-m-tab="xf"] { display: block; }
@@ -1750,11 +1750,19 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 .m .m-g8-picks .m-toggle { transition: background-color .3s ease-out, color .3s ease-out, opacity .3s ease-out; }
 .m .m-g8-picks .m-toggle.hit { background: var(--ink) !important; color: var(--panel); opacity: 1; text-shadow: none; transition: none; }
 .m .m-g8-picks .m-toggle[aria-pressed="true"].hit { background: var(--panel) !important; color: var(--ink); }
+/* the reverb's IR picker (app/irverb.js), in the fx page's reverb header */
+.m-irpick { display: flex; gap: 6px; flex: 1; min-width: 0; justify-content: flex-end; }
+.m-irpick select { flex: 0 1 15em; min-width: 0; min-height: 30px; font: inherit; font-size: var(--fs-s); text-transform: uppercase; color: var(--ink);
+  background: transparent; border: 2px solid var(--ink); border-radius: 3px; padding: 0 6px; }
+.m-irpick select option, .m-irpick select optgroup { color: #000; background: #fff; }
+.m-irbtn { flex: none; min-height: 30px; font: inherit; font-size: var(--fs-xs); text-transform: uppercase; color: var(--ink); background: transparent;
+  border: 2px solid var(--ink); border-radius: 3px; padding: 0 8px; cursor: pointer; }
+.m-irbtn[hidden] { display: none; }
 </style>
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.41<!--/v--></small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.42<!--/v--></small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1812,7 +1820,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
   <div class="m-panel" data-m-panel="fx">
     <section class="m-card m-fx-card">
       <div class="m-fx-row"><div class="m-fxhead"><b>echo</b><label class="m-chk"><input id="m-pp" type="checkbox"><i aria-hidden="true"></i>ping pong</label><label class="m-chk"><input id="m-sync" type="checkbox" checked><i aria-hidden="true"></i>sync</label></div><div class="m-faders" id="m-fx-echo"></div></div>
-      <div class="m-fx-row"><b>reverb</b><div class="m-faders" id="m-fx-ring"></div></div>
+      <div class="m-fx-row"><div class="m-fxhead"><b>reverb</b><span class="m-irpick"><select id="m-ir" aria-label="impulse response"></select><button type="button" class="m-irbtn" id="m-ir-load" title="Load your own impulse response (a wav or other audio file, up to 5 s used); it's kept in this browser">load IR</button><button type="button" class="m-irbtn" id="m-ir-del" hidden title="Remove this IR of yours">remove</button><input type="file" id="m-ir-file" accept="audio/*,.wav,.aif,.aiff,.flac" hidden></span></div><div class="m-faders" id="m-fx-ring"></div></div>
       <div class="m-fx-row m-fx-slot"><b>insert</b><div class="m-fx-empty">empty slot</div></div>
       <div class="m-fx-row m-fx-slot"><b>insert</b><div class="m-fx-empty">empty slot</div></div>
     </section>
@@ -1851,7 +1859,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.41<!--/v-->, 7 Nov, 01:19</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.42<!--/v-->, 7 Nov, 01:41</footer>
     </section>
   </div>
   </div>
@@ -9620,6 +9628,165 @@ function barOk(b, bar) {
 // the tempo-synced delay: 1/128 of a bar at 0, a whole bar at 1, evenly in octaves between
 const delaySamples = (pos, bpm) => 240 / bpm * Math.pow(2, -7 * (1 - pos)) * LXR.REAL_FS;
 const VERB_MAKEUP = 1;
+// ---- the reverb: convolution with an impulse response (a recorded room, hall or reverb unit) ----
+// radix-2 complex FFT in place (inv: the inverse, unscaled); twiddles and bit reversal kept a size
+const FFT_T = {};
+function fftTab(n) {
+  if (FFT_T[n]) return FFT_T[n];
+  const bits = Math.log2(n), rev = new Uint32Array(n), c = new Float64Array(n / 2), s = new Float64Array(n / 2);
+  for (let i = 0; i < n; i++) { let r = 0; for (let b = 0; b < bits; b++) r |= ((i >> b) & 1) << (bits - 1 - b); rev[i] = r; }
+  for (let k = 0; k < n / 2; k++) { c[k] = Math.cos(2 * Math.PI * k / n); s[k] = Math.sin(2 * Math.PI * k / n); }
+  return (FFT_T[n] = { rev, c, s });
+}
+function fft(re, im, inv) {
+  const n = re.length, T = fftTab(n), rev = T.rev, C = T.c, S = T.s, sg = inv ? 1 : -1;
+  for (let i = 0; i < n; i++) { const j = rev[i]; if (j > i) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; } }
+  for (let size = 2; size <= n; size <<= 1) {
+    const h = size >> 1, st = n / size;
+    for (let i = 0; i < n; i += size) for (let k = 0, w = 0; k < h; k++, w += st) {
+      const wr = C[w], wi = sg * S[w], a = i + k, b = a + h;
+      const tr = re[b] * wr - im[b] * wi, ti = re[b] * wi + im[b] * wr;
+      re[b] = re[a] - tr; im[b] = im[a] - ti; re[a] += tr; im[a] += ti;
+    }
+  }
+}
+// Two stages of uniformly partitioned overlap-save convolution, mono in, stereo out: the IR's first 4096 samples in
+// 64-sample parts (no latency: each 64-sample block is convolved as it comes), the rest in 2048-sample parts, whose
+// work is spread over the 32 blocks after each 2048 samples of input and lands exactly when it's due (2 x 2048 after).
+// IrVerb.prepare (on the page) cuts the IR into those parts' spectra; the player swaps them in.
+const IRV_B1 = 64, IRV_N1 = 128, IRV_K1 = 65, IRV_P1 = 64, IRV_B2 = 2048, IRV_N2 = 4096, IRV_K2 = 2049;
+const IRV_MAX = 5 * 44140, IRV_P2MAX = Math.ceil((IRV_MAX - IRV_B1 * IRV_P1) / IRV_B2) + 1;
+class IrVerb {
+  // L, R: the IR at the engine's rate (R may be L); frac: how much of it to keep (the length knob, faded out over the last
+  // 30% of what's kept). Scaled to unit energy, so a long IR is no louder than a short one
+  static prepare(L, R, frac = 1) {
+    R = R || L;
+    const n = Math.max(64, Math.min(IRV_MAX, Math.round(L.length * frac))), fd = Math.round(n * 0.3);
+    const ch = [L, R].map((x) => { const y = new Float64Array(n); for (let i = 0; i < n; i++) y[i] = (x[i] || 0) * (i > n - fd ? 0.5 + 0.5 * Math.cos(Math.PI * (i - (n - fd)) / fd) : 1); return y; });
+    let e = 0; for (const y of ch) for (let i = 0; i < n; i++) e += y[i] * y[i];
+    const g = 0.8 / Math.sqrt(e / 2 + 1e-12); // (about as loud as the firmware reverb it replaced)
+    const part = (y, off, B, N, K, P) => {
+      const re = new Float32Array(P * K), im = new Float32Array(P * K), r = new Float64Array(N), m = new Float64Array(N);
+      for (let p = 0; p < P; p++) {
+        r.fill(0); m.fill(0);
+        for (let i = 0; i < B; i++) { const k = off + p * B + i; if (k < n) r[i] = y[k] * g; }
+        fft(r, m, false); re.set(r.subarray(0, K), p * K); im.set(m.subarray(0, K), p * K);
+      }
+      return { re, im };
+    };
+    const p2 = Math.max(0, Math.ceil((n - IRV_B1 * IRV_P1) / IRV_B2));
+    return { n, p2, h1: ch.map((y) => part(y, 0, IRV_B1, IRV_N1, IRV_K1, IRV_P1)), h2: ch.map((y) => part(y, IRV_B1 * IRV_P1, IRV_B2, IRV_N2, IRV_K2, p2)) };
+  }
+  constructor(fs) {
+    this.fs = fs; this.h = null;
+    this.x1re = new Float32Array(IRV_P1 * IRV_K1); this.x1im = new Float32Array(IRV_P1 * IRV_K1); this.pos1 = 0;
+    this.x2re = new Float32Array(IRV_P2MAX * IRV_K2); this.x2im = new Float32Array(IRV_P2MAX * IRV_K2); this.pos2 = 0;
+    this.prev1 = new Float64Array(IRV_B1);
+    this.seg = new Float64Array(IRV_B2); this.prevSeg = new Float64Array(IRV_B2); this.jobWin = new Float64Array(IRV_N2);
+    this.job = false; this.blk = 0;
+    this.out2 = [new Float32Array(IRV_B2), new Float32Array(IRV_B2)]; this.pend = [new Float32Array(IRV_B2), new Float32Array(IRV_B2)];
+    this.r1 = new Float64Array(IRV_N1); this.i1 = new Float64Array(IRV_N1); this.r2 = new Float64Array(IRV_N2); this.i2 = new Float64Array(IRV_N2);
+    this.y1 = [new Float64Array(IRV_K1), new Float64Array(IRV_K1), new Float64Array(IRV_K1), new Float64Array(IRV_K1)];
+    this.y2 = [new Float64Array(IRV_K2), new Float64Array(IRV_K2), new Float64Array(IRV_K2), new Float64Array(IRV_K2)];
+    // pre-delay (up to 150 ms), low cut on the way in; tone (a low-pass) and width on the way out
+    this.pd = new Float32Array(8192); this.pdW = 0; this.pre = 0;
+    this.lcA = 0; this.lcS = 0; this.lpA = 1; this.lpL = 0; this.lpR = 0; this.width = 1;
+    this.idle = Infinity; this.v = new Float64Array(64);
+    this.set({ pre: 10, low: 50, tone: 100, width: 64 });
+  }
+  // the knobs, 0..127: pre-delay 0..150 ms, low cut 20..500 Hz, tone 1..20 kHz (a one-pole low-pass), width 0..200%
+  set(v) {
+    if (v.pre !== undefined) this.pre = Math.min(this.pd.length - 64, Math.round(v.pre / 127 * 0.15 * this.fs));
+    if (v.low !== undefined) this.lcA = Math.exp(-2 * Math.PI * 20 * Math.pow(25, v.low / 127) / this.fs);
+    if (v.tone !== undefined) this.lpA = 1 - Math.exp(-2 * Math.PI * Math.min(0.45 * this.fs, 1000 * Math.pow(20, v.tone / 127)) / this.fs);
+    if (v.width !== undefined) this.width = v.width / 64;
+  }
+  load(h) { this.h = h; }
+  clear() {
+    this.x1re.fill(0); this.x1im.fill(0); this.x2re.fill(0); this.x2im.fill(0); this.prev1.fill(0); this.seg.fill(0); this.prevSeg.fill(0);
+    for (const b of [...this.out2, ...this.pend]) b.fill(0);
+    this.job = false; this.lcS = 0; this.lpL = 0; this.lpR = 0; this.pd.fill(0);
+  }
+  // one 64-sample block: x (mono, float) in; the wet signal added into L and R at gain g0 ramping to g1
+  process(x, L, R, g0, g1) {
+    const h = this.h; if (!h) return;
+    let any = false; for (let i = 0; i < 64; i++) if (x[i]) { any = true; break; }
+    const gone = h.n + 3 * IRV_B2 + this.pre;
+    if (any) { if (this.idle > gone) this.clear(); this.idle = 0; }
+    else if ((this.idle += 64) > gone) return;
+    // pre-delay and low cut (a one-pole high-pass)
+    const pd = this.pd, M = pd.length - 1, xin = this.r1;
+    for (let i = 0; i < 64; i++) {
+      pd[this.pdW] = x[i];
+      const d = pd[(this.pdW - this.pre) & M]; this.pdW = (this.pdW + 1) & M;
+      this.lcS = d + this.lcA * (this.lcS - d); xin[i] = d - this.lcS;
+    }
+    const v = this.v; v.set(xin.subarray(0, 64));
+    // stage 1: [previous block, this block] -> spectrum into the ring; the sum over parts; back
+    const r1 = this.r1, i1 = this.i1;
+    r1.set(this.prev1, 0); r1.set(v, 64); i1.fill(0); this.prev1.set(v);
+    fft(r1, i1, false);
+    const o1 = this.pos1 * IRV_K1; this.x1re.set(r1.subarray(0, IRV_K1), o1); this.x1im.set(i1.subarray(0, IRV_K1), o1);
+    const [aLr, aLi, aRr, aRi] = this.y1; aLr.fill(0); aLi.fill(0); aRr.fill(0); aRi.fill(0);
+    this.mac(this.x1re, this.x1im, IRV_P1, this.pos1, IRV_K1, h.h1, 0, IRV_P1, this.y1);
+    this.pos1 = (this.pos1 + 1) % IRV_P1;
+    this.back(this.y1, r1, i1, IRV_N1);
+    // stage 2: this block of the segment in, its output out (computed during the segment before)
+    const b = this.blk, s = b * 64;
+    this.seg.set(v, s);
+    if (this.job) {
+      if (b === 0) {
+        const r2 = this.r2, i2 = this.i2; r2.set(this.jobWin); i2.fill(0); fft(r2, i2, false);
+        const o2 = this.pos2 * IRV_K2; this.x2re.set(r2.subarray(0, IRV_K2), o2); this.x2im.set(i2.subarray(0, IRV_K2), o2);
+        for (const y of this.y2) y.fill(0);
+      }
+      const P = Math.min(h.p2, IRV_P2MAX), p0 = Math.floor(b * P / 32), p1 = Math.floor((b + 1) * P / 32);
+      if (p1 > p0) this.mac(this.x2re, this.x2im, IRV_P2MAX, this.pos2, IRV_K2, h.h2, p0, p1, this.y2);
+      if (b === 31) {
+        this.back(this.y2, this.r2, this.i2, IRV_N2);
+        for (let i = 0; i < IRV_B2; i++) { this.pend[0][i] = this.r2[IRV_B2 + i]; this.pend[1][i] = this.i2[IRV_B2 + i]; }
+        this.pos2 = (this.pos2 + 1) % IRV_P2MAX;
+      }
+    }
+    // out: both stages, tone and width
+    const o2L = this.out2[0], o2R = this.out2[1], a = this.lpA, w = this.width;
+    let lL = this.lpL, lR = this.lpR;
+    for (let i = 0; i < 64; i++) {
+      const yl = r1[64 + i] + o2L[s + i], yr = i1[64 + i] + o2R[s + i];
+      lL += a * (yl - lL); lR += a * (yr - lR);
+      const m = (lL + lR) / 2, d = (lL - lR) / 2 * w, g = g0 + (g1 - g0) * (i + 1) / 64;
+      L[i] += (m + d) * g; R[i] += (m - d) * g;
+    }
+    this.lpL = lL; this.lpR = lR;
+    if (b === 31) {
+      // the segment's in: its job starts next block; the finished job's output plays over the next segment
+      if (this.job) { const t = this.out2; this.out2 = this.pend; this.pend = t; } else { o2L.fill(0); o2R.fill(0); }
+      this.jobWin.set(this.prevSeg, 0); this.jobWin.set(this.seg, IRV_B2); this.prevSeg.set(this.seg);
+      this.job = h.p2 > 0;
+    }
+    this.blk = (b + 1) & 31;
+  }
+  // y += sum over parts p0..p1 of X[pos - p] * H[p], both channels
+  mac(Xr, Xi, ring, pos, K, H, p0, p1, y) {
+    const [yLr, yLi, yRr, yRi] = y, HL = H[0], HR = H[1];
+    for (let p = p0; p < p1; p++) {
+      const xo = ((pos - p + ring) % ring) * K, ho = p * K;
+      for (let k = 0; k < K; k++) {
+        const xr = Xr[xo + k], xi = Xi[xo + k], lr = HL.re[ho + k], li = HL.im[ho + k], rr = HR.re[ho + k], ri = HR.im[ho + k];
+        yLr[k] += xr * lr - xi * li; yLi[k] += xr * li + xi * lr;
+        yRr[k] += xr * rr - xi * ri; yRi[k] += xr * ri + xi * rr;
+      }
+    }
+  }
+  // both channels' half spectra -> one inverse FFT (left in the real part, right in the imaginary), scaled
+  back(y, re, im, N) {
+    const [Lr, Li, Rr, Ri] = y, H = N / 2;
+    for (let k = 0; k <= H; k++) { re[k] = Lr[k] - Ri[k]; im[k] = Li[k] + Rr[k]; }
+    for (let k = H + 1; k < N; k++) { const j = N - k; re[k] = Lr[j] + Ri[j]; im[k] = Rr[j] - Li[j]; }
+    fft(re, im, true);
+    for (let i = 0; i < N; i++) { re[i] /= N; im[i] /= N; }
+  }
+}
 // the 808 voices' gain from the bench's digital level (volts / 24) to Elixir's: about as loud as the LXR voices
 const G808 = 2.4;
 // each 808 voice's track when the grid's lanes play (and the mixer channel it takes: tracks 5 and 6 share the hats'):
@@ -9687,7 +9854,7 @@ class Player {
     // voices keep their dry path; the engine's own FX bus is the echo), and in Elixir Mobile the distortion as an insert
     // on the whole mix, before the compressor. (Send 2 was the ring mod; its sends, sendR, now feed the reverb)
     this.dist = new LXR.FxBus(); this.dist.fxType = LXR.FX_DISTORTION; this.dist.forceWet = true;
-    this.verb = new LXR.ReverbBus();
+    this.verb = new IrVerb(LXR.REAL_FS); this.verbIn = new Float32Array(64);
     this.fxRng = new LXR.Rng(0x2545f491);
     this.sendD = new Float32Array(6); this.sendR = new Float32Array(6); this.echoWidth = 1;
     this.distMix = 0; this.distAt = 0;
@@ -9714,6 +9881,7 @@ class Player {
     else if (m.type === 'mute') m.muted.forEach((v, n) => { this.muted[n] = v ? 1 : 0; });
     else if (m.type === 'xmod') return; // (Elixir 808: no crossfeed)
     else if (m.type === 'delay') this.delayPos = m.pos;
+    else if (m.type === 'verbIr') this.verb.load(m.h);
     else if (m.type === 'atBar') { if (this.playing) this.atBar.push(m.m); else this.msg(m.m); }
     else if (m.type === 'mix') {
       if (m.master) Object.assign(this.master, m.master);
@@ -9721,7 +9889,7 @@ class Player {
         this.dist.distortion.type = m.dist.type;
         m.dist.p.forEach((v, i) => this.dist.setParameter(i, v / 127));
         this.distMix = (m.dist.mix || 0) / 100;
-        if (m.verb) ['time', 'decay', 'tone', 'early'].forEach((k, i) => this.verb.setParameter(i, m.verb[k] / 127));
+        if (m.verb) this.verb.set(m.verb);
         this.sendD.set(m.sendD); this.sendR.set(m.sendR); this.echoWidth = m.echo.pct / 100;
         // the echo's time: tempo-synced (the position, as before) or free (milliseconds, 1..2000, linear in the TIME knob); fine
         // tunes either by up to 1% (-100..100 hundredths of a percent)
@@ -10054,7 +10222,7 @@ class Player {
     const fx = e.renderFx(this.fxGain, this.echoWidth, fe);
     // with duck fx on, the three FX returns are ducked too (all of them, drum 1's sends included), ramped over the block
     const fd0 = M.duckFx ? duck0 : 1, fdd = M.duckFx ? (duck1 - duck0) / 64 : 0;
-    // the reverb's bus: each voice panned in at its send, saturated to int16
+    // the reverb's bus: each voice panned in at its send
     for (const [bus, sends, mk] of [[this.verb, this.sendR, VERB_MAKEUP]]) {
       const bi = this.busIn; bi.fill(0);
       let any = false;
@@ -10072,10 +10240,10 @@ class Player {
         const b = this.vbuf[id], g = M8.verb * this.gainTo[Math.min(this.track808(id), 5)] * (id === 'bd' ? 1 : duck1), pl = M8.pl * g, pr = M8.pr * g;
         for (let i = 0; i < 64; i++) { bi[2 * i] += b[i] * pl; bi[2 * i + 1] += b[i] * pr; }
       }
-      for (let i = 0; i < 128; i++) bus.input[i] = Math.max(-32768, Math.min(32767, Math.round(bi[i])));
-      const bo = this.busOut; bo.fill(0);
-      bus.process(bo, 64, this.fxRng);
-      if (any || bo.some((v) => v)) for (let i = 0; i < 64; i++) { const g = mk / 32768 * (fd0 + fdd * i); L[i] += bo[2 * i] * g; R[i] += bo[2 * i + 1] * g; }
+      // the convolution reverb takes the bus in mono (as the firmware's reverb did) and adds its stereo wet into the mix
+      const vi = this.verbIn;
+      if (any) for (let i = 0; i < 64; i++) vi[i] = (bi[2 * i] + bi[2 * i + 1]) / 65536; else vi.fill(0);
+      bus.process(vi, L, R, mk * fd0, mk * (fd0 + fdd * 64));
     }
     for (let i = 0; i < 64; i++) { const g = (fd0 + fdd * i) / 32768; L[i] += fx[2 * i] * g; R[i] += fx[2 * i + 1] * g; }
     // the distortion, a master insert (not in the firmware's routing): the whole mix through the firmware's distortion,
@@ -11002,6 +11170,8 @@ function useKit(k) {
   const kitFx = k.kit[PAR.FX_TYPE], hadDelay = kitFx === LXR.FX_DELAY;
   // the kit's own effect seeds that bus, and the voices it routed there get a 25% send on it (distortion: on)
   Object.assign(fx3, structuredClone(FX3_0), structuredClone(k.fx3 ? k.fx3.params : {}));
+  // (the reverb's knobs from before the IR reverb are dropped)
+  fx3.verb = Object.fromEntries(Object.keys(FX3_0.verb).map((q) => [q, fx3.verb?.[q] ?? FX3_0.verb[q]]));
   if (!k.fx3 && kitFx === LXR.FX_DISTORTION) fx3.dist = { type: k.kit[PAR.FX_DIST_TYPE], p: [0, 1, 2, 3].map((i) => k.kit[PAR.FX_P1 + i]) };
   if (!k.fx3 && kitFx === LXR.FX_RING) fx3.ring = { wave: k.kit[PAR.FX_WAVE], freq: k.kit[PAR.FX_P1] };
   const routed = [0, 1, 2, 3, 4, 5].map((n) => k.kit[PAR.AUDIO_OUT1 + n] === LXR.MIXER_ROUTING_FX_BUS);
@@ -11784,7 +11954,7 @@ const CH = ['DRUM 1', 'DRUM 2', 'DRUM 3', 'SNARE', 'CYMBAL', 'HIHAT'];
 // sends per voice: fx = echo (the engine's FX bus), dist = distortion, ring = ring mod, 0..100
 const mix = { fx: new Array(6).fill(0), dist: new Array(6).fill(0), ring: new Array(6).fill(0) };
 // (the distortion is a master insert in Elixir Mobile: mix is how much of the whole mix goes through it, 0 = bypassed)
-const FX3_0 = { echo: { pct: 100, sync: true, fine: 0, free: 0.25 }, dist: { type: 0, p: [70, 64, 80, 90], mix: 0 }, ring: { wave: 0, freq: 40 }, verb: { time: 30, decay: 90, tone: 64, early: 64 } };
+const FX3_0 = { echo: { pct: 100, sync: true, fine: 0, free: 0.25 }, dist: { type: 0, p: [70, 64, 80, 90], mix: 0 }, ring: { wave: 0, freq: 40 }, verb: { pre: 10, len: 127, low: 50, tone: 100, width: 64 }, ir: 'plate' };
 const fx3 = structuredClone(FX3_0);
 const fx3Snapshot = () => ({ params: structuredClone(fx3), ring: mix.ring.slice() });
 const stripsEl = $('strips');
@@ -12012,6 +12182,7 @@ function syncMixer() {
   for (const par in mixInputs) { mixInputs[par].value = values[par]; mixInputs[par].dispatchEvent(new Event('sync')); }
 }
 function sendMix() {
+  irWant(fx3.ir || FX3_0.ir, (fx3.verb || FX3_0.verb).len ?? FX3_0.verb.len);
   send({ type: 'mix', master: { ...master }, fx: mix.fx.map((v) => v / 100), echo: fx3.echo, dist: fx3.dist, ring: fx3.ring, verb: fx3.verb || FX3_0.verb,
     sendD: mix.dist.map((v) => v / 100), sendR: mix.ring.map((v) => v / 100) });
 }
@@ -13040,11 +13211,16 @@ $('m-sync').addEventListener('change', () => { fx3.echo.sync = $('m-sync').check
 mDraws.push(() => { $('m-sync').checked = echoSynced(); });
 // EVERYTHING: a new patch has the echo synced, with its fine tune randomised
 $('m-everything').addEventListener('click', () => { fx3.echo.sync = true; fx3.echo.fine = rIn(-100, 100); sendMix(); mDrawAll(); });
-// reverb (send 2, where the ring mod was; its sends are still mix.ring): send, time (the pre-delay), decay, tone (dark ..
-// bright) and early (the early reflections' level)
+// reverb (send 2, where the ring mod was; its sends are still mix.ring): the IR (picked in its header, app/irverb.js), send,
+// pre-delay, length (how much of the IR), low cut, tone (a low-pass) and width
 fxF('m-fx-ring', 'send', fxSend('ring'));
-const verbP = (k) => ({ min: 0, max: 127, get: () => (fx3.verb || (fx3.verb = { ...FX3_0.verb }))[k], set: (v) => { fx3.verb[k] = v; sendMix(); }, show: String, dflt: FX3_0.verb[k] });
-for (const k of ['time', 'decay', 'tone', 'early']) fxF('m-fx-ring', k, verbP(k));
+const verbP = (k, show) => ({ min: 0, max: 127, get: () => (fx3.verb || (fx3.verb = { ...FX3_0.verb }))[k] ?? FX3_0.verb[k], set: (v) => { fx3.verb[k] = v; sendMix(); }, show, dflt: FX3_0.verb[k] });
+const hz = (f) => (f >= 1000 ? `${(f / 1000).toFixed(f < 10000 ? 1 : 0)}k` : String(Math.round(f)));
+fxF('m-fx-ring', 'pre', verbP('pre', (v) => `${Math.round(v / 127 * 150)}ms`));
+fxF('m-fx-ring', 'length', verbP('len', (v) => `${Math.round((0.1 + 0.9 * v / 127) * 100)}%`));
+fxF('m-fx-ring', 'low cut', verbP('low', (v) => hz(20 * Math.pow(25, v / 127))));
+fxF('m-fx-ring', 'tone', verbP('tone', (v) => hz(1000 * Math.pow(20, v / 127))));
+fxF('m-fx-ring', 'width', verbP('width', (v) => `${Math.round(v / 64 * 100)}%`));
 
 // ---- the master page's distortion: the whole mix through it (after the sidechain's duck), into the compressor; the
 // page runs top to bottom in signal order: sidechain, distortion, compressor. Mix (0 bypasses it), type (tube,
@@ -13098,7 +13274,7 @@ function mFxRandomise(q) {
   q.pp = rChance(F.pingpong) ? 1 : 0;
   q.p3 = rRange(F.toneLo, F.toneHi); q.p4 = rChance(F.fbWild) ? rIn(70, 105) : rRange(F.fbLo, F.fbHi);
   q.fx3.echo.pct = rRange(F.widthLo, F.widthHi);
-  q.fx3.verb = { time: rIn(0, 70), decay: rIn(60, 115), tone: rIn(35, 100), early: rIn(20, 110) };
+  q.fx3.verb = { pre: rIn(0, 40), len: rIn(40, 127), low: rIn(30, 90), tone: rIn(60, 120), width: rIn(50, 110) };
 }
 $('m-fx-rand').addEventListener('click', async () => { await startAudio(); fxChange(mFxRandomise); });
 $('m-fx-alter').addEventListener('click', async () => {
@@ -13113,6 +13289,114 @@ $('m-fx-alter').addEventListener('click', async () => {
   });
 });
 
+// ---- the reverb's impulse responses: the IR picker on the fx page, the built-in IRs (two made here, ten recorded rooms
+// from the OpenAIR library in irs/, see irs/README.md) and your own, loaded from a file and kept in this browser.
+// Each is decoded at the engine's rate, cut to the length knob and split into the convolution's parts (IrVerb.prepare),
+// then sent to the player ----
+const IR_LIST = [['plate', 'plate'], ['gated', 'gated 80s'], ['wood-shop', 'wood shop'], ['living-room', 'living room'],
+  ['small-church', 'small church'], ['rail-tunnel', 'rail tunnel'], ['empty-bedroom', 'empty bedroom'], ['club-hall', 'club hall'],
+  ['inside-piano', 'inside piano'], ['car-park', 'car park'], ['midiverb-ii', 'midiverb ii'], ['cathedral', 'cathedral']];
+const IR_DB = 'elixir808-irs';
+// (var: sendMix can run before this file has)
+var irSt = null;
+// two made here: a plate (dense, bright, 2.4 s) and the 80s gated snare reverb (a burst of reverb cut off at 280 ms)
+function irSynth(kind) {
+  const fs = LXR.REAL_FS, n = Math.round((kind === 'plate' ? 2.4 : 0.32) * fs), ch = [new Float32Array(n), new Float32Array(n)];
+  let seed = kind === 'plate' ? 7 : 11;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 1073741823.5 - 1);
+  ch.forEach((y) => {
+    let lp = 0;
+    for (let i = 0; i < n; i++) {
+      const t = i / fs, x = rnd();
+      if (kind === 'plate') {
+        // decays 60 dB in 2.4 s, getting darker as it goes
+        const a = Math.max(0.08, Math.exp(-t * 1.6)); lp += a * (x - lp);
+        y[i] = (0.35 * x * Math.exp(-t * 40) + lp) * Math.exp(-6.9 * t / 2.4) * Math.min(1, i / 40);
+      } else {
+        lp += 0.45 * (x - lp);
+        y[i] = lp * Math.min(1, t / 0.004) * (1 - 0.35 * t / 0.28) * (t > 0.28 ? Math.max(0, 1 - (t - 0.28) / 0.02) : 1);
+      }
+    }
+  });
+  return ch;
+}
+function irDb() {
+  return new Promise((ok, no) => { const r = indexedDB.open(IR_DB, 1); r.onupgradeneeded = () => r.result.createObjectStore('irs'); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+}
+async function irDbDo(mode, fn) {
+  const db = await irDb();
+  return new Promise((ok, no) => { const tx = db.transaction('irs', mode), r = fn(tx.objectStore('irs')); tx.oncomplete = () => ok(r && r.result); tx.onerror = () => no(tx.error); });
+}
+async function irDecode(buf) {
+  const a = await new OfflineAudioContext(2, 1, LXR.REAL_FS).decodeAudioData(buf);
+  return [a.getChannelData(0), a.numberOfChannels > 1 ? a.getChannelData(1) : a.getChannelData(0)];
+}
+// the IR by name: made here, fetched from irs/ or (user:...) read from this browser
+async function irRaw(name) {
+  if (irSt.raw[name]) return irSt.raw[name];
+  let ch;
+  if (name === 'plate' || name === 'gated') ch = irSynth(name);
+  else if (name.startsWith('user:')) { const d = await irDbDo('readonly', (s) => s.get(name)); if (!d) throw new Error('no such IR'); ch = await irDecode(d.slice(0)); }
+  else { const r = await fetch(`irs/${name}.wav`); if (!r.ok) throw new Error(r.status); ch = await irDecode(await r.arrayBuffer()); }
+  return (irSt.raw[name] = ch);
+}
+// called by sendMix with the IR and the length knob: (re)builds and sends when either changed
+function irWant(name, len) {
+  if (!irSt) return;
+  const key = `${name}|${len}`;
+  if (key === irSt.want) return;
+  irSt.want = key;
+  clearTimeout(irSt.t);
+  irSt.t = setTimeout(async () => {
+    let ch;
+    try { ch = await irRaw(name); } catch (e) {
+      console.warn('reverb IR', name, e);
+      if (name !== 'plate') { fx3.ir = 'plate'; irDraw(); sendMix(); }
+      return;
+    }
+    if (irSt.want !== key) return;
+    send({ type: 'verbIr', h: IrVerb.prepare(ch[0], ch[1], 0.1 + 0.9 * len / 127) });
+  }, irSt.raw[name] ? 60 : 0);
+}
+function irDraw() {
+  const sel = $('m-ir');
+  if (![...sel.options].some((o) => o.value === fx3.ir)) sel.append(new Option(fx3.ir.replace(/^user:/, ''), fx3.ir));
+  sel.value = fx3.ir;
+  $('m-ir-del').hidden = !fx3.ir.startsWith('user:');
+}
+async function irFill() {
+  const sel = $('m-ir'); sel.innerHTML = '';
+  const b = document.createElement('optgroup'); b.label = 'built in';
+  for (const [k, l] of IR_LIST) b.append(new Option(l, k));
+  sel.append(b);
+  let mine = [];
+  try { mine = (await irDbDo('readonly', (s) => s.getAllKeys())) || []; } catch (e) { /* (no IndexedDB: no saved IRs) */ }
+  if (mine.length) {
+    const u = document.createElement('optgroup'); u.label = 'yours';
+    for (const k of mine.sort()) u.append(new Option(k.replace(/^user:/, ''), k));
+    sel.append(u);
+  }
+  irDraw();
+}
+irSt = { want: null, raw: {}, t: 0 };
+mDraws.push(irDraw);
+$('m-ir').addEventListener('change', () => { fx3.ir = $('m-ir').value; irDraw(); sendMix(); setDirty(true); });
+$('m-ir-load').addEventListener('click', () => $('m-ir-file').click());
+// your own: any audio file the browser can read (wav, aiff, mp3...), up to 5 s used; kept by its file name
+$('m-ir-file').addEventListener('change', async () => {
+  const f = $('m-ir-file').files[0]; $('m-ir-file').value = '';
+  if (!f) return;
+  const name = 'user:' + f.name.replace(/\.[^.]+$/, '').slice(0, 40), buf = await f.arrayBuffer();
+  try { irSt.raw[name] = await irDecode(buf.slice(0)); } catch (e) { alert(`Couldn't read ${f.name} as audio.`); return; }
+  try { await irDbDo('readwrite', (s) => s.put(buf, name)); } catch (e) { /* (kept for this visit only) */ }
+  irSt.want = null; fx3.ir = name; await irFill(); sendMix(); setDirty(true);
+});
+$('m-ir-del').addEventListener('click', async () => {
+  const name = fx3.ir; if (!name.startsWith('user:') || !confirm(`Remove ${name.slice(5)} from your IRs?`)) return;
+  try { await irDbDo('readwrite', (s) => s.delete(name)); } catch (e) { /* */ }
+  delete irSt.raw[name]; fx3.ir = 'plate'; await irFill(); sendMix(); setDirty(true);
+});
+irFill().then(sendMix);
 // ---- step sequencers: holding a fader opens one for it: 2 to 64 steps (shown sixteen at a time, a page each), each an offset from the fader's setting (up or
 // down, up to depth of its range) that it takes while playing (the step is the bar's 16th counted from the start,
 // wrapped at the length, so short ones run against the bar), jumping to it or, with slew, gliding to it over up to a
@@ -13885,7 +14169,7 @@ const HELP = [
 <ul><li><b>tone</b>: tuning, wave and fm. <b>shape</b>: the envelope, the pitch drop and the click (the attack's sample).</li>
 <li><b>filter</b>: cutoff, resonance, type and drive, then the drum's volume, pan, sample rate and drive. <b>mod</b>: its lfo and what velocity does.</li></ul>`],
   ['fx', 'fx: echo, reverb, crossfeed (xfeed)', `<ul><li><b>echo</b>: send, time (musical lengths), tone, feedback and width; tick <b>ping pong</b> to bounce it left and right.</li>
-<li><b>reverb</b>: send, time (the pre-delay before it), decay, tone (dark to bright) and early (the early reflections' level). It's the LXR firmware's own reverb, written for it but never switched on in the hardware.</li>
+<li><b>reverb</b>: a convolution reverb, a recorded space (its impulse response, IR) put on the sound. Pick the IR in its header: a plate and a gated 80s one made here, or ten recorded rooms (wood shop to cathedral, from the OpenAIR library). <b>load IR</b> takes your own (a wav or other audio file; up to 5 s of it is used); it's kept in this browser under its file name, with <b>remove</b> to drop it. Knobs: pre (the delay before it, 0 to 150 ms), length (how much of the IR, faded out), low cut, tone (a low-pass) and width.</li>
 <li><b>crossfeed</b>: drums feeding each other. A row is the drum it comes from, a column the drum it goes into; click a column's name to pick what it changes there (fm, filter or ring). Drag a cell up or down to set it; double-click to clear.</li></ul>`],
   ['mix', 'mix: the channel strips', `<p>A strip for each drum: its echo send knob, reverb send knob and pan knob (L, C, R) over its level fader, with a level meter beside it.</p>`],
   ['mstr', 'mstr: the master chain', `<p>The whole mix runs top to bottom:</p>

@@ -43,7 +43,7 @@ for (const p of presets) if (p.v !== PRESET_V) throw new Error(`presets/: ${p.na
 // order as one classic script (each file sees the ones before it)
 const APP = ['kit', 'audio', 'groove-types', 'perform-state', 'sound', 'randomise', 'scope', 'steps', 'presets', 'midi', 'preset-manager', 'recorder',
   'grooves', 'styles', 'mixer', 'fx', 'master', 'perform-knobs', 'rush-set', 'pc4', 'crossfeed', 'main',
-  'mobile', 'mobile-pages', 'mobile-density', 'mobile-presets', 'mobile-record', 'mobile-mix', 'mobile-seq', 'mobile-extras', 'mobile-xy', 'mobile-settings', 'mobile-slots', 'mobile-setup', 'mobile-rush', 'mobile-user', 'mobile-help', 'desktop-menu', 'desktop-seq', 'desktop-mix', 'desktop-presets', 'desktop-mute', 'desktop-rdepth', 'desktop-keys', 'tr808', 'tr808-grid', 'tr808-mix', 'mobile-glass'];
+  'mobile', 'mobile-pages', 'mobile-density', 'mobile-presets', 'mobile-record', 'mobile-mix', 'irverb', 'mobile-seq', 'mobile-extras', 'mobile-xy', 'mobile-settings', 'mobile-slots', 'mobile-setup', 'mobile-rush', 'mobile-user', 'mobile-help', 'desktop-menu', 'desktop-seq', 'desktop-mix', 'desktop-presets', 'desktop-mute', 'desktop-rdepth', 'desktop-keys', 'tr808', 'tr808-grid', 'tr808-mix', 'mobile-glass'];
 const app = APP.map((f) => read(`app/${f}.js`)).join('');
 
 const sources = { lxr: read('lxr.js'), verify: read('verify.mjs') };

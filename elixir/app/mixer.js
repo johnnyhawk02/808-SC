@@ -5,7 +5,7 @@ const CH = ['DRUM 1', 'DRUM 2', 'DRUM 3', 'SNARE', 'CYMBAL', 'HIHAT'];
 // sends per voice: fx = echo (the engine's FX bus), dist = distortion, ring = ring mod, 0..100
 const mix = { fx: new Array(6).fill(0), dist: new Array(6).fill(0), ring: new Array(6).fill(0) };
 // (the distortion is a master insert in Elixir Mobile: mix is how much of the whole mix goes through it, 0 = bypassed)
-const FX3_0 = { echo: { pct: 100, sync: true, fine: 0, free: 0.25 }, dist: { type: 0, p: [70, 64, 80, 90], mix: 0 }, ring: { wave: 0, freq: 40 }, verb: { time: 30, decay: 90, tone: 64, early: 64 } };
+const FX3_0 = { echo: { pct: 100, sync: true, fine: 0, free: 0.25 }, dist: { type: 0, p: [70, 64, 80, 90], mix: 0 }, ring: { wave: 0, freq: 40 }, verb: { pre: 10, len: 127, low: 50, tone: 100, width: 64 }, ir: 'plate' };
 const fx3 = structuredClone(FX3_0);
 const fx3Snapshot = () => ({ params: structuredClone(fx3), ring: mix.ring.slice() });
 const stripsEl = $('strips');

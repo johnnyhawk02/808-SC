@@ -20,11 +20,16 @@ $('m-sync').addEventListener('change', () => { fx3.echo.sync = $('m-sync').check
 mDraws.push(() => { $('m-sync').checked = echoSynced(); });
 // EVERYTHING: a new patch has the echo synced, with its fine tune randomised
 $('m-everything').addEventListener('click', () => { fx3.echo.sync = true; fx3.echo.fine = rIn(-100, 100); sendMix(); mDrawAll(); });
-// reverb (send 2, where the ring mod was; its sends are still mix.ring): send, time (the pre-delay), decay, tone (dark ..
-// bright) and early (the early reflections' level)
+// reverb (send 2, where the ring mod was; its sends are still mix.ring): the IR (picked in its header, app/irverb.js), send,
+// pre-delay, length (how much of the IR), low cut, tone (a low-pass) and width
 fxF('m-fx-ring', 'send', fxSend('ring'));
-const verbP = (k) => ({ min: 0, max: 127, get: () => (fx3.verb || (fx3.verb = { ...FX3_0.verb }))[k], set: (v) => { fx3.verb[k] = v; sendMix(); }, show: String, dflt: FX3_0.verb[k] });
-for (const k of ['time', 'decay', 'tone', 'early']) fxF('m-fx-ring', k, verbP(k));
+const verbP = (k, show) => ({ min: 0, max: 127, get: () => (fx3.verb || (fx3.verb = { ...FX3_0.verb }))[k] ?? FX3_0.verb[k], set: (v) => { fx3.verb[k] = v; sendMix(); }, show, dflt: FX3_0.verb[k] });
+const hz = (f) => (f >= 1000 ? `${(f / 1000).toFixed(f < 10000 ? 1 : 0)}k` : String(Math.round(f)));
+fxF('m-fx-ring', 'pre', verbP('pre', (v) => `${Math.round(v / 127 * 150)}ms`));
+fxF('m-fx-ring', 'length', verbP('len', (v) => `${Math.round((0.1 + 0.9 * v / 127) * 100)}%`));
+fxF('m-fx-ring', 'low cut', verbP('low', (v) => hz(20 * Math.pow(25, v / 127))));
+fxF('m-fx-ring', 'tone', verbP('tone', (v) => hz(1000 * Math.pow(20, v / 127))));
+fxF('m-fx-ring', 'width', verbP('width', (v) => `${Math.round(v / 64 * 100)}%`));
 
 // ---- the master page's distortion: the whole mix through it (after the sidechain's duck), into the compressor; the
 // page runs top to bottom in signal order: sidechain, distortion, compressor. Mix (0 bypasses it), type (tube,
@@ -78,7 +83,7 @@ function mFxRandomise(q) {
   q.pp = rChance(F.pingpong) ? 1 : 0;
   q.p3 = rRange(F.toneLo, F.toneHi); q.p4 = rChance(F.fbWild) ? rIn(70, 105) : rRange(F.fbLo, F.fbHi);
   q.fx3.echo.pct = rRange(F.widthLo, F.widthHi);
-  q.fx3.verb = { time: rIn(0, 70), decay: rIn(60, 115), tone: rIn(35, 100), early: rIn(20, 110) };
+  q.fx3.verb = { pre: rIn(0, 40), len: rIn(40, 127), low: rIn(30, 90), tone: rIn(60, 120), width: rIn(50, 110) };
 }
 $('m-fx-rand').addEventListener('click', async () => { await startAudio(); fxChange(mFxRandomise); });
 $('m-fx-alter').addEventListener('click', async () => {

@@ -86,6 +86,7 @@ function syncMixer() {
   for (const par in mixInputs) { mixInputs[par].value = values[par]; mixInputs[par].dispatchEvent(new Event('sync')); }
 }
 function sendMix() {
+  irWant(fx3.ir || FX3_0.ir, (fx3.verb || FX3_0.verb).len ?? FX3_0.verb.len);
   send({ type: 'mix', master: { ...master }, fx: mix.fx.map((v) => v / 100), echo: fx3.echo, dist: fx3.dist, ring: fx3.ring, verb: fx3.verb || FX3_0.verb,
     sendD: mix.dist.map((v) => v / 100), sendR: mix.ring.map((v) => v / 100) });
 }

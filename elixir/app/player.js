@@ -11,6 +11,165 @@ function barOk(b, bar) {
 // the tempo-synced delay: 1/128 of a bar at 0, a whole bar at 1, evenly in octaves between
 const delaySamples = (pos, bpm) => 240 / bpm * Math.pow(2, -7 * (1 - pos)) * LXR.REAL_FS;
 const VERB_MAKEUP = 1;
+// ---- the reverb: convolution with an impulse response (a recorded room, hall or reverb unit) ----
+// radix-2 complex FFT in place (inv: the inverse, unscaled); twiddles and bit reversal kept a size
+const FFT_T = {};
+function fftTab(n) {
+  if (FFT_T[n]) return FFT_T[n];
+  const bits = Math.log2(n), rev = new Uint32Array(n), c = new Float64Array(n / 2), s = new Float64Array(n / 2);
+  for (let i = 0; i < n; i++) { let r = 0; for (let b = 0; b < bits; b++) r |= ((i >> b) & 1) << (bits - 1 - b); rev[i] = r; }
+  for (let k = 0; k < n / 2; k++) { c[k] = Math.cos(2 * Math.PI * k / n); s[k] = Math.sin(2 * Math.PI * k / n); }
+  return (FFT_T[n] = { rev, c, s });
+}
+function fft(re, im, inv) {
+  const n = re.length, T = fftTab(n), rev = T.rev, C = T.c, S = T.s, sg = inv ? 1 : -1;
+  for (let i = 0; i < n; i++) { const j = rev[i]; if (j > i) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; } }
+  for (let size = 2; size <= n; size <<= 1) {
+    const h = size >> 1, st = n / size;
+    for (let i = 0; i < n; i += size) for (let k = 0, w = 0; k < h; k++, w += st) {
+      const wr = C[w], wi = sg * S[w], a = i + k, b = a + h;
+      const tr = re[b] * wr - im[b] * wi, ti = re[b] * wi + im[b] * wr;
+      re[b] = re[a] - tr; im[b] = im[a] - ti; re[a] += tr; im[a] += ti;
+    }
+  }
+}
+// Two stages of uniformly partitioned overlap-save convolution, mono in, stereo out: the IR's first 4096 samples in
+// 64-sample parts (no latency: each 64-sample block is convolved as it comes), the rest in 2048-sample parts, whose
+// work is spread over the 32 blocks after each 2048 samples of input and lands exactly when it's due (2 x 2048 after).
+// IrVerb.prepare (on the page) cuts the IR into those parts' spectra; the player swaps them in.
+const IRV_B1 = 64, IRV_N1 = 128, IRV_K1 = 65, IRV_P1 = 64, IRV_B2 = 2048, IRV_N2 = 4096, IRV_K2 = 2049;
+const IRV_MAX = 5 * 44140, IRV_P2MAX = Math.ceil((IRV_MAX - IRV_B1 * IRV_P1) / IRV_B2) + 1;
+class IrVerb {
+  // L, R: the IR at the engine's rate (R may be L); frac: how much of it to keep (the length knob, faded out over the last
+  // 30% of what's kept). Scaled to unit energy, so a long IR is no louder than a short one
+  static prepare(L, R, frac = 1) {
+    R = R || L;
+    const n = Math.max(64, Math.min(IRV_MAX, Math.round(L.length * frac))), fd = Math.round(n * 0.3);
+    const ch = [L, R].map((x) => { const y = new Float64Array(n); for (let i = 0; i < n; i++) y[i] = (x[i] || 0) * (i > n - fd ? 0.5 + 0.5 * Math.cos(Math.PI * (i - (n - fd)) / fd) : 1); return y; });
+    let e = 0; for (const y of ch) for (let i = 0; i < n; i++) e += y[i] * y[i];
+    const g = 0.8 / Math.sqrt(e / 2 + 1e-12); // (about as loud as the firmware reverb it replaced)
+    const part = (y, off, B, N, K, P) => {
+      const re = new Float32Array(P * K), im = new Float32Array(P * K), r = new Float64Array(N), m = new Float64Array(N);
+      for (let p = 0; p < P; p++) {
+        r.fill(0); m.fill(0);
+        for (let i = 0; i < B; i++) { const k = off + p * B + i; if (k < n) r[i] = y[k] * g; }
+        fft(r, m, false); re.set(r.subarray(0, K), p * K); im.set(m.subarray(0, K), p * K);
+      }
+      return { re, im };
+    };
+    const p2 = Math.max(0, Math.ceil((n - IRV_B1 * IRV_P1) / IRV_B2));
+    return { n, p2, h1: ch.map((y) => part(y, 0, IRV_B1, IRV_N1, IRV_K1, IRV_P1)), h2: ch.map((y) => part(y, IRV_B1 * IRV_P1, IRV_B2, IRV_N2, IRV_K2, p2)) };
+  }
+  constructor(fs) {
+    this.fs = fs; this.h = null;
+    this.x1re = new Float32Array(IRV_P1 * IRV_K1); this.x1im = new Float32Array(IRV_P1 * IRV_K1); this.pos1 = 0;
+    this.x2re = new Float32Array(IRV_P2MAX * IRV_K2); this.x2im = new Float32Array(IRV_P2MAX * IRV_K2); this.pos2 = 0;
+    this.prev1 = new Float64Array(IRV_B1);
+    this.seg = new Float64Array(IRV_B2); this.prevSeg = new Float64Array(IRV_B2); this.jobWin = new Float64Array(IRV_N2);
+    this.job = false; this.blk = 0;
+    this.out2 = [new Float32Array(IRV_B2), new Float32Array(IRV_B2)]; this.pend = [new Float32Array(IRV_B2), new Float32Array(IRV_B2)];
+    this.r1 = new Float64Array(IRV_N1); this.i1 = new Float64Array(IRV_N1); this.r2 = new Float64Array(IRV_N2); this.i2 = new Float64Array(IRV_N2);
+    this.y1 = [new Float64Array(IRV_K1), new Float64Array(IRV_K1), new Float64Array(IRV_K1), new Float64Array(IRV_K1)];
+    this.y2 = [new Float64Array(IRV_K2), new Float64Array(IRV_K2), new Float64Array(IRV_K2), new Float64Array(IRV_K2)];
+    // pre-delay (up to 150 ms), low cut on the way in; tone (a low-pass) and width on the way out
+    this.pd = new Float32Array(8192); this.pdW = 0; this.pre = 0;
+    this.lcA = 0; this.lcS = 0; this.lpA = 1; this.lpL = 0; this.lpR = 0; this.width = 1;
+    this.idle = Infinity; this.v = new Float64Array(64);
+    this.set({ pre: 10, low: 50, tone: 100, width: 64 });
+  }
+  // the knobs, 0..127: pre-delay 0..150 ms, low cut 20..500 Hz, tone 1..20 kHz (a one-pole low-pass), width 0..200%
+  set(v) {
+    if (v.pre !== undefined) this.pre = Math.min(this.pd.length - 64, Math.round(v.pre / 127 * 0.15 * this.fs));
+    if (v.low !== undefined) this.lcA = Math.exp(-2 * Math.PI * 20 * Math.pow(25, v.low / 127) / this.fs);
+    if (v.tone !== undefined) this.lpA = 1 - Math.exp(-2 * Math.PI * Math.min(0.45 * this.fs, 1000 * Math.pow(20, v.tone / 127)) / this.fs);
+    if (v.width !== undefined) this.width = v.width / 64;
+  }
+  load(h) { this.h = h; }
+  clear() {
+    this.x1re.fill(0); this.x1im.fill(0); this.x2re.fill(0); this.x2im.fill(0); this.prev1.fill(0); this.seg.fill(0); this.prevSeg.fill(0);
+    for (const b of [...this.out2, ...this.pend]) b.fill(0);
+    this.job = false; this.lcS = 0; this.lpL = 0; this.lpR = 0; this.pd.fill(0);
+  }
+  // one 64-sample block: x (mono, float) in; the wet signal added into L and R at gain g0 ramping to g1
+  process(x, L, R, g0, g1) {
+    const h = this.h; if (!h) return;
+    let any = false; for (let i = 0; i < 64; i++) if (x[i]) { any = true; break; }
+    const gone = h.n + 3 * IRV_B2 + this.pre;
+    if (any) { if (this.idle > gone) this.clear(); this.idle = 0; }
+    else if ((this.idle += 64) > gone) return;
+    // pre-delay and low cut (a one-pole high-pass)
+    const pd = this.pd, M = pd.length - 1, xin = this.r1;
+    for (let i = 0; i < 64; i++) {
+      pd[this.pdW] = x[i];
+      const d = pd[(this.pdW - this.pre) & M]; this.pdW = (this.pdW + 1) & M;
+      this.lcS = d + this.lcA * (this.lcS - d); xin[i] = d - this.lcS;
+    }
+    const v = this.v; v.set(xin.subarray(0, 64));
+    // stage 1: [previous block, this block] -> spectrum into the ring; the sum over parts; back
+    const r1 = this.r1, i1 = this.i1;
+    r1.set(this.prev1, 0); r1.set(v, 64); i1.fill(0); this.prev1.set(v);
+    fft(r1, i1, false);
+    const o1 = this.pos1 * IRV_K1; this.x1re.set(r1.subarray(0, IRV_K1), o1); this.x1im.set(i1.subarray(0, IRV_K1), o1);
+    const [aLr, aLi, aRr, aRi] = this.y1; aLr.fill(0); aLi.fill(0); aRr.fill(0); aRi.fill(0);
+    this.mac(this.x1re, this.x1im, IRV_P1, this.pos1, IRV_K1, h.h1, 0, IRV_P1, this.y1);
+    this.pos1 = (this.pos1 + 1) % IRV_P1;
+    this.back(this.y1, r1, i1, IRV_N1);
+    // stage 2: this block of the segment in, its output out (computed during the segment before)
+    const b = this.blk, s = b * 64;
+    this.seg.set(v, s);
+    if (this.job) {
+      if (b === 0) {
+        const r2 = this.r2, i2 = this.i2; r2.set(this.jobWin); i2.fill(0); fft(r2, i2, false);
+        const o2 = this.pos2 * IRV_K2; this.x2re.set(r2.subarray(0, IRV_K2), o2); this.x2im.set(i2.subarray(0, IRV_K2), o2);
+        for (const y of this.y2) y.fill(0);
+      }
+      const P = Math.min(h.p2, IRV_P2MAX), p0 = Math.floor(b * P / 32), p1 = Math.floor((b + 1) * P / 32);
+      if (p1 > p0) this.mac(this.x2re, this.x2im, IRV_P2MAX, this.pos2, IRV_K2, h.h2, p0, p1, this.y2);
+      if (b === 31) {
+        this.back(this.y2, this.r2, this.i2, IRV_N2);
+        for (let i = 0; i < IRV_B2; i++) { this.pend[0][i] = this.r2[IRV_B2 + i]; this.pend[1][i] = this.i2[IRV_B2 + i]; }
+        this.pos2 = (this.pos2 + 1) % IRV_P2MAX;
+      }
+    }
+    // out: both stages, tone and width
+    const o2L = this.out2[0], o2R = this.out2[1], a = this.lpA, w = this.width;
+    let lL = this.lpL, lR = this.lpR;
+    for (let i = 0; i < 64; i++) {
+      const yl = r1[64 + i] + o2L[s + i], yr = i1[64 + i] + o2R[s + i];
+      lL += a * (yl - lL); lR += a * (yr - lR);
+      const m = (lL + lR) / 2, d = (lL - lR) / 2 * w, g = g0 + (g1 - g0) * (i + 1) / 64;
+      L[i] += (m + d) * g; R[i] += (m - d) * g;
+    }
+    this.lpL = lL; this.lpR = lR;
+    if (b === 31) {
+      // the segment's in: its job starts next block; the finished job's output plays over the next segment
+      if (this.job) { const t = this.out2; this.out2 = this.pend; this.pend = t; } else { o2L.fill(0); o2R.fill(0); }
+      this.jobWin.set(this.prevSeg, 0); this.jobWin.set(this.seg, IRV_B2); this.prevSeg.set(this.seg);
+      this.job = h.p2 > 0;
+    }
+    this.blk = (b + 1) & 31;
+  }
+  // y += sum over parts p0..p1 of X[pos - p] * H[p], both channels
+  mac(Xr, Xi, ring, pos, K, H, p0, p1, y) {
+    const [yLr, yLi, yRr, yRi] = y, HL = H[0], HR = H[1];
+    for (let p = p0; p < p1; p++) {
+      const xo = ((pos - p + ring) % ring) * K, ho = p * K;
+      for (let k = 0; k < K; k++) {
+        const xr = Xr[xo + k], xi = Xi[xo + k], lr = HL.re[ho + k], li = HL.im[ho + k], rr = HR.re[ho + k], ri = HR.im[ho + k];
+        yLr[k] += xr * lr - xi * li; yLi[k] += xr * li + xi * lr;
+        yRr[k] += xr * rr - xi * ri; yRi[k] += xr * ri + xi * rr;
+      }
+    }
+  }
+  // both channels' half spectra -> one inverse FFT (left in the real part, right in the imaginary), scaled
+  back(y, re, im, N) {
+    const [Lr, Li, Rr, Ri] = y, H = N / 2;
+    for (let k = 0; k <= H; k++) { re[k] = Lr[k] - Ri[k]; im[k] = Li[k] + Rr[k]; }
+    for (let k = H + 1; k < N; k++) { const j = N - k; re[k] = Lr[j] + Ri[j]; im[k] = Rr[j] - Li[j]; }
+    fft(re, im, true);
+    for (let i = 0; i < N; i++) { re[i] /= N; im[i] /= N; }
+  }
+}
 // the 808 voices' gain from the bench's digital level (volts / 24) to Elixir's: about as loud as the LXR voices
 const G808 = 2.4;
 // each 808 voice's track when the grid's lanes play (and the mixer channel it takes: tracks 5 and 6 share the hats'):
@@ -78,7 +237,7 @@ class Player {
     // voices keep their dry path; the engine's own FX bus is the echo), and in Elixir Mobile the distortion as an insert
     // on the whole mix, before the compressor. (Send 2 was the ring mod; its sends, sendR, now feed the reverb)
     this.dist = new LXR.FxBus(); this.dist.fxType = LXR.FX_DISTORTION; this.dist.forceWet = true;
-    this.verb = new LXR.ReverbBus();
+    this.verb = new IrVerb(LXR.REAL_FS); this.verbIn = new Float32Array(64);
     this.fxRng = new LXR.Rng(0x2545f491);
     this.sendD = new Float32Array(6); this.sendR = new Float32Array(6); this.echoWidth = 1;
     this.distMix = 0; this.distAt = 0;
@@ -105,6 +264,7 @@ class Player {
     else if (m.type === 'mute') m.muted.forEach((v, n) => { this.muted[n] = v ? 1 : 0; });
     else if (m.type === 'xmod') return; // (Elixir 808: no crossfeed)
     else if (m.type === 'delay') this.delayPos = m.pos;
+    else if (m.type === 'verbIr') this.verb.load(m.h);
     else if (m.type === 'atBar') { if (this.playing) this.atBar.push(m.m); else this.msg(m.m); }
     else if (m.type === 'mix') {
       if (m.master) Object.assign(this.master, m.master);
@@ -112,7 +272,7 @@ class Player {
         this.dist.distortion.type = m.dist.type;
         m.dist.p.forEach((v, i) => this.dist.setParameter(i, v / 127));
         this.distMix = (m.dist.mix || 0) / 100;
-        if (m.verb) ['time', 'decay', 'tone', 'early'].forEach((k, i) => this.verb.setParameter(i, m.verb[k] / 127));
+        if (m.verb) this.verb.set(m.verb);
         this.sendD.set(m.sendD); this.sendR.set(m.sendR); this.echoWidth = m.echo.pct / 100;
         // the echo's time: tempo-synced (the position, as before) or free (milliseconds, 1..2000, linear in the TIME knob); fine
         // tunes either by up to 1% (-100..100 hundredths of a percent)
@@ -445,7 +605,7 @@ class Player {
     const fx = e.renderFx(this.fxGain, this.echoWidth, fe);
     // with duck fx on, the three FX returns are ducked too (all of them, drum 1's sends included), ramped over the block
     const fd0 = M.duckFx ? duck0 : 1, fdd = M.duckFx ? (duck1 - duck0) / 64 : 0;
-    // the reverb's bus: each voice panned in at its send, saturated to int16
+    // the reverb's bus: each voice panned in at its send
     for (const [bus, sends, mk] of [[this.verb, this.sendR, VERB_MAKEUP]]) {
       const bi = this.busIn; bi.fill(0);
       let any = false;
@@ -463,10 +623,10 @@ class Player {
         const b = this.vbuf[id], g = M8.verb * this.gainTo[Math.min(this.track808(id), 5)] * (id === 'bd' ? 1 : duck1), pl = M8.pl * g, pr = M8.pr * g;
         for (let i = 0; i < 64; i++) { bi[2 * i] += b[i] * pl; bi[2 * i + 1] += b[i] * pr; }
       }
-      for (let i = 0; i < 128; i++) bus.input[i] = Math.max(-32768, Math.min(32767, Math.round(bi[i])));
-      const bo = this.busOut; bo.fill(0);
-      bus.process(bo, 64, this.fxRng);
-      if (any || bo.some((v) => v)) for (let i = 0; i < 64; i++) { const g = mk / 32768 * (fd0 + fdd * i); L[i] += bo[2 * i] * g; R[i] += bo[2 * i + 1] * g; }
+      // the convolution reverb takes the bus in mono (as the firmware's reverb did) and adds its stereo wet into the mix
+      const vi = this.verbIn;
+      if (any) for (let i = 0; i < 64; i++) vi[i] = (bi[2 * i] + bi[2 * i + 1]) / 65536; else vi.fill(0);
+      bus.process(vi, L, R, mk * fd0, mk * (fd0 + fdd * 64));
     }
     for (let i = 0; i < 64; i++) { const g = (fd0 + fdd * i) / 32768; L[i] += fx[2 * i] * g; R[i] += fx[2 * i + 1] * g; }
     // the distortion, a master insert (not in the firmware's routing): the whole mix through the firmware's distortion,
