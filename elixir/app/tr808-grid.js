@@ -177,33 +177,31 @@ function g8Order() {
   });
 }
 function g8SetBdTop(on) { g8.bdTop = on; g8Save(); g8Order(); }
-// Recording a pattern (right-click its button): it plays, its button says STOP, and keys 1 to 8 play drums (G8_REC_KEYS),
-// each hit landing on the step nearest when it was played (in whichever bar of the pattern is playing)
-const G8_REC_KEYS = ['bd', 'sd', 'cp', 'ch', 'oh', 'lt', 'mt', 'ht'];
-g8.rec = -1;
-let g8StepAt = 0;
+// Recording a pattern (right-click its button > record): it empties, its button says STOP (tap it to stop), and from the
+// next bar what is heard (whichever pattern plays, picked with keys 1 to 8 or the buttons as usual) is written into it as
+// notes, step by step, up to 64 steps (4 bars); stopping the transport stops it too
+g8.rec = -1; g8.recPos = -1;
 function g8RecStart(i) {
-  g8Pick(i); g8.rec = i;
+  g8.rec = i; g8.recPos = -1;
+  g8.pats[i] = g8Empty(); g8.lens[i] = 1;
+  if (g8.mode === 'lanes' && g8.cur === i) { const o = [...Array(G8_N).keys()].find((j) => j !== i && G8_IDS.some((id) => g8.pats[j][id].on.some(Boolean))); g8Pick(o ?? (i ? 0 : 1)); }
   if (!playing) $('m-play').click();
-  g8Draw();
+  g8Save(); g8Draw();
 }
-function g8RecStop() { g8.rec = -1; g8Draw(); }
-// keys 1 to 8: pick a pattern, or while recording, play and record a drum
-function g8Key(n) {
-  if (g8.rec < 0) { g8Pick(n); return; }
-  const id = G8_REC_KEYS[n];
-  t8Audition(id);
-  const len = g8.lens[g8.cur] * 16;
-  let k = 0;
-  if (playing && g8Now >= 0) {
-    const stepMs = 60000 / perf.tempo / 4, late = Math.round((performance.now() - g8StepAt) / stepMs);
-    k = ((Math.max(0, g8PlayPage) * 16 + g8Now + late) % len + len) % len;
-  }
-  const L = g8.lanes[id]; L.on[k] = 1; L.acc[k] = 0;
-  g8Send(); g8Draw();
+function g8RecStop() { g8.rec = -1; g8.recPos = -1; g8Save(); g8Draw(); }
+// one step heard: its notes into the pattern recording
+function g8RecStep(s) {
+  if (g8.rec < 0) return;
+  if (s < 0) { g8RecStop(); return; }
+  if (g8.recPos < 0) { if (s !== 0) return; g8.recPos = 0; }
+  const src = g8Shown(), k = Math.max(0, g8PlayPage) * 16 + s, R = g8.pats[g8.rec], j = g8.recPos;
+  for (const id of G8_IDS) { R[id].on[j] = src[id].on[k] ? 1 : 0; R[id].acc[j] = src[id].acc[k] ? 1 : 0; }
+  g8.recPos++; g8.lens[g8.rec] = Math.ceil(g8.recPos / 16);
+  if (g8.recPos >= G8_STEPS) g8RecStop(); else if (g8.recPos % 16 === 0) g8Save();
 }
+// keys 1 to 8 pick a pattern (not the one recording)
+function g8Key(n) { if (n !== g8.rec) g8Pick(n); }
 function g8Pick(i) {
-  if (g8.rec >= 0 && g8.rec !== i) g8.rec = -1;
   g8.cur = i; g8.mode = 'lanes'; g8.page = 0;
   g8Send(); g8Draw();
 }
@@ -214,8 +212,6 @@ function g8Draw() {
   for (const id of T8_ORDER) { g8Picks[id].setAttribute('aria-pressed', id === g8.sel); g8Picks[id].classList.toggle('used', L[id].on.some(Boolean)); }
   for (const id of G8_IDS) {
     const used = L[id].on.some((v, k) => v && k < n * 16);
-    const rk = g8.rec >= 0 ? G8_REC_KEYS.indexOf(id) : -1;
-    g8Labs[id].textContent = rk >= 0 ? `${id} ${rk + 1}` : id; // (while recording: its key)
     for (const lab of [g8Labs[id], g8LabsR[id]]) { lab.classList.toggle('used', used); lab.classList.toggle('sel', id === g8.sel); }
     g8Cells[id].forEach((c, s) => {
       const on = !!L[id].on[p0 + s], acc = on && !!L[id].acc[p0 + s];
@@ -231,11 +227,11 @@ function g8Draw() {
   });
   $('m-g8-less').disabled = n < 2;
   $('m-g8-gen').setAttribute('aria-pressed', !lanes);
-  $('m-g8-what').textContent = g8.rec >= 0 ? `recording ${g8.rec + 1}` : lanes ? `pattern ${g8.cur + 1}` : 'generator';
+  $('m-g8-what').textContent = (lanes ? `pattern ${g8.cur + 1}` : 'generator') + (g8.rec < 0 ? '' : g8.recPos < 0 ? ` · ${g8.rec + 1} records from the next bar` : ` · recording ${g8.rec + 1}, bar ${Math.floor(g8.recPos / 16) + 1}`);
 }
 // the playhead, and redraws when the generator changes the pattern
 const g8Mark = markStep;
-markStep = (s, bar) => { g8Mark(s); g8Now = s; g8StepAt = performance.now(); g8PlayPage = s < 0 || bar === undefined ? -1 : bar % g8Len(); g8Flash(s); if ($('m').dataset.page === 'grid' || !mWide.matches) g8Draw(); };
+markStep = (s, bar) => { g8Mark(s); g8Now = s; g8PlayPage = s < 0 || bar === undefined ? -1 : bar % g8Len(); g8Flash(s); g8RecStep(s); if ($('m').dataset.page === 'grid' || !mWide.matches) g8Draw(); };
 // each sound's name, in its controls box (here and on the 808 page) and on its pick button, lights for a moment as its
 // step plays
 function g8Flash(s) {
