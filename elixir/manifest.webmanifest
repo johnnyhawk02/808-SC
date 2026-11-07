@@ -1,7 +1,7 @@
 {
-  "name": "Elixir Desktop",
-  "short_name": "Elixir",
-  "description": "A six-voice drum machine, running a port of the Erica Synths LXR-02 drum engine.",
+  "name": "808 Circuit",
+  "short_name": "808 Circuit",
+  "description": "A drum machine playing circuit-modelled TR-808 sounds.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

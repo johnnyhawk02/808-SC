@@ -1,4 +1,6 @@
-# Elixir 808
+# 808 Circuit
+
+(Formerly Elixir 808; still served from `elixir/`, live at https://johnnyhawk02.github.io/Tr808/elixir/.)
 
 A copy of [Elixir Desktop](https://github.com/johnnyhawk02/elixir-desktop) (commit 8f45f44) that plays the TR-808 voices
 from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.github.io/Tr808/elixir/**

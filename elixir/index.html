@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<title>Elixir 808</title>
+<title>808 Circuit</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>
 /* Phones and tablets get the laptop layout, shrunk to fit: the page is laid out at least 1280 x 710 (the smallest
@@ -33,7 +33,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<meta name="description" content="Elixir 808: Elixir Desktop's drum machine playing the TR-808 circuit-modelled voices.">
+<meta name="description" content="808 Circuit: a drum machine playing circuit-modelled TR-808 voices.">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=VT323&display=swap">
@@ -1766,7 +1766,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.48<!--/v--></small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">808 circuit</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.49<!--/v--></small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1863,7 +1863,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.48<!--/v-->, 7 Nov, 06:35</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.49<!--/v-->, 7 Nov, 06:41</footer>
     </section>
   </div>
   </div>
@@ -1963,7 +1963,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
     <button type="button" role="tab" data-m-tab="presets" aria-selected="false">prst</button>
   </nav>
 </main>
-<div class="m-turn" id="m-turn"><div><b>turn it sideways</b><span>elixir plays in landscape</span><button type="button" id="m-turn-fs" hidden>full screen</button></div></div>
+<div class="m-turn" id="m-turn"><div><b>turn it sideways</b><span>808 circuit plays in landscape</span><button type="button" id="m-turn-fs" hidden>full screen</button></div></div>
 
 <div class="wrap" aria-hidden="true">
   <header class="topbar">
@@ -11586,7 +11586,7 @@ async function finishTake(ev) {
   const blob = wavBlob(L, R, rate, bits, gain);
   const bpm = ev.bpm, preset = ($('kit').selectedOptions[0] || {}).textContent || 'take';
   const len = loop ? `${LENS[recSet.len]} bar${LENS[recSet.len] > 1 ? "s" : ""}` : `${(frames / rate).toFixed(1)} s`;
-  const name = `elixir ${preset.replace(/[^\w' -]/g, '').trim()} ${bpm}bpm ${loop ? LENS[recSet.len] + 'bar' : 'take'} ${++takeNo}.wav`;
+  const name = `808 circuit ${preset.replace(/[^\w' -]/g, '').trim()} ${bpm}bpm ${loop ? LENS[recSet.len] + 'bar' : 'take'} ${++takeNo}.wav`;
   addTake({ name, blob, len, peak: peak * gain, rate, bits });
   $('rec-status').textContent = `took ${len}`;
 }
@@ -14170,7 +14170,7 @@ $('m-ccsave').addEventListener('click', () => {
 });
 // ---- help (options › help, or h; on a phone the HELP ME! button): getting started first, then a tab each for the pages and the features ----
 const HELP = [
-  ['start', 'getting started', `<p>Elixir is a six voice drum machine: drum 1, 2 and 3, snare, cymbal and hihat. Three steps to a beat:</p>
+  ['start', 'getting started', `<p>808 Circuit is a drum machine playing circuit-modelled TR-808 sounds (it began as Elixir, a six voice drum machine: drum 1, 2 and 3, snare, cymbal and hihat). Three steps to a beat:</p>
 <ol><li>Press <b>play</b> (or space).</li><li>Press <b>everything</b> until you like what you hear: each press is a new beat, kit, effects and mix.</li>
 <li>Turn the knobs, or press <b>kit</b>, <b>pattern</b> or <b>alter</b> to change one part. <b>undo</b> takes back the last one.</li></ol>
 <p>The screen: the title line has <b>options</b>, the randomise buttons, then <b>play</b> and <b>rec</b>. Under it on the left, the perform knobs and the step sequencer; on the right, one page at a time (beat, voice, fx, xfeed, mix, mstr, prst), chosen by the buttons over it.</p>
