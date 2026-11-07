@@ -92,6 +92,7 @@ class Player {
     // each 808 sound's own mix (the mix page, app/tr808-mix.js): level, pan, echo and reverb sends; its dry signal this
     // block (int16 scale, at its level) and peak
     this.vmix = {}; this.vbuf = {}; this.vpk = {}; this.fxExtra = new Float32Array(128);
+    this.vlv = {}; // (and each sound's own meter peak, for the grid's level fader)
     this._render(this.A); this._render(this.B);
   }
   msg(m) {
@@ -423,6 +424,7 @@ class Player {
           const a = v < 0 ? -v : v; if (a > lv) lv = a;
         }
         lv *= Math.max(pl, pr); if (lv > this.lvl[c]) this.lvl[c] = lv;
+        if (lv > (this.vlv[id] || 0)) this.vlv[id] = lv;
       }
     }
     if (sp) {
@@ -435,8 +437,8 @@ class Player {
     if (++this.lvlN >= 16) {
       this.lvlN = 0;
       const on = this.lvl.some((v) => v > 1e-4);
-      if (on || this.lvlOn) this.events.push({ type: 'lvl', l: Array.from(this.lvl) });
-      this.lvlOn = on; this.lvl.fill(0);
+      if (on || this.lvlOn) this.events.push({ type: 'lvl', l: Array.from(this.lvl), v: { ...this.vlv } });
+      this.lvlOn = on; this.lvl.fill(0); for (const id in this.vlv) this.vlv[id] = 0;
     }
     // the firmware's FX bus (distortion, ring mod, compressor or delay), sample-exact
     const fx = e.renderFx(this.fxGain, this.echoWidth, fe);
