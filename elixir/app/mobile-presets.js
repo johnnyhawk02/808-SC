@@ -89,7 +89,7 @@ function mOverDraw() {
 $('m-pover').addEventListener('click', () => {
   const k = mOverTarget();
   if (!k || !confirm(`Save the current sound over ${k.name}?`)) return;
-  Object.assign(k, { kit: Uint8Array.from(values), xm: { amt: xm.amt.slice(), target: xm.target.slice() }, fx: mix.fx.slice(), fx3: fx3Snapshot(), dpos: delayPos, song: songSnapshot() });
+  Object.assign(k, { kit: Uint8Array.from(values), xm: { amt: xm.amt.slice(), target: xm.target.slice() }, fx: mix.fx.slice(), fx3: fx3Snapshot(), dpos: delayPos, song: songSnapshot(), e808: t8Snapshot() });
   if (k.saved) storePresets();
   else { k.edited = true; mEdits[k.name] = presetData(k); try { localStorage.setItem(EDIT_KEY, JSON.stringify(mEdits)); } catch (e) {} }
   initValues.set(values); buildKnobs(); setDirty(false);
