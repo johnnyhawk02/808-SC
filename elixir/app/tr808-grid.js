@@ -128,12 +128,13 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
     g8Take(); const n = g8.lens[g8.cur] * 16, L = g8.lanes;
     for (const id of G8_IDS) for (const k of ['on', 'acc']) {
       const a = L[id][k].slice(0, n);
-      for (let s = 0; s < n; s++) L[id][k][s] = a[(s - d + n) % n];
+      for (let s = 0; s < n; s++) L[id][k][s] = a[(((s - d) % n) + n) % n];
     }
     g8Send(); g8Draw();
   };
-  $('m-g8-left').addEventListener('click', () => shift(-1));
-  $('m-g8-right').addEventListener('click', () => shift(1));
+  // (cmd or ctrl + click: a whole bar, 16 steps)
+  $('m-g8-left').addEventListener('click', (e) => shift(e.metaKey || e.ctrlKey ? -16 : -1));
+  $('m-g8-right').addEventListener('click', (e) => shift(e.metaKey || e.ctrlKey ? 16 : 1));
   // generator: press it and the generator page's pattern plays (generator mode, shown in the lanes); the button then says
   // write?, and pressing that overwrites the pattern picked with what the generator is playing (one bar) and goes back to
   // the patterns. A pattern button (or key 1 to 8) leaves generator mode without writing. Right-click a pattern > record
