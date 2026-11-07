@@ -1760,11 +1760,13 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 .m-irbtn { flex: none; min-height: 30px; font: inherit; font-size: var(--fs-xs); text-transform: uppercase; color: var(--ink); background: transparent;
   border: 2px solid var(--ink); border-radius: 3px; padding: 0 8px; cursor: pointer; }
 .m-irbtn[hidden] { display: none; }
+/* the generator button asking write? (tr808-grid.js) */
+.m .m-g8-foot #m-g8-gen.ask { background: var(--ink) !important; color: var(--panel); animation: g8rec .8s steps(1) infinite; }
 </style>
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.45<!--/v--></small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.46<!--/v--></small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1805,7 +1807,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
     <section class="m-card m-g8-card" aria-label="pattern grid">
       <div class="m-g8-presets" id="m-g8-presets" role="group" aria-label="patterns"></div>
       <div class="m-g8-grid" id="m-grid"></div>
-      <div class="m-g8-foot"><button class="m-toggle" id="m-g8-gen" type="button" title="Play the generator's pattern (genre, beat, energy, fills on the beat page)">generator</button><span>playing: <b id="m-g8-what"></b></span><span class="m-g8-barbox">bars <span class="m-g8-bars" id="m-g8-bars"></span><button class="m-toggle" id="m-g8-less" type="button" title="take the last bar off">−</button><button class="m-toggle" id="m-g8-more" type="button" title="add a bar: a copy of the bar shown">+</button></span><span class="m-g8-shift"><button class="m-toggle" id="m-g8-left" type="button" title="shift the pattern one step left (wraps round)" aria-label="shift the pattern one step left">◀</button><button class="m-toggle" id="m-g8-right" type="button" title="shift the pattern one step right (wraps round)" aria-label="shift the pattern one step right">▶</button></span><span class="m-g8-key" title="tap or drag across steps: on or off; with cmd (ctrl): accents">drag to paint · cmd: accent</span></div>
+      <div class="m-g8-foot"><button class="m-toggle" id="m-g8-gen" type="button" title="Write the generator page's pattern into this pattern: press, then press write? to overwrite it">generator</button><span>playing: <b id="m-g8-what"></b></span><span class="m-g8-barbox">bars <span class="m-g8-bars" id="m-g8-bars"></span><button class="m-toggle" id="m-g8-less" type="button" title="take the last bar off">−</button><button class="m-toggle" id="m-g8-more" type="button" title="add a bar: a copy of the bar shown">+</button></span><span class="m-g8-shift"><button class="m-toggle" id="m-g8-left" type="button" title="shift the pattern one step left (wraps round)" aria-label="shift the pattern one step left">◀</button><button class="m-toggle" id="m-g8-right" type="button" title="shift the pattern one step right (wraps round)" aria-label="shift the pattern one step right">▶</button></span><span class="m-g8-key" title="tap or drag across steps: on or off; with cmd (ctrl): accents">drag to paint · cmd: accent</span></div>
       <div class="m-g8-side" id="m-g8-side" aria-label="the sound's controls"></div>
     </section>
   </div>
@@ -1861,7 +1863,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.45<!--/v-->, 7 Nov, 06:14</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.46<!--/v-->, 7 Nov, 06:24</footer>
     </section>
   </div>
   </div>
@@ -1952,7 +1954,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
   <nav class="m-tabs" role="tablist" aria-label="pages">
     <button type="button" role="tab" data-m-tab="play" aria-selected="true">perf</button>
     <button type="button" role="tab" data-m-tab="grid" aria-selected="false">grid</button>
-    <button type="button" role="tab" data-m-tab="beat" aria-selected="false">beat</button>
+    <button type="button" role="tab" data-m-tab="beat" aria-selected="false">generator</button>
     <button type="button" role="tab" data-m-tab="t808" aria-selected="false">808</button>
     <button type="button" role="tab" data-m-tab="xy" aria-selected="false">x/y</button>
     <button type="button" role="tab" data-m-tab="fx" aria-selected="false">fx</button>
@@ -14196,7 +14198,7 @@ const HELP = [
 <li><b>on</b> switches it on and off. A control with a sequencer running has its name inverted. Presets keep them. esc greys the strip out.</li>
 <li>MIDI CC 21, 22, 23 and 24 set its length, slew, speed and depth (on the sequencer shown).</li>
 <li>The steps follow the groove and its depth, landing with the swung hits; switch that off in <b>options</b> › <b>user settings</b> › <b>seq</b>.</li></ul>`],
-  ['beat', 'beat: the pattern', `<p>Tempo, genre, beat and energy; fills, rush, rush on and velocity; groove, depth and accent.</p>
+  ['beat', 'generator: the pattern', `<p>Tempo, genre, beat and energy; fills, rush, rush on and velocity; groove, depth and accent.</p>
 <ul><li><b>genre</b> picks a style, <b>beat</b> one of its grooves, <b>energy</b> how busy it is, <b>fills</b> how often it fills.</li>
 <li><b>rush</b> builds a roll: the chosen drum (<b>rush on</b>) rolls faster and faster while the others drop out and a high-pass rises. Push it up for a build, drop it for the drop. Its curve is in <b>options</b> › <b>settings</b> › <b>rush</b>.</li>
 <li><b>groove</b> and <b>depth</b> give it swing or push; <b>accent</b> how loud the accents are.</li>
@@ -14894,7 +14896,18 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
   };
   $('m-g8-left').addEventListener('click', () => shift(-1));
   $('m-g8-right').addEventListener('click', () => shift(1));
-  $('m-g8-gen').addEventListener('click', () => { g8.mode = 'gen'; setSource('perform'); generate(); sendSeq(); g8Send(); g8Draw(); });
+  // generator: press, it asks write?; press again (within 4 s) and the generator page's pattern (one bar) overwrites the
+  // pattern picked. Anything else pressed meanwhile, or the wait, takes the question back
+  const gen = $('m-g8-gen'), ask = (on) => { clearTimeout(gen._t); gen.classList.toggle('ask', on); gen.textContent = on ? 'write?' : 'generator'; if (on) gen._t = setTimeout(() => ask(false), 4000); };
+  gen.addEventListener('click', () => {
+    if (!gen.classList.contains('ask')) { ask(true); return; }
+    ask(false);
+    const L = g8FromTracks();
+    if (g8.rec === g8.cur) g8RecStop();
+    g8.mode = 'lanes'; g8.lanes = L; g8.lens[g8.cur] = 1; g8.page = 0;
+    g8Send(); g8Draw();
+  });
+  addEventListener('pointerdown', (e) => { if (gen.classList.contains('ask') && !gen.contains(e.target)) ask(false); }, { capture: true });
 }
 // Painting: press on a step and drag across others (any lanes). The first step decides what the drag does: a tap on an
 // empty step puts notes on, on a full one takes them off; with cmd (ctrl) it puts accents on, or takes them off (the
