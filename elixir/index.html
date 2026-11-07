@@ -1754,7 +1754,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.39<!--/v--></small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.40<!--/v--></small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1795,7 +1795,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
     <section class="m-card m-g8-card" aria-label="pattern grid">
       <div class="m-g8-presets" id="m-g8-presets" role="group" aria-label="patterns"></div>
       <div class="m-g8-grid" id="m-grid"></div>
-      <div class="m-g8-foot"><button class="m-toggle" id="m-g8-gen" type="button" title="Play the generator's pattern (genre, beat, energy, fills on the beat page)">generator</button><span>playing: <b id="m-g8-what"></b></span><span class="m-g8-barbox">bars <span class="m-g8-bars" id="m-g8-bars"></span><button class="m-toggle" id="m-g8-less" type="button" title="take the last bar off">−</button></span><span class="m-g8-key" title="tap a step: on or off; cmd+tap (ctrl+tap): accent">cmd+tap: accent</span></div>
+      <div class="m-g8-foot"><button class="m-toggle" id="m-g8-gen" type="button" title="Play the generator's pattern (genre, beat, energy, fills on the beat page)">generator</button><span>playing: <b id="m-g8-what"></b></span><span class="m-g8-barbox">bars <span class="m-g8-bars" id="m-g8-bars"></span><button class="m-toggle" id="m-g8-less" type="button" title="take the last bar off">−</button><button class="m-toggle" id="m-g8-more" type="button" title="add a bar: a copy of the bar shown">+</button></span><span class="m-g8-key" title="tap a step: on or off; cmd+tap (ctrl+tap): accent">cmd+tap: accent</span></div>
       <div class="m-g8-side" id="m-g8-side" aria-label="the sound's controls"></div>
     </section>
   </div>
@@ -1851,7 +1851,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.39<!--/v-->, 7 Nov, 00:52</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.40<!--/v-->, 7 Nov, 01:14</footer>
     </section>
   </div>
   </div>
@@ -14544,7 +14544,8 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
     b.addEventListener('contextmenu', (e) => { e.preventDefault(); mMenu(e, [g8.rec === i ? ['stop recording', g8RecStop] : [`record pattern ${i + 1}`, () => g8RecStart(i)]]); });
     $('m-g8-presets').append(b);
   }
-  // the bars: tap one to show it (one past the end adds it, empty); "-" takes the last one off
+  // the bars: tap one to show it (one past the end adds it, empty); "-" takes the last one off, "+" adds a copy of the one
+// shown
   for (let i = 0; i < 4; i++) {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'm-toggle'; b.textContent = String(i + 1);
@@ -14556,6 +14557,13 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
     $('m-g8-bars').append(b);
   }
   $('m-g8-less').addEventListener('click', () => { g8Take(); if (g8.lens[g8.cur] > 1) g8.lens[g8.cur]--; g8Send(); g8Draw(); });
+  // "+": a new bar on the end, a copy of the bar shown, and it's shown
+  $('m-g8-more').addEventListener('click', () => {
+    g8Take(); const n = g8.lens[g8.cur]; if (n >= 4) return;
+    const L = g8.lanes, from = g8.page * 16, to = n * 16;
+    for (const id of G8_IDS) for (let s = 0; s < 16; s++) { L[id].on[to + s] = L[id].on[from + s]; L[id].acc[to + s] = L[id].acc[from + s]; }
+    g8.lens[g8.cur] = n + 1; g8.page = n; g8Send(); g8Draw();
+  });
   $('m-g8-gen').addEventListener('click', () => { g8.mode = 'gen'; setSource('perform'); generate(); sendSeq(); g8Send(); g8Draw(); });
 }
 // the side panel: the controls of the sound last put on a lane (or whose name was tapped)
@@ -14667,6 +14675,7 @@ function g8Draw() {
     b.title = i < n ? `bar ${i + 1}: steps ${i * 16 + 1} to ${i * 16 + 16}` : `add bars up to ${i + 1} (${(i + 1) * 16} steps)`;
   });
   $('m-g8-less').disabled = n < 2;
+  $('m-g8-more').disabled = !lanes || n >= 4;
   $('m-g8-gen').setAttribute('aria-pressed', !lanes);
   $('m-g8-what').textContent = (lanes ? `pattern ${g8.cur + 1}` : 'generator') + (g8.rec < 0 ? '' : g8.recPos < 0 ? ` · ${g8.rec + 1} records from the next bar` : ` · recording ${g8.rec + 1}, bar ${Math.floor(g8.recPos / 16) + 1}`);
 }
