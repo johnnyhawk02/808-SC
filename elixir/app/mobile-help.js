@@ -1,6 +1,6 @@
 // ---- help (options › help, or h; on a phone the HELP ME! button): getting started first, then a tab each for the pages and the features ----
 const HELP = [
-  ['start', 'getting started', `<p>Elixir is a six voice drum machine: drum 1, 2 and 3, snare, cymbal and hihat. Three steps to a beat:</p>
+  ['start', 'getting started', `<p>808 Circuit is a drum machine playing circuit-modelled TR-808 sounds (it began as Elixir, a six voice drum machine: drum 1, 2 and 3, snare, cymbal and hihat). Three steps to a beat:</p>
 <ol><li>Press <b>play</b> (or space).</li><li>Press <b>everything</b> until you like what you hear: each press is a new beat, kit, effects and mix.</li>
 <li>Turn the knobs, or press <b>kit</b>, <b>pattern</b> or <b>alter</b> to change one part. <b>undo</b> takes back the last one.</li></ol>
 <p>The screen: the title line has <b>options</b>, the randomise buttons, then <b>play</b> and <b>rec</b>. Under it on the left, the perform knobs and the step sequencer; on the right, one page at a time (beat, voice, fx, xfeed, mix, mstr, prst), chosen by the buttons over it.</p>
