@@ -38,6 +38,8 @@ function fft(re, im, inv) {
 // work is spread over the 32 blocks after each 2048 samples of input and lands exactly when it's due (2 x 2048 after).
 // IrVerb.prepare (on the page) cuts the IR into those parts' spectra; the player swaps them in.
 const IRV_B1 = 64, IRV_N1 = 128, IRV_K1 = 65, IRV_P1 = 64, IRV_B2 = 2048, IRV_N2 = 4096, IRV_K2 = 2049;
+// the gate's lengths, in bars (4/4): off, 1/64, 1/32, 1/16T, 1/16, 1/8T, 1/16., 1/8, 1/4T, 1/8., 1/4, 1/2T, 1/4., 1/2, 1/2., 1 bar
+const VERB_GATE = [0, 1 / 64, 1 / 32, 1 / 24, 1 / 16, 1 / 12, 3 / 32, 1 / 8, 1 / 6, 3 / 16, 1 / 4, 1 / 3, 3 / 8, 1 / 2, 3 / 4, 1];
 const IRV_MAX = 5 * 44140, IRV_P2MAX = Math.ceil((IRV_MAX - IRV_B1 * IRV_P1) / IRV_B2) + 1;
 class IrVerb {
   // L, R: the IR at the engine's rate (R may be L); frac: how much of it to keep (the length knob, faded out over the last
@@ -75,6 +77,10 @@ class IrVerb {
     this.pd = new Float32Array(8192); this.pdW = 0; this.pre = 0;
     this.lcA = 0; this.lcS = 0; this.lpA = 1; this.lpL = 0; this.lpR = 0; this.width = 1;
     this.idle = Infinity; this.v = new Float64Array(64);
+    // the gate: each hit into the reverb (after the pre-delay) opens it for its length, a note division at the tempo plus
+    // its fine tune; then it shuts (1 ms open, 6 ms shut). gate 0 = off
+    this.gate = 0; this.gFine = 0; this.bpm = 120; this.gEnvF = 0; this.gEnvS = 0; this.gLeft = 0; this.gG = 1; this.gt = new Float32Array(64);
+    this.gkF = Math.exp(-1 / (0.002 * fs)); this.gkS = Math.exp(-1 / (0.08 * fs)); this.gA = 1 - Math.exp(-1 / (0.001 * fs)); this.gR = 1 - Math.exp(-1 / (0.006 * fs));
     this.set({ pre: 10, low: 50, tone: 100, width: 64 });
   }
   // the knobs, 0..127: pre-delay 0..150 ms, low cut 20..500 Hz, tone 1..20 kHz (a one-pole low-pass), width 0..200%
@@ -83,6 +89,8 @@ class IrVerb {
     if (v.low !== undefined) this.lcA = Math.exp(-2 * Math.PI * 20 * Math.pow(25, v.low / 127) / this.fs);
     if (v.tone !== undefined) this.lpA = 1 - Math.exp(-2 * Math.PI * Math.min(0.45 * this.fs, 1000 * Math.pow(20, v.tone / 127)) / this.fs);
     if (v.width !== undefined) this.width = v.width / 64;
+    if (v.gate !== undefined) this.gate = Math.max(0, Math.min(VERB_GATE.length - 1, v.gate | 0));
+    if (v.gfine !== undefined) this.gFine = v.gfine;
   }
   load(h) { this.h = h; }
   clear() {
@@ -98,12 +106,22 @@ class IrVerb {
     if (any) { if (this.idle > gone) this.clear(); this.idle = 0; }
     else if ((this.idle += 64) > gone) return;
     // pre-delay and low cut (a one-pole high-pass)
-    const pd = this.pd, M = pd.length - 1, xin = this.r1;
+    const pd = this.pd, M = pd.length - 1, xin = this.r1, gt = this.gt;
+    const gLen = this.gate ? Math.max(64, VERB_GATE[this.gate] * 240 / this.bpm * this.fs * (1 + this.gFine / 100)) : 0;
     for (let i = 0; i < 64; i++) {
       pd[this.pdW] = x[i];
       const d = pd[(this.pdW - this.pre) & M]; this.pdW = (this.pdW + 1) & M;
       this.lcS = d + this.lcA * (this.lcS - d); xin[i] = d - this.lcS;
+      if (gLen) {
+        // a hit: the fast envelope jumps over the slow one (and over a floor)
+        const a = Math.abs(d); this.gEnvF = Math.max(a, this.gEnvF * this.gkF);
+        if (this.gEnvF > 1.6 * this.gEnvS + 1e-4 && this.gLeft <= 0) this.gLeft = gLen;
+        this.gEnvS = Math.max(this.gEnvF, this.gEnvS * this.gkS);
+        const to = this.gLeft-- > 0 ? 1 : 0;
+        this.gG += (to - this.gG) * (to ? this.gA : this.gR); gt[i] = this.gG;
+      } else gt[i] = 1;
     }
+    if (!gLen) { this.gG = 1; this.gLeft = 0; }
     const v = this.v; v.set(xin.subarray(0, 64));
     // stage 1: [previous block, this block] -> spectrum into the ring; the sum over parts; back
     const r1 = this.r1, i1 = this.i1;
@@ -137,7 +155,7 @@ class IrVerb {
     for (let i = 0; i < 64; i++) {
       const yl = r1[64 + i] + o2L[s + i], yr = i1[64 + i] + o2R[s + i];
       lL += a * (yl - lL); lR += a * (yr - lR);
-      const m = (lL + lR) / 2, d = (lL - lR) / 2 * w, g = g0 + (g1 - g0) * (i + 1) / 64;
+      const m = (lL + lR) / 2, d = (lL - lR) / 2 * w, g = (g0 + (g1 - g0) * (i + 1) / 64) * gt[i];
       L[i] += (m + d) * g; R[i] += (m - d) * g;
     }
     this.lpL = lL; this.lpR = lR;
@@ -626,7 +644,7 @@ class Player {
       // the convolution reverb takes the bus in mono (as the firmware's reverb did) and adds its stereo wet into the mix
       const vi = this.verbIn;
       if (any) for (let i = 0; i < 64; i++) vi[i] = (bi[2 * i] + bi[2 * i + 1]) / 65536; else vi.fill(0);
-      bus.process(vi, L, R, mk * fd0, mk * (fd0 + fdd * 64));
+      bus.bpm = this.bpm; bus.process(vi, L, R, mk * fd0, mk * (fd0 + fdd * 64));
     }
     for (let i = 0; i < 64; i++) { const g = (fd0 + fdd * i) / 32768; L[i] += fx[2 * i] * g; R[i] += fx[2 * i + 1] * g; }
     // the distortion, a master insert (not in the firmware's routing): the whole mix through the firmware's distortion,
