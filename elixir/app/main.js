@@ -37,7 +37,7 @@ function onEvent(ev) {
   if (ev.type !== 'step' || !playing) return;
   setTimeout(() => {
     if (!playing) return;
-    markStep(ev.step); markBar(ev.bar);
+    markStep(ev.step, ev.bar); markBar(ev.bar);
     grVu.set(master.comp ? ev.gr : 0);
     duckVu.set(-20 * Math.log10(Math.max(ev.duck, 0.001)));
     for (const t of ev.hits) { flash(voicesEl.children[t]); if (t === track) flash(pad); }

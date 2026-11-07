@@ -88,7 +88,7 @@ class Player {
     this.lvl = new Float32Array(6); this.lvlN = 0; this.lvlOn = false;
     this.events = [];
     // the TR-808 voices (app/tr808.js): a track set to one plays it instead of its LXR voice
-    this.k808 = null; this.t808 = new Array(7).fill(null); this.want808 = {}; this.b808 = {}; this.lanes = null;
+    this.k808 = null; this.t808 = new Array(7).fill(null); this.want808 = {}; this.b808 = {}; this.lanes = null; this.lanePages = 1;
     // each 808 sound's own mix (the mix page, app/tr808-mix.js): level, pan, echo and reverb sends; its dry signal this
     // block (int16 scale, at its level) and peak
     this.vmix = {}; this.vbuf = {}; this.vpk = {}; this.fxExtra = new Float32Array(128);
@@ -155,11 +155,12 @@ class Player {
     const pg = this.pattern.pages ? bar % this.pattern.pages.length : 0;
     const P = this.pattern.pages ? this.pattern.pages[pg] : this.pattern; // pages: one bar each, in turn
     const hits = [], { on, acc, bar: cond } = P, G = this.groove, len = LXR.REAL_FS * 60 / this.bpm / 4;
-    if (this.lanes) { // the grid's lanes: each voice on its track (BUS808), moved by that track's groove
+    if (this.lanes) { // the grid's lanes: each voice on its track (BUS808), moved by that track's groove; a pattern of
+      // several bars (lanePages, up to 4: 64 steps) plays its bars in turn
       for (const id in this.lanes) {
-        const L = this.lanes[id], t = BUS808[id];
-        if (!L.on[s] || t === undefined || this.muted[Math.min(t, 5)]) continue;
-        this.queue.push({ at: Math.max(0, at0 + G.off[t][s] * len), t, lane: id, acc: !!L.acc[s] });
+        const L = this.lanes[id], t = BUS808[id], k = (bar % this.lanePages) * 16 + s;
+        if (!L.on[k] || t === undefined || this.muted[Math.min(t, 5)]) continue;
+        this.queue.push({ at: Math.max(0, at0 + G.off[t][s] * len), t, lane: id, acc: !!L.acc[k] });
         hits.push(t);
       }
       this.sched[s] = hits; return;
@@ -261,8 +262,8 @@ class Player {
     }
     const K = this.k808;
     if (m.type === 'map808') this.t808 = m.map.slice(0, 7);
-    // the grid's lanes, one an 808 voice ({ id: { on: [16], acc: [16] } }), which play instead of the tracks' pattern; null: the tracks
-    else if (m.type === 'lanes808') this.lanes = m.lanes;
+    // the grid's lanes, one an 808 voice ({ id: { on: [64], acc: [64] } }, pages: its bars), which play instead of the tracks' pattern; null: the tracks
+    else if (m.type === 'lanes808') { this.lanes = m.lanes; this.lanePages = Math.max(1, Math.min(4, m.pages || 1)); }
     // a tap on a voice's name on the 808 page: play it now
     else if (m.type === 'hit808') { const t = this.t808.includes(m.id) ? this.t808.indexOf(m.id) : BUS808[m.id] ?? 3; this.hit(t, 127, m.acc, m.id); this.gainTo[Math.min(t, 5)] = 1; }
     else if (m.type === 'set808') K.set(m.id, m.param, m.value);

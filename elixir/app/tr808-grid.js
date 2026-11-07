@@ -5,7 +5,8 @@
 // (app/player.js: lanes808), each sound on its own track for the mixer (BUS808 there). "generator" hands back to the
 // beat page's generated pattern on the tracks (one 808 sound a track, t8.map); the grid shows it in the sounds' lanes,
 // and the first edit copies it into the pattern picked. The patterns are kept in this browser.
-// The patterns start as these (each lane's 16 steps, '.' off, 'x' on, 'X' accent); 7 and 8 start empty
+// A pattern is 1 to 4 bars (up to 64 steps); the bar buttons under the grid show one bar at a time and add or take off
+// bars. The patterns start as these (each lane's first 16 steps, '.' off, 'x' on, 'X' accent); 7 and 8 start empty
 const G8_SEEDS = [
   { bd: 'X......x..X.....', sd: '........X.......', cp: '........X.......', ch: 'x.x.xxx.x.x.xxxx' },
   { bd: 'X..x..X...X..x..', sd: '....X.......X...', cp: '....x.......x...', ch: 'x.xxx.xxx.xxx.xx' },
@@ -15,10 +16,10 @@ const G8_SEEDS = [
   { bd: 'X...X...X...X...', cp: '....X.......X...', cb: 'x..x..x...x..x..', ch: '..x...x...x...x.', cy: 'X...............' },
   {}, {},
 ];
-const G8_N = 8;
+const G8_N = 8, G8_STEPS = 64; // (a pattern: 1 to 4 bars of 16 steps, g8.lens; the grid shows one bar, g8.page)
 const G8_IDS = T8_ORDER;
 const G8_KEY = 'elixir808-pats';
-const g8Empty = () => Object.fromEntries(G8_IDS.map((id) => [id, { on: new Array(16).fill(0), acc: new Array(16).fill(0) }]));
+const g8Empty = () => Object.fromEntries(G8_IDS.map((id) => [id, { on: new Array(G8_STEPS).fill(0), acc: new Array(G8_STEPS).fill(0) }]));
 const g8FromText = (l) => {
   const L = g8Empty();
   for (const id in l) for (let s = 0; s < 16; s++) { const ch = l[id][s] || '.'; L[id].on[s] = ch === '.' ? 0 : 1; L[id].acc[s] = ch === 'X' ? 1 : 0; }
@@ -26,10 +27,10 @@ const g8FromText = (l) => {
 };
 const g8Clean = (src) => {
   const L = g8Empty();
-  for (const id of G8_IDS) for (let i = 0; i < 16; i++) { L[id].on[i] = src?.[id]?.on?.[i] ? 1 : 0; L[id].acc[i] = src?.[id]?.acc?.[i] ? 1 : 0; }
+  for (const id of G8_IDS) for (let i = 0; i < G8_STEPS; i++) { L[id].on[i] = src?.[id]?.on?.[i] ? 1 : 0; L[id].acc[i] = src?.[id]?.acc?.[i] ? 1 : 0; }
   return L;
 };
-const g8 = { mode: 'lanes', pats: G8_SEEDS.map(g8FromText), cur: 0, sel: 'bd', bdTop: false };
+const g8 = { mode: 'lanes', pats: G8_SEEDS.map(g8FromText), lens: new Array(G8_N).fill(1), cur: 0, page: 0, sel: 'bd', bdTop: false };
 // (the pattern picked: g8.lanes)
 Object.defineProperty(g8, 'lanes', { get: () => g8.pats[g8.cur], set: (L) => { g8.pats[g8.cur] = L; }, enumerable: false });
 try {
@@ -37,6 +38,7 @@ try {
   if (s && Array.isArray(s.pats)) {
     for (let i = 0; i < G8_N; i++) if (s.pats[i]) g8.pats[i] = g8Clean(s.pats[i]);
     if (s.cur >= 0 && s.cur < G8_N) g8.cur = s.cur;
+    if (Array.isArray(s.lens)) for (let i = 0; i < G8_N; i++) g8.lens[i] = Math.max(1, Math.min(4, s.lens[i] | 0 || 1));
     g8.mode = s.mode === 'gen' ? 'gen' : 'lanes'; if (T8_ORDER.includes(s.sel)) g8.sel = s.sel; g8.bdTop = s.bdTop === true;
   } else {
     // (from before the eight patterns: the one pattern becomes pattern 1)
@@ -55,16 +57,19 @@ function g8FromTracks() {
   return L;
 }
 const g8Shown = () => (g8.mode === 'lanes' ? g8.lanes : g8FromTracks());
+// the bars of what plays (the generator's: one)
+const g8Len = () => (g8.mode === 'lanes' ? g8.lens[g8.cur] : 1);
 // to the audio thread, and the sounds the lanes play load their cached hits
 function g8Send() {
-  send({ type: 'lanes808', lanes: g8.mode === 'lanes' ? g8.lanes : null });
+  if (g8.page >= g8Len()) g8.page = g8Len() - 1;
+  send({ type: 'lanes808', lanes: g8.mode === 'lanes' ? g8.lanes : null, pages: g8Len() });
   if (g8.mode === 'lanes') for (const id of G8_IDS) if (g8.lanes[id].on.some(Boolean) && t8.models[id] === 'cached') t8LoadCached(id);
   g8Save();
 }
 // first edit: what plays becomes the lanes
 function g8Take() {
   if (g8.mode === 'lanes') return;
-  g8.lanes = g8FromTracks(); g8.mode = 'lanes';
+  g8.lanes = g8FromTracks(); g8.lens[g8.cur] = 1; g8.mode = 'lanes';
 }
 const g8Cells = {}, g8Labs = {}, g8LabsR = {};
 {
@@ -80,9 +85,9 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
       c.type = 'button'; c.className = 'm-g8-cell' + (s % 4 === 0 ? ' beat' : '');
       c.addEventListener('click', (e) => {
         g8Take();
-        const L = g8.lanes[id];
-        if (e.metaKey || e.ctrlKey) { if (!L.on[s]) { L.on[s] = 1; L.acc[s] = 1; g8Select(id); } else L.acc[s] = L.acc[s] ? 0 : 1; }
-        else if (!L.on[s]) { L.on[s] = 1; L.acc[s] = 0; g8Select(id); } else { L.on[s] = 0; L.acc[s] = 0; }
+        const L = g8.lanes[id], k = g8.page * 16 + s;
+        if (e.metaKey || e.ctrlKey) { if (!L.on[k]) { L.on[k] = 1; L.acc[k] = 1; g8Select(id); } else L.acc[k] = L.acc[k] ? 0 : 1; }
+        else if (!L.on[k]) { L.on[k] = 1; L.acc[k] = 0; g8Select(id); } else { L.on[k] = 0; L.acc[k] = 0; }
         g8Send(); g8Draw();
       });
       box.append(c); g8Cells[id].push(c);
@@ -99,6 +104,18 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
     b.addEventListener('click', () => g8Pick(i));
     $('m-g8-presets').append(b);
   }
+  // the bars: tap one to show it (one past the end adds it, empty); "-" takes the last one off
+  for (let i = 0; i < 4; i++) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'm-toggle'; b.textContent = String(i + 1);
+    b.addEventListener('click', () => {
+      g8Take();
+      if (i >= g8.lens[g8.cur]) { const L = g8.lanes; for (const id of G8_IDS) for (let k = g8.lens[g8.cur] * 16; k < (i + 1) * 16; k++) { L[id].on[k] = 0; L[id].acc[k] = 0; } g8.lens[g8.cur] = i + 1; }
+      g8.page = i; g8Send(); g8Draw();
+    });
+    $('m-g8-bars').append(b);
+  }
+  $('m-g8-less').addEventListener('click', () => { g8Take(); if (g8.lens[g8.cur] > 1) g8.lens[g8.cur]--; g8Send(); g8Draw(); });
   $('m-g8-gen').addEventListener('click', () => { g8.mode = 'gen'; setSource('perform'); generate(); sendSeq(); g8Send(); g8Draw(); });
 }
 // the side panel: the controls of the sound last put on a lane (or whose name was tapped)
@@ -160,35 +177,41 @@ function g8Order() {
 }
 function g8SetBdTop(on) { g8.bdTop = on; g8Save(); g8Order(); }
 function g8Pick(i) {
-  g8.cur = i; g8.mode = 'lanes';
+  g8.cur = i; g8.mode = 'lanes'; g8.page = 0;
   g8Send(); g8Draw();
 }
-let g8Now = -1;
+let g8Now = -1, g8PlayPage = -1;
 function g8Draw() {
-  const L = g8Shown(), lanes = g8.mode === 'lanes';
+  const L = g8Shown(), lanes = g8.mode === 'lanes', n = g8Len(), p0 = g8.page * 16;
   [...$('m-g8-side').querySelectorAll(':scope > .m-808-v')].forEach((c, i) => { c.hidden = T8_ORDER[i] !== g8.sel; });
   for (const id of T8_ORDER) { g8Picks[id].setAttribute('aria-pressed', id === g8.sel); g8Picks[id].classList.toggle('used', L[id].on.some(Boolean)); }
   for (const id of G8_IDS) {
-    for (const lab of [g8Labs[id], g8LabsR[id]]) { lab.classList.toggle('used', L[id].on.some(Boolean)); lab.classList.toggle('sel', id === g8.sel); }
+    const used = L[id].on.some((v, k) => v && k < n * 16);
+    for (const lab of [g8Labs[id], g8LabsR[id]]) { lab.classList.toggle('used', used); lab.classList.toggle('sel', id === g8.sel); }
     g8Cells[id].forEach((c, s) => {
-      const on = !!L[id].on[s], acc = on && !!L[id].acc[s];
-      c.classList.toggle('on', on); c.classList.toggle('acc', acc); c.classList.toggle('now', s === g8Now);
-      c.setAttribute('aria-label', `${T8_NAME[id]} step ${s + 1}${on ? acc ? ', accent' : ', on' : ''}`);
+      const on = !!L[id].on[p0 + s], acc = on && !!L[id].acc[p0 + s];
+      c.classList.toggle('on', on); c.classList.toggle('acc', acc); c.classList.toggle('now', s === g8Now && g8PlayPage === g8.page);
+      c.setAttribute('aria-label', `${T8_NAME[id]} step ${p0 + s + 1}${on ? acc ? ', accent' : ', on' : ''}`);
     });
   }
-  [...$('m-g8-presets').children].forEach((b, i) => { b.setAttribute('aria-pressed', lanes && i === g8.cur); b.classList.toggle('used', G8_IDS.some((id) => g8.pats[i][id].on.some(Boolean))); });
+  [...$('m-g8-presets').children].forEach((b, i) => { b.setAttribute('aria-pressed', lanes && i === g8.cur); b.classList.toggle('used', G8_IDS.some((id) => g8.pats[i][id].on.some((v, k) => v && k < g8.lens[i] * 16))); });
+  [...$('m-g8-bars').children].forEach((b, i) => {
+    b.setAttribute('aria-pressed', i === g8.page); b.classList.toggle('in', i < n); b.classList.toggle('now', i === g8PlayPage && i < n);
+    b.title = i < n ? `bar ${i + 1}: steps ${i * 16 + 1} to ${i * 16 + 16}` : `add bars up to ${i + 1} (${(i + 1) * 16} steps)`;
+  });
+  $('m-g8-less').disabled = n < 2;
   $('m-g8-gen').setAttribute('aria-pressed', !lanes);
   $('m-g8-what').textContent = lanes ? `pattern ${g8.cur + 1}` : 'generator';
 }
 // the playhead, and redraws when the generator changes the pattern
 const g8Mark = markStep;
-markStep = (s) => { g8Mark(s); g8Now = s; g8Flash(s); if ($('m').dataset.page === 'grid' || !mWide.matches) g8Draw(); };
+markStep = (s, bar) => { g8Mark(s); g8Now = s; g8PlayPage = s < 0 || bar === undefined ? -1 : bar % g8Len(); g8Flash(s); if ($('m').dataset.page === 'grid' || !mWide.matches) g8Draw(); };
 // each sound's name, in its controls box (here and on the 808 page), lights for a moment as its step plays
 function g8Flash(s) {
   if (s < 0) return;
-  const L = g8Shown();
+  const L = g8Shown(), k = Math.max(0, g8PlayPage) * 16 + (s % 16);
   for (const id of G8_IDS) {
-    if (!L[id].on[s % 16]) continue;
+    if (!L[id].on[k]) continue;
     for (const card of t8Cards[id] || []) {
       const n = card.querySelector('.m-808-vname'); if (!n) continue;
       n.classList.add('hit'); clearTimeout(n._hit); n._hit = setTimeout(() => n.classList.remove('hit'), 60);
@@ -207,8 +230,8 @@ function g8Note(t) { const w = $('m-g8-what'); w.textContent = t; clearTimeout(w
 addEventListener('keydown', (e) => {
   if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || e.target.closest?.('input, select, textarea') || $('m-menu')) return;
   const k = e.key.toLowerCase();
-  if (k === 'c') { e.preventDefault(); g8Clip = g8Clean(g8Shown()); g8Note(`copied ${g8.mode === 'lanes' ? `pattern ${g8.cur + 1}` : 'the generator'}`); }
-  else if (k === 'v' && g8Clip) { e.preventDefault(); g8.mode = 'lanes'; g8.lanes = g8Clean(g8Clip); g8Send(); g8Draw(); g8Note(`pasted into pattern ${g8.cur + 1}`); }
+  if (k === 'c') { e.preventDefault(); g8Clip = g8Clean(g8Shown()); g8Clip.len = g8Len(); g8Note(`copied ${g8.mode === 'lanes' ? `pattern ${g8.cur + 1}` : 'the generator'}`); }
+  else if (k === 'v' && g8Clip) { e.preventDefault(); g8.mode = 'lanes'; g8.lanes = g8Clean(g8Clip); g8.lens[g8.cur] = g8Clip.len; g8Send(); g8Draw(); g8Note(`pasted into pattern ${g8.cur + 1}`); }
 });
 M_PAGE_NAMES.grid = 'grid';
 g8Order();
