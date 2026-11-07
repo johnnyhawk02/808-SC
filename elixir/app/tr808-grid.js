@@ -122,6 +122,18 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
     for (const id of G8_IDS) for (let s = 0; s < 16; s++) { L[id].on[to + s] = L[id].on[from + s]; L[id].acc[to + s] = L[id].acc[from + s]; }
     g8.lens[g8.cur] = n + 1; g8.page = n; g8Send(); g8Draw();
   });
+  // ◀ ▶: the whole pattern (every lane, all its bars) one step earlier or later, the step pushed off one end coming round
+  // to the other
+  const shift = (d) => {
+    g8Take(); const n = g8.lens[g8.cur] * 16, L = g8.lanes;
+    for (const id of G8_IDS) for (const k of ['on', 'acc']) {
+      const a = L[id][k].slice(0, n);
+      for (let s = 0; s < n; s++) L[id][k][s] = a[(s - d + n) % n];
+    }
+    g8Send(); g8Draw();
+  };
+  $('m-g8-left').addEventListener('click', () => shift(-1));
+  $('m-g8-right').addEventListener('click', () => shift(1));
   $('m-g8-gen').addEventListener('click', () => { g8.mode = 'gen'; setSource('perform'); generate(); sendSeq(); g8Send(); g8Draw(); });
 }
 // Painting: press on a step and drag across others (any lanes). The first step decides what the drag does: a tap on an
