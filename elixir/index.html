@@ -1744,11 +1744,13 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 .m-g8-foot { gap: 10px; min-width: 0; }
 .m-g8-foot > * { flex: none; }
 .m-g8-foot > .m-g8-key { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; opacity: .8; }
+.m .m-g8-presets .m-toggle.rec { background: var(--ink) !important; color: var(--panel); animation: g8rec 1s steps(2) infinite; }
+@keyframes g8rec { 50% { opacity: .55; } }
 </style>
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.33<!--/v--></small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.34<!--/v--></small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1845,7 +1847,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.33<!--/v-->, 7 Nov, 00:16</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.34<!--/v-->, 7 Nov, 00:18</footer>
     </section>
   </div>
   </div>
@@ -14161,7 +14163,7 @@ addEventListener('keydown', (e) => {
   }
   if (pop) return; // (the other keys wait until the pop-up is closed)
   // (arrows and enter stay with a focused control, so a fader still steps with the arrows)
-  if (/^[1-8]$/.test(k)) { e.preventDefault(); g8Pick(Number(k) - 1); }
+  if (/^[1-8]$/.test(k)) { e.preventDefault(); g8Key(Number(k) - 1); }
   else if (KEYS[k]) { e.preventDefault(); const b = $(KEYS[k]); if (!b.disabled) b.click(); }
   else if (k === 'm') { e.preventDefault(); $('m-nextbar').click(); }
   else if (MUTE_KEYS.includes(k)) { e.preventDefault(); mMuteToggle(MUTE_KEYS.indexOf(k)); }
@@ -14493,7 +14495,8 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
   for (let i = 0; i < G8_N; i++) {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'm-toggle'; b.textContent = String(i + 1); b.title = `pattern ${i + 1} (key ${i + 1})`;
-    b.addEventListener('click', () => g8Pick(i));
+    b.addEventListener('click', () => { if (g8.rec === i) g8RecStop(); else g8Pick(i); });
+    b.addEventListener('contextmenu', (e) => { e.preventDefault(); mMenu(e, [g8.rec === i ? ['stop recording', g8RecStop] : [`record pattern ${i + 1}`, () => g8RecStart(i)]]); });
     $('m-g8-presets').append(b);
   }
   // the bars: tap one to show it (one past the end adds it, empty); "-" takes the last one off
@@ -14568,7 +14571,33 @@ function g8Order() {
   });
 }
 function g8SetBdTop(on) { g8.bdTop = on; g8Save(); g8Order(); }
+// Recording a pattern (right-click its button): it plays, its button says STOP, and keys 1 to 8 play drums (G8_REC_KEYS),
+// each hit landing on the step nearest when it was played (in whichever bar of the pattern is playing)
+const G8_REC_KEYS = ['bd', 'sd', 'cp', 'ch', 'oh', 'lt', 'mt', 'ht'];
+g8.rec = -1;
+let g8StepAt = 0;
+function g8RecStart(i) {
+  g8Pick(i); g8.rec = i;
+  if (!playing) $('m-play').click();
+  g8Draw();
+}
+function g8RecStop() { g8.rec = -1; g8Draw(); }
+// keys 1 to 8: pick a pattern, or while recording, play and record a drum
+function g8Key(n) {
+  if (g8.rec < 0) { g8Pick(n); return; }
+  const id = G8_REC_KEYS[n];
+  t8Audition(id);
+  const len = g8.lens[g8.cur] * 16;
+  let k = 0;
+  if (playing && g8Now >= 0) {
+    const stepMs = 60000 / perf.tempo / 4, late = Math.round((performance.now() - g8StepAt) / stepMs);
+    k = ((Math.max(0, g8PlayPage) * 16 + g8Now + late) % len + len) % len;
+  }
+  const L = g8.lanes[id]; L.on[k] = 1; L.acc[k] = 0;
+  g8Send(); g8Draw();
+}
 function g8Pick(i) {
+  if (g8.rec >= 0 && g8.rec !== i) g8.rec = -1;
   g8.cur = i; g8.mode = 'lanes'; g8.page = 0;
   g8Send(); g8Draw();
 }
@@ -14579,6 +14608,8 @@ function g8Draw() {
   for (const id of T8_ORDER) { g8Picks[id].setAttribute('aria-pressed', id === g8.sel); g8Picks[id].classList.toggle('used', L[id].on.some(Boolean)); }
   for (const id of G8_IDS) {
     const used = L[id].on.some((v, k) => v && k < n * 16);
+    const rk = g8.rec >= 0 ? G8_REC_KEYS.indexOf(id) : -1;
+    g8Labs[id].textContent = rk >= 0 ? `${id} ${rk + 1}` : id; // (while recording: its key)
     for (const lab of [g8Labs[id], g8LabsR[id]]) { lab.classList.toggle('used', used); lab.classList.toggle('sel', id === g8.sel); }
     g8Cells[id].forEach((c, s) => {
       const on = !!L[id].on[p0 + s], acc = on && !!L[id].acc[p0 + s];
@@ -14586,18 +14617,19 @@ function g8Draw() {
       c.setAttribute('aria-label', `${T8_NAME[id]} step ${p0 + s + 1}${on ? acc ? ', accent' : ', on' : ''}`);
     });
   }
-  [...$('m-g8-presets').children].forEach((b, i) => { b.setAttribute('aria-pressed', lanes && i === g8.cur); b.classList.toggle('used', G8_IDS.some((id) => g8.pats[i][id].on.some((v, k) => v && k < g8.lens[i] * 16))); });
+  [...$('m-g8-presets').children].forEach((b, i) => { b.setAttribute('aria-pressed', lanes && i === g8.cur);
+    b.textContent = g8.rec === i ? 'STOP' : String(i + 1); b.classList.toggle('rec', g8.rec === i); b.classList.toggle('used', G8_IDS.some((id) => g8.pats[i][id].on.some((v, k) => v && k < g8.lens[i] * 16))); });
   [...$('m-g8-bars').children].forEach((b, i) => {
     b.setAttribute('aria-pressed', i === g8.page); b.classList.toggle('in', i < n); b.classList.toggle('now', i === g8PlayPage && i < n);
     b.title = i < n ? `bar ${i + 1}: steps ${i * 16 + 1} to ${i * 16 + 16}` : `add bars up to ${i + 1} (${(i + 1) * 16} steps)`;
   });
   $('m-g8-less').disabled = n < 2;
   $('m-g8-gen').setAttribute('aria-pressed', !lanes);
-  $('m-g8-what').textContent = lanes ? `pattern ${g8.cur + 1}` : 'generator';
+  $('m-g8-what').textContent = g8.rec >= 0 ? `recording ${g8.rec + 1}` : lanes ? `pattern ${g8.cur + 1}` : 'generator';
 }
 // the playhead, and redraws when the generator changes the pattern
 const g8Mark = markStep;
-markStep = (s, bar) => { g8Mark(s); g8Now = s; g8PlayPage = s < 0 || bar === undefined ? -1 : bar % g8Len(); g8Flash(s); if ($('m').dataset.page === 'grid' || !mWide.matches) g8Draw(); };
+markStep = (s, bar) => { g8Mark(s); g8Now = s; g8StepAt = performance.now(); g8PlayPage = s < 0 || bar === undefined ? -1 : bar % g8Len(); g8Flash(s); if ($('m').dataset.page === 'grid' || !mWide.matches) g8Draw(); };
 // each sound's name, in its controls box (here and on the 808 page), lights for a moment as its step plays
 function g8Flash(s) {
   if (s < 0) return;
