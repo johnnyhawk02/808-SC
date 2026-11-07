@@ -1,9 +1,9 @@
 # 808 Circuit
 
-(Formerly Elixir 808; still served from `elixir/`, live at https://johnnyhawk02.github.io/Tr808/elixir/.)
+(Formerly Elixir 808; the source is in `elixir/`, served at the site root: https://johnnyhawk02.github.io/808-circuit/.)
 
 A copy of [Elixir Desktop](https://github.com/johnnyhawk02/elixir-desktop) (commit 8f45f44) that plays the TR-808 voices
-from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.github.io/Tr808/elixir/**
+from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.github.io/808-circuit/**
 
 - **Grid page** (opens first): a lane for each of the sixteen 808 sounds, sixteen steps; tap a step for on or
   off, or drag across steps to paint (the first step decides on or off; cmd/ctrl for accents), tap a sound's name (either side) for its controls; the kick is at the bottom (options: "bass drum at the top of the grid" flips it). Eight pattern buttons over it (keys 1 to 8) pick which pattern plays and is edited; a pattern is 1 to 4 bars (up to 64 steps): the **bars** buttons under the grid show one bar, tapping a dashed one adds bars, "−" takes the last off, "+" adds a copy of the bar shown; ◀ ▶ shift the whole pattern a step left or right (wrapping round; cmd/ctrl + click: a bar); right-click a pattern button › **record pattern**: it empties, its button says STOP (tap to stop), and from the next bar whatever plays (switch patterns with keys 1 to 8 as usual) is written into it as notes, looping over its 64 steps until its button or number key is pressed (they start as six 808 grooves and two empty ones, and are kept in this browser); cmd/ctrl + c copies the pattern and cmd/ctrl + v pastes it over the one picked; beside it, the controls of the sound last put on a lane (or tapped, there or on the sound buttons over the controls), its name lighting as it hits (and fading away), and beside them its echo and reverb sends and pan beside a tall level fader with its meter in it (the same as its mix page strip); **autocache**: everything plays cached except the sound being edited, which plays the circuit (picked on the grid, or a knob moved there or on the 808 page); moving away caches it at its new knobs (4 + 4 hits) and plays that, or just goes back to cached if no knob moved; **generator** plays the generator page's pattern (on

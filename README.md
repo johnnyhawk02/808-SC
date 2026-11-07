@@ -5,7 +5,7 @@ that runs in an AudioWorklet (with a ScriptProcessor fallback) or in Node.
 
 `elixir/` is Elixir 808: a copy of Elixir Desktop (the LXR-02 drum machine) with these voices on its tracks, built
 from `dsp/` and `voices/` by `node elixir/build.mjs` (rebuild it after changing them). See `elixir/README.md`;
-live at https://johnnyhawk02.github.io/Tr808/elixir/.
+live at https://johnnyhawk02.github.io/808-circuit/ (the bench at /808-circuit/bench/).
 
 ## Layout
 
@@ -156,7 +156,7 @@ Cost: the whole synth kit is 10-13% of one core in Node (the circuit kit
 recordings in `cache/808/`.
 
 Hosting: `.github/workflows/pages.yml` publishes the bench to GitHub Pages
-(https://johnnyhawk02.github.io/Tr808/) on every push to `main`. One-time
+(https://johnnyhawk02.github.io/808-circuit/, the bench at bench/) on every push to `main`. One-time
 setup: Settings > Pages > Source: "GitHub Actions".
 
 Running locally: any static server, e.g. `python3 -m http.server`, then open
