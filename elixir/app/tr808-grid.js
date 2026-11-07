@@ -83,13 +83,10 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
     for (let s = 0; s < 16; s++) {
       const c = document.createElement('button');
       c.type = 'button'; c.className = 'm-g8-cell' + (s % 4 === 0 ? ' beat' : '');
-      c.addEventListener('click', (e) => {
-        g8Take();
-        const L = g8.lanes[id], k = g8.page * 16 + s;
-        if (e.metaKey || e.ctrlKey) { if (!L.on[k]) { L.on[k] = 1; L.acc[k] = 1; g8Select(id); } else L.acc[k] = L.acc[k] ? 0 : 1; }
-        else if (!L.on[k]) { L.on[k] = 1; L.acc[k] = 0; g8Select(id); } else { L.on[k] = 0; L.acc[k] = 0; }
-        g8Send(); g8Draw();
-      });
+      c.dataset.id = id; c.dataset.s = s;
+      // (a click from the keyboard: the same as a tap)
+      c.addEventListener('click', (e) => { if (e.detail === 0) { g8PaintStart(c, e); g8PaintEnd(); } });
+      c.addEventListener('pointerdown', (e) => { if (e.button === 0) { e.preventDefault(); g8PaintStart(c, e); } });
       box.append(c); g8Cells[id].push(c);
     }
   }
@@ -127,6 +124,35 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
   });
   $('m-g8-gen').addEventListener('click', () => { g8.mode = 'gen'; setSource('perform'); generate(); sendSeq(); g8Send(); g8Draw(); });
 }
+// Painting: press on a step and drag across others (any lanes). The first step decides what the drag does: a tap on an
+// empty step puts notes on, on a full one takes them off; with cmd (ctrl) it puts accents on, or takes them off (the
+// notes staying)
+let g8Paint = null; // { mode: 'on' | 'off' | 'acc' | 'unacc', done: Set }
+function g8PaintCell(c) {
+  if (!g8Paint || g8Paint.done.has(c)) return;
+  g8Paint.done.add(c);
+  const id = c.dataset.id, k = g8.page * 16 + Number(c.dataset.s), L = g8.lanes[id], m = g8Paint.mode;
+  if (m === 'on') { if (!L.on[k]) { L.on[k] = 1; L.acc[k] = 0; } }
+  else if (m === 'off') { L.on[k] = 0; L.acc[k] = 0; }
+  else if (m === 'acc') { L.on[k] = 1; L.acc[k] = 1; }
+  else if (L.on[k]) L.acc[k] = 0;
+  g8Send(); g8Draw();
+}
+function g8PaintStart(c, e) {
+  g8Take();
+  const id = c.dataset.id, k = g8.page * 16 + Number(c.dataset.s), L = g8.lanes[id];
+  const mode = e.metaKey || e.ctrlKey ? (L.on[k] && L.acc[k] ? 'unacc' : 'acc') : L.on[k] ? 'off' : 'on';
+  g8Paint = { mode, done: new Set() };
+  g8PaintCell(c);
+  if (mode === 'on' || mode === 'acc') g8Select(id);
+}
+function g8PaintEnd() { g8Paint = null; }
+addEventListener('pointermove', (e) => {
+  if (!g8Paint) return;
+  const c = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('.m-g8-cell');
+  if (c) g8PaintCell(c);
+});
+addEventListener('pointerup', g8PaintEnd); addEventListener('pointercancel', g8PaintEnd);
 // the side panel: the controls of the sound last put on a lane (or whose name was tapped)
 // (over them, a button for each sound picks which one's controls show; picking doesn't play it)
 const g8Picks = {};

@@ -1635,7 +1635,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
   font-size: var(--fs-xs) !important; line-height: 1; text-align: left; text-transform: uppercase; opacity: .55; cursor: pointer; }
 .m .m-g8-lab.used { opacity: 1; }
 .m .m-g8-lab:active { background: var(--ink) !important; color: var(--panel); }
-.m .m-g8-cell { min-width: 0; min-height: 0; padding: 0; border: 1.5px solid var(--ink) !important; border-radius: 2px; background: var(--ghost) !important; opacity: .5; cursor: pointer; box-shadow: none; }
+.m .m-g8-cell { touch-action: none; min-width: 0; min-height: 0; padding: 0; border: 1.5px solid var(--ink) !important; border-radius: 2px; background: var(--ghost) !important; opacity: .5; cursor: pointer; box-shadow: none; }
 .m .m-g8-cell.beat { opacity: .8; }
 .m-g8-cell:nth-child(17n + 6), .m-g8-cell:nth-child(17n + 10), .m-g8-cell:nth-child(17n + 14) { margin-left: 4px; }
 .m .m-g8-cell.on { background: repeating-linear-gradient(to top, var(--ink) 0 3px, transparent 3px 5px) !important; opacity: 1; }
@@ -1754,7 +1754,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.40<!--/v--></small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.41<!--/v--></small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1795,7 +1795,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
     <section class="m-card m-g8-card" aria-label="pattern grid">
       <div class="m-g8-presets" id="m-g8-presets" role="group" aria-label="patterns"></div>
       <div class="m-g8-grid" id="m-grid"></div>
-      <div class="m-g8-foot"><button class="m-toggle" id="m-g8-gen" type="button" title="Play the generator's pattern (genre, beat, energy, fills on the beat page)">generator</button><span>playing: <b id="m-g8-what"></b></span><span class="m-g8-barbox">bars <span class="m-g8-bars" id="m-g8-bars"></span><button class="m-toggle" id="m-g8-less" type="button" title="take the last bar off">−</button><button class="m-toggle" id="m-g8-more" type="button" title="add a bar: a copy of the bar shown">+</button></span><span class="m-g8-key" title="tap a step: on or off; cmd+tap (ctrl+tap): accent">cmd+tap: accent</span></div>
+      <div class="m-g8-foot"><button class="m-toggle" id="m-g8-gen" type="button" title="Play the generator's pattern (genre, beat, energy, fills on the beat page)">generator</button><span>playing: <b id="m-g8-what"></b></span><span class="m-g8-barbox">bars <span class="m-g8-bars" id="m-g8-bars"></span><button class="m-toggle" id="m-g8-less" type="button" title="take the last bar off">−</button><button class="m-toggle" id="m-g8-more" type="button" title="add a bar: a copy of the bar shown">+</button></span><span class="m-g8-key" title="tap or drag across steps: on or off; with cmd (ctrl): accents">drag to paint · cmd: accent</span></div>
       <div class="m-g8-side" id="m-g8-side" aria-label="the sound's controls"></div>
     </section>
   </div>
@@ -1851,7 +1851,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.40<!--/v-->, 7 Nov, 01:14</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.41<!--/v-->, 7 Nov, 01:19</footer>
     </section>
   </div>
   </div>
@@ -14522,13 +14522,10 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
     for (let s = 0; s < 16; s++) {
       const c = document.createElement('button');
       c.type = 'button'; c.className = 'm-g8-cell' + (s % 4 === 0 ? ' beat' : '');
-      c.addEventListener('click', (e) => {
-        g8Take();
-        const L = g8.lanes[id], k = g8.page * 16 + s;
-        if (e.metaKey || e.ctrlKey) { if (!L.on[k]) { L.on[k] = 1; L.acc[k] = 1; g8Select(id); } else L.acc[k] = L.acc[k] ? 0 : 1; }
-        else if (!L.on[k]) { L.on[k] = 1; L.acc[k] = 0; g8Select(id); } else { L.on[k] = 0; L.acc[k] = 0; }
-        g8Send(); g8Draw();
-      });
+      c.dataset.id = id; c.dataset.s = s;
+      // (a click from the keyboard: the same as a tap)
+      c.addEventListener('click', (e) => { if (e.detail === 0) { g8PaintStart(c, e); g8PaintEnd(); } });
+      c.addEventListener('pointerdown', (e) => { if (e.button === 0) { e.preventDefault(); g8PaintStart(c, e); } });
       box.append(c); g8Cells[id].push(c);
     }
   }
@@ -14566,6 +14563,35 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
   });
   $('m-g8-gen').addEventListener('click', () => { g8.mode = 'gen'; setSource('perform'); generate(); sendSeq(); g8Send(); g8Draw(); });
 }
+// Painting: press on a step and drag across others (any lanes). The first step decides what the drag does: a tap on an
+// empty step puts notes on, on a full one takes them off; with cmd (ctrl) it puts accents on, or takes them off (the
+// notes staying)
+let g8Paint = null; // { mode: 'on' | 'off' | 'acc' | 'unacc', done: Set }
+function g8PaintCell(c) {
+  if (!g8Paint || g8Paint.done.has(c)) return;
+  g8Paint.done.add(c);
+  const id = c.dataset.id, k = g8.page * 16 + Number(c.dataset.s), L = g8.lanes[id], m = g8Paint.mode;
+  if (m === 'on') { if (!L.on[k]) { L.on[k] = 1; L.acc[k] = 0; } }
+  else if (m === 'off') { L.on[k] = 0; L.acc[k] = 0; }
+  else if (m === 'acc') { L.on[k] = 1; L.acc[k] = 1; }
+  else if (L.on[k]) L.acc[k] = 0;
+  g8Send(); g8Draw();
+}
+function g8PaintStart(c, e) {
+  g8Take();
+  const id = c.dataset.id, k = g8.page * 16 + Number(c.dataset.s), L = g8.lanes[id];
+  const mode = e.metaKey || e.ctrlKey ? (L.on[k] && L.acc[k] ? 'unacc' : 'acc') : L.on[k] ? 'off' : 'on';
+  g8Paint = { mode, done: new Set() };
+  g8PaintCell(c);
+  if (mode === 'on' || mode === 'acc') g8Select(id);
+}
+function g8PaintEnd() { g8Paint = null; }
+addEventListener('pointermove', (e) => {
+  if (!g8Paint) return;
+  const c = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('.m-g8-cell');
+  if (c) g8PaintCell(c);
+});
+addEventListener('pointerup', g8PaintEnd); addEventListener('pointercancel', g8PaintEnd);
 // the side panel: the controls of the sound last put on a lane (or whose name was tapped)
 // (over them, a button for each sound picks which one's controls show; picking doesn't play it)
 const g8Picks = {};

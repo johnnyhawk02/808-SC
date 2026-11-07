@@ -42,7 +42,7 @@
   font-size: var(--fs-xs) !important; line-height: 1; text-align: left; text-transform: uppercase; opacity: .55; cursor: pointer; }
 .m .m-g8-lab.used { opacity: 1; }
 .m .m-g8-lab:active { background: var(--ink) !important; color: var(--panel); }
-.m .m-g8-cell { min-width: 0; min-height: 0; padding: 0; border: 1.5px solid var(--ink) !important; border-radius: 2px; background: var(--ghost) !important; opacity: .5; cursor: pointer; box-shadow: none; }
+.m .m-g8-cell { touch-action: none; min-width: 0; min-height: 0; padding: 0; border: 1.5px solid var(--ink) !important; border-radius: 2px; background: var(--ghost) !important; opacity: .5; cursor: pointer; box-shadow: none; }
 .m .m-g8-cell.beat { opacity: .8; }
 .m-g8-cell:nth-child(17n + 6), .m-g8-cell:nth-child(17n + 10), .m-g8-cell:nth-child(17n + 14) { margin-left: 4px; }
 .m .m-g8-cell.on { background: repeating-linear-gradient(to top, var(--ink) 0 3px, transparent 3px 5px) !important; opacity: 1; }
