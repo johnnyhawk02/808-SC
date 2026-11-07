@@ -21,7 +21,7 @@ addEventListener('keydown', (e) => {
   }
   if (pop) return; // (the other keys wait until the pop-up is closed)
   // (arrows and enter stay with a focused control, so a fader still steps with the arrows)
-  if (/^[1-8]$/.test(k)) { e.preventDefault(); g8Pick(Number(k) - 1); }
+  if (/^[1-8]$/.test(k)) { e.preventDefault(); g8Key(Number(k) - 1); }
   else if (KEYS[k]) { e.preventDefault(); const b = $(KEYS[k]); if (!b.disabled) b.click(); }
   else if (k === 'm') { e.preventDefault(); $('m-nextbar').click(); }
   else if (MUTE_KEYS.includes(k)) { e.preventDefault(); mMuteToggle(MUTE_KEYS.indexOf(k)); }

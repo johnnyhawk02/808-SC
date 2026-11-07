@@ -101,7 +101,8 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
   for (let i = 0; i < G8_N; i++) {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'm-toggle'; b.textContent = String(i + 1); b.title = `pattern ${i + 1} (key ${i + 1})`;
-    b.addEventListener('click', () => g8Pick(i));
+    b.addEventListener('click', () => { if (g8.rec === i) g8RecStop(); else g8Pick(i); });
+    b.addEventListener('contextmenu', (e) => { e.preventDefault(); mMenu(e, [g8.rec === i ? ['stop recording', g8RecStop] : [`record pattern ${i + 1}`, () => g8RecStart(i)]]); });
     $('m-g8-presets').append(b);
   }
   // the bars: tap one to show it (one past the end adds it, empty); "-" takes the last one off
@@ -176,7 +177,33 @@ function g8Order() {
   });
 }
 function g8SetBdTop(on) { g8.bdTop = on; g8Save(); g8Order(); }
+// Recording a pattern (right-click its button): it plays, its button says STOP, and keys 1 to 8 play drums (G8_REC_KEYS),
+// each hit landing on the step nearest when it was played (in whichever bar of the pattern is playing)
+const G8_REC_KEYS = ['bd', 'sd', 'cp', 'ch', 'oh', 'lt', 'mt', 'ht'];
+g8.rec = -1;
+let g8StepAt = 0;
+function g8RecStart(i) {
+  g8Pick(i); g8.rec = i;
+  if (!playing) $('m-play').click();
+  g8Draw();
+}
+function g8RecStop() { g8.rec = -1; g8Draw(); }
+// keys 1 to 8: pick a pattern, or while recording, play and record a drum
+function g8Key(n) {
+  if (g8.rec < 0) { g8Pick(n); return; }
+  const id = G8_REC_KEYS[n];
+  t8Audition(id);
+  const len = g8.lens[g8.cur] * 16;
+  let k = 0;
+  if (playing && g8Now >= 0) {
+    const stepMs = 60000 / perf.tempo / 4, late = Math.round((performance.now() - g8StepAt) / stepMs);
+    k = ((Math.max(0, g8PlayPage) * 16 + g8Now + late) % len + len) % len;
+  }
+  const L = g8.lanes[id]; L.on[k] = 1; L.acc[k] = 0;
+  g8Send(); g8Draw();
+}
 function g8Pick(i) {
+  if (g8.rec >= 0 && g8.rec !== i) g8.rec = -1;
   g8.cur = i; g8.mode = 'lanes'; g8.page = 0;
   g8Send(); g8Draw();
 }
@@ -187,6 +214,8 @@ function g8Draw() {
   for (const id of T8_ORDER) { g8Picks[id].setAttribute('aria-pressed', id === g8.sel); g8Picks[id].classList.toggle('used', L[id].on.some(Boolean)); }
   for (const id of G8_IDS) {
     const used = L[id].on.some((v, k) => v && k < n * 16);
+    const rk = g8.rec >= 0 ? G8_REC_KEYS.indexOf(id) : -1;
+    g8Labs[id].textContent = rk >= 0 ? `${id} ${rk + 1}` : id; // (while recording: its key)
     for (const lab of [g8Labs[id], g8LabsR[id]]) { lab.classList.toggle('used', used); lab.classList.toggle('sel', id === g8.sel); }
     g8Cells[id].forEach((c, s) => {
       const on = !!L[id].on[p0 + s], acc = on && !!L[id].acc[p0 + s];
@@ -194,18 +223,19 @@ function g8Draw() {
       c.setAttribute('aria-label', `${T8_NAME[id]} step ${p0 + s + 1}${on ? acc ? ', accent' : ', on' : ''}`);
     });
   }
-  [...$('m-g8-presets').children].forEach((b, i) => { b.setAttribute('aria-pressed', lanes && i === g8.cur); b.classList.toggle('used', G8_IDS.some((id) => g8.pats[i][id].on.some((v, k) => v && k < g8.lens[i] * 16))); });
+  [...$('m-g8-presets').children].forEach((b, i) => { b.setAttribute('aria-pressed', lanes && i === g8.cur);
+    b.textContent = g8.rec === i ? 'STOP' : String(i + 1); b.classList.toggle('rec', g8.rec === i); b.classList.toggle('used', G8_IDS.some((id) => g8.pats[i][id].on.some((v, k) => v && k < g8.lens[i] * 16))); });
   [...$('m-g8-bars').children].forEach((b, i) => {
     b.setAttribute('aria-pressed', i === g8.page); b.classList.toggle('in', i < n); b.classList.toggle('now', i === g8PlayPage && i < n);
     b.title = i < n ? `bar ${i + 1}: steps ${i * 16 + 1} to ${i * 16 + 16}` : `add bars up to ${i + 1} (${(i + 1) * 16} steps)`;
   });
   $('m-g8-less').disabled = n < 2;
   $('m-g8-gen').setAttribute('aria-pressed', !lanes);
-  $('m-g8-what').textContent = lanes ? `pattern ${g8.cur + 1}` : 'generator';
+  $('m-g8-what').textContent = g8.rec >= 0 ? `recording ${g8.rec + 1}` : lanes ? `pattern ${g8.cur + 1}` : 'generator';
 }
 // the playhead, and redraws when the generator changes the pattern
 const g8Mark = markStep;
-markStep = (s, bar) => { g8Mark(s); g8Now = s; g8PlayPage = s < 0 || bar === undefined ? -1 : bar % g8Len(); g8Flash(s); if ($('m').dataset.page === 'grid' || !mWide.matches) g8Draw(); };
+markStep = (s, bar) => { g8Mark(s); g8Now = s; g8StepAt = performance.now(); g8PlayPage = s < 0 || bar === undefined ? -1 : bar % g8Len(); g8Flash(s); if ($('m').dataset.page === 'grid' || !mWide.matches) g8Draw(); };
 // each sound's name, in its controls box (here and on the 808 page), lights for a moment as its step plays
 function g8Flash(s) {
   if (s < 0) return;
