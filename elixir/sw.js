@@ -14,6 +14,9 @@ self.addEventListener('fetch', (e) => {
   if (req.mode === 'navigate' || (url.origin === location.origin && APP.some((a) => url.pathname.endsWith(a.replace('./', '/'))))) {
     e.respondWith(fetch(req, { cache: 'no-cache' }).then((r) => { if (r.ok) { const copy = r.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); } return r; })
       .catch(() => caches.match(req, { ignoreSearch: true }).then((r) => r || caches.match('index.html'))));
+  } else if (url.origin === location.origin && url.pathname.includes('/irs/')) {
+    // the reverb's impulse responses: kept as first fetched
+    e.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((r) => { if (r.ok) { const copy = r.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); } return r; })));
   } else if (/fonts\.(googleapis|gstatic)\.com$/.test(url.hostname)) {
     e.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((r) => { const copy = r.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); return r; })));
   }

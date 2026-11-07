@@ -37,7 +37,7 @@ const HELP = [
 <ul><li><b>tone</b>: tuning, wave and fm. <b>shape</b>: the envelope, the pitch drop and the click (the attack's sample).</li>
 <li><b>filter</b>: cutoff, resonance, type and drive, then the drum's volume, pan, sample rate and drive. <b>mod</b>: its lfo and what velocity does.</li></ul>`],
   ['fx', 'fx: echo, reverb, crossfeed (xfeed)', `<ul><li><b>echo</b>: send, time (musical lengths), tone, feedback and width; tick <b>ping pong</b> to bounce it left and right.</li>
-<li><b>reverb</b>: send, time (the pre-delay before it), decay, tone (dark to bright) and early (the early reflections' level). It's the LXR firmware's own reverb, written for it but never switched on in the hardware.</li>
+<li><b>reverb</b>: a convolution reverb, a recorded space (its impulse response, IR) put on the sound. Pick the IR in its header: a plate and a gated 80s one made here, or ten recorded rooms (wood shop to cathedral, from the OpenAIR library). <b>load IR</b> takes your own (a wav or other audio file; up to 5 s of it is used); it's kept in this browser under its file name, with <b>remove</b> to drop it. Knobs: pre (the delay before it, 0 to 150 ms), length (how much of the IR, faded out), low cut, tone (a low-pass) and width.</li>
 <li><b>crossfeed</b>: drums feeding each other. A row is the drum it comes from, a column the drum it goes into; click a column's name to pick what it changes there (fm, filter or ring). Drag a cell up or down to set it; double-click to clear.</li></ul>`],
   ['mix', 'mix: the channel strips', `<p>A strip for each drum: its echo send knob, reverb send knob and pan knob (L, C, R) over its level fader, with a level meter beside it.</p>`],
   ['mstr', 'mstr: the master chain', `<p>The whole mix runs top to bottom:</p>

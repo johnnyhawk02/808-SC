@@ -8,6 +8,11 @@ from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.git
   pattern (on the seven tracks, one sound each: BD, LT, HT, SD, CY, CH, OH), shown in their lanes, and the first edit
   copies it into the lanes. The lanes are kept in this browser.
 - **808 page** (hidden for now: `T8_PAGE` in app/tr808.js brings it back): all sixteen sounds at once, each with circuit/cached, its knobs and its cache button.
+- **Reverb** (fx page): a convolution reverb. The IR is picked in its header: plate and gated 80s (made in the app), ten
+  recorded spaces in `irs/` (OpenAIR and Reverb.js, public domain and Creative Commons: `irs/README.md`), or your own
+  (**load IR**, any audio file, up to 5 s; kept in this browser's IndexedDB, `elixir808-irs`). Knobs: pre-delay, length,
+  low cut, tone, width. It runs in the player (`IrVerb`: FFT convolution in two stages, 64-sample parts for the first
+  4096 samples so there's no added latency, 2048-sample parts after).
 - **Mix page**: a strip for each of the sixteen sounds (echo send, reverb send, pan, level), mixed per sound in the
   player (`vmix808`; the echo takes them through `renderFx`'s extra input in `lxr.js`). The kick keys the sidechain and
   the rest duck. Each sound still has a track (`BUS808`) for mutes and the rush.
@@ -22,7 +27,7 @@ from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.git
 - No LXR-02 voices: they're silenced in the player. The voice page and crossfeed are deleted (crossfeed is off in the
   player too); the kit / alter / crossfeed randomisers and the LXR sound macros (pitch, decay, filter, fm) are gone. What's left of Elixir is the sequencer and
   pattern generator, the mixer, and its effects (echo, reverb, distortion, compressor; the echo and distortion are the
-  LXR-02 firmware's FX code, which the mix still runs through).
+  LXR-02 firmware's FX code (the reverb is Elixir 808's own), which the mix still runs through).
 - An 808 voice takes its track's place in the engine's output, so level, pan, sends, the drum 1 sidechain, the master
   chain, meters and the recorder work on it. Accents are the circuit's own accent.
 - The 808 setup (models, knobs) and the lanes are kept in this browser, not in presets. Presets, settings and
@@ -81,7 +86,8 @@ sit outside that comparison; with crossfeed at zero the engine runs exactly as v
 The shipped firmware is built with `-O3 -ffast-math`, which rounds slightly differently: with
 the init kit the largest difference is 9 LSB (−77 dB).
 
-Not ported: the firmware's reverb (compiled out of the firmware, `USE_REVERB 0`), user samples
+Not ported: the firmware's reverb (compiled out of the firmware, `USE_REVERB 0`; Elixir 808's reverb is its own
+convolution reverb instead: `IrVerb` in `app/player.js`, the IR picker in `app/irverb.js`, the IRs in `irs/`), user samples
 and the hardware sequencer. Only the stereo outputs are modelled.
 
 ## Files

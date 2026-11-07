@@ -26,7 +26,7 @@ jobs:
         run: |
           mkdir site
           cp -r index.html app.js worklet.js cache-worker.js dsp voices cache site/
-          mkdir site/elixir && cp -r elixir/index.html elixir/help.html elixir/manifest.webmanifest elixir/sw.js elixir/icons site/elixir/
+          mkdir site/elixir && cp -r elixir/index.html elixir/help.html elixir/manifest.webmanifest elixir/sw.js elixir/icons elixir/irs site/elixir/
           # Elixir 808's version, 1.N: N the number of changes merged into main
           VER="1.$(git rev-list --count --first-parent HEAD)"
           sed -i "s#<!--v-->[^<]*<!--/v-->#<!--v-->$VER<!--/v-->#g" site/elixir/index.html

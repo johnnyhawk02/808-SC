@@ -107,6 +107,8 @@ function useKit(k) {
   const kitFx = k.kit[PAR.FX_TYPE], hadDelay = kitFx === LXR.FX_DELAY;
   // the kit's own effect seeds that bus, and the voices it routed there get a 25% send on it (distortion: on)
   Object.assign(fx3, structuredClone(FX3_0), structuredClone(k.fx3 ? k.fx3.params : {}));
+  // (the reverb's knobs from before the IR reverb are dropped)
+  fx3.verb = Object.fromEntries(Object.keys(FX3_0.verb).map((q) => [q, fx3.verb?.[q] ?? FX3_0.verb[q]]));
   if (!k.fx3 && kitFx === LXR.FX_DISTORTION) fx3.dist = { type: k.kit[PAR.FX_DIST_TYPE], p: [0, 1, 2, 3].map((i) => k.kit[PAR.FX_P1 + i]) };
   if (!k.fx3 && kitFx === LXR.FX_RING) fx3.ring = { wave: k.kit[PAR.FX_WAVE], freq: k.kit[PAR.FX_P1] };
   const routed = [0, 1, 2, 3, 4, 5].map((n) => k.kit[PAR.AUDIO_OUT1 + n] === LXR.MIXER_ROUTING_FX_BUS);
