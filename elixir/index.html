@@ -1737,6 +1737,8 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 
 /* the bars of a pattern, under the grid: the one shown pressed, the ones in the pattern solid, the one playing outlined */
 .m-g8-barbox { display: flex; align-items: center; gap: 4px; }
+.m-g8-shift { display: flex; align-items: center; gap: 4px; }
+.m .m-g8-foot .m-g8-shift .m-toggle { min-width: 34px; padding: 0 6px; font-size: 13px !important; }
 .m-g8-bars { display: flex; gap: 3px; }
 .m .m-g8-foot .m-g8-barbox .m-toggle { min-width: 34px; padding: 0 6px; }
 .m .m-g8-bars .m-toggle:not(.in) { opacity: .4; border-style: dashed !important; }
@@ -1762,7 +1764,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.44<!--/v--></small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">elixir 808</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.45<!--/v--></small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1803,7 +1805,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
     <section class="m-card m-g8-card" aria-label="pattern grid">
       <div class="m-g8-presets" id="m-g8-presets" role="group" aria-label="patterns"></div>
       <div class="m-g8-grid" id="m-grid"></div>
-      <div class="m-g8-foot"><button class="m-toggle" id="m-g8-gen" type="button" title="Play the generator's pattern (genre, beat, energy, fills on the beat page)">generator</button><span>playing: <b id="m-g8-what"></b></span><span class="m-g8-barbox">bars <span class="m-g8-bars" id="m-g8-bars"></span><button class="m-toggle" id="m-g8-less" type="button" title="take the last bar off">−</button><button class="m-toggle" id="m-g8-more" type="button" title="add a bar: a copy of the bar shown">+</button></span><span class="m-g8-key" title="tap or drag across steps: on or off; with cmd (ctrl): accents">drag to paint · cmd: accent</span></div>
+      <div class="m-g8-foot"><button class="m-toggle" id="m-g8-gen" type="button" title="Play the generator's pattern (genre, beat, energy, fills on the beat page)">generator</button><span>playing: <b id="m-g8-what"></b></span><span class="m-g8-barbox">bars <span class="m-g8-bars" id="m-g8-bars"></span><button class="m-toggle" id="m-g8-less" type="button" title="take the last bar off">−</button><button class="m-toggle" id="m-g8-more" type="button" title="add a bar: a copy of the bar shown">+</button></span><span class="m-g8-shift"><button class="m-toggle" id="m-g8-left" type="button" title="shift the pattern one step left (wraps round)" aria-label="shift the pattern one step left">◀</button><button class="m-toggle" id="m-g8-right" type="button" title="shift the pattern one step right (wraps round)" aria-label="shift the pattern one step right">▶</button></span><span class="m-g8-key" title="tap or drag across steps: on or off; with cmd (ctrl): accents">drag to paint · cmd: accent</span></div>
       <div class="m-g8-side" id="m-g8-side" aria-label="the sound's controls"></div>
     </section>
   </div>
@@ -1859,7 +1861,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.44<!--/v-->, 7 Nov, 02:09</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.45<!--/v-->, 7 Nov, 06:14</footer>
     </section>
   </div>
   </div>
@@ -14880,6 +14882,18 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
     for (const id of G8_IDS) for (let s = 0; s < 16; s++) { L[id].on[to + s] = L[id].on[from + s]; L[id].acc[to + s] = L[id].acc[from + s]; }
     g8.lens[g8.cur] = n + 1; g8.page = n; g8Send(); g8Draw();
   });
+  // ◀ ▶: the whole pattern (every lane, all its bars) one step earlier or later, the step pushed off one end coming round
+  // to the other
+  const shift = (d) => {
+    g8Take(); const n = g8.lens[g8.cur] * 16, L = g8.lanes;
+    for (const id of G8_IDS) for (const k of ['on', 'acc']) {
+      const a = L[id][k].slice(0, n);
+      for (let s = 0; s < n; s++) L[id][k][s] = a[(s - d + n) % n];
+    }
+    g8Send(); g8Draw();
+  };
+  $('m-g8-left').addEventListener('click', () => shift(-1));
+  $('m-g8-right').addEventListener('click', () => shift(1));
   $('m-g8-gen').addEventListener('click', () => { g8.mode = 'gen'; setSource('perform'); generate(); sendSeq(); g8Send(); g8Draw(); });
 }
 // Painting: press on a step and drag across others (any lanes). The first step decides what the drag does: a tap on an
