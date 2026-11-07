@@ -134,18 +134,17 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
   };
   $('m-g8-left').addEventListener('click', () => shift(-1));
   $('m-g8-right').addEventListener('click', () => shift(1));
-  // generator: press, it asks write?; press again (within 4 s) and the generator page's pattern (one bar) overwrites the
-  // pattern picked. Anything else pressed meanwhile, or the wait, takes the question back
-  const gen = $('m-g8-gen'), ask = (on) => { clearTimeout(gen._t); gen.classList.toggle('ask', on); gen.textContent = on ? 'write?' : 'generator'; if (on) gen._t = setTimeout(() => ask(false), 4000); };
-  gen.addEventListener('click', () => {
-    if (!gen.classList.contains('ask')) { ask(true); return; }
-    ask(false);
+  // generator: press it and the generator page's pattern plays (generator mode, shown in the lanes); the button then says
+  // write?, and pressing that overwrites the pattern picked with what the generator is playing (one bar) and goes back to
+  // the patterns. A pattern button (or key 1 to 8) leaves generator mode without writing. Right-click a pattern > record
+  // works here too: it loop-records the generator into that pattern
+  $('m-g8-gen').addEventListener('click', () => {
+    if (g8.mode !== 'gen') { g8.mode = 'gen'; setSource('perform'); generate(); sendSeq(); g8Send(); g8Draw(); return; }
     const L = g8FromTracks();
     if (g8.rec === g8.cur) g8RecStop();
     g8.mode = 'lanes'; g8.lanes = L; g8.lens[g8.cur] = 1; g8.page = 0;
     g8Send(); g8Draw();
   });
-  addEventListener('pointerdown', (e) => { if (gen.classList.contains('ask') && !gen.contains(e.target)) ask(false); }, { capture: true });
 }
 // Painting: press on a step and drag across others (any lanes). The first step decides what the drag does: a tap on an
 // empty step puts notes on, on a full one takes them off; with cmd (ctrl) it puts accents on, or takes them off (the
@@ -286,7 +285,8 @@ function g8Draw() {
   });
   $('m-g8-less').disabled = n < 2;
   $('m-g8-more').disabled = !lanes || n >= 4;
-  $('m-g8-gen').setAttribute('aria-pressed', !lanes);
+  $('m-g8-gen').setAttribute('aria-pressed', !lanes); $('m-g8-gen').classList.toggle('ask', !lanes); $('m-g8-gen').textContent = lanes ? 'generator' : 'write?';
+  $('m-g8-gen').title = lanes ? 'Play the generator page\'s pattern (then write? puts it into the pattern picked)' : `Write what the generator plays into pattern ${g8.cur + 1}`;
   $('m-g8-what').textContent = (lanes ? `pattern ${g8.cur + 1}` : 'generator') + (g8.rec < 0 ? '' : g8.recPos < 0 ? ` · ${g8.rec + 1} records from the next bar` : ` · recording ${g8.rec + 1}, bar ${Math.floor(g8.recPos / 16) + 1}`);
 }
 // the playhead, and redraws when the generator changes the pattern
