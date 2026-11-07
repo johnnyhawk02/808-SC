@@ -105,7 +105,8 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
     b.addEventListener('contextmenu', (e) => { e.preventDefault(); mMenu(e, [g8.rec === i ? ['stop recording', g8RecStop] : [`record pattern ${i + 1}`, () => g8RecStart(i)]]); });
     $('m-g8-presets').append(b);
   }
-  // the bars: tap one to show it (one past the end adds it, empty); "-" takes the last one off
+  // the bars: tap one to show it (one past the end adds it, empty); "-" takes the last one off, "+" adds a copy of the one
+// shown
   for (let i = 0; i < 4; i++) {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'm-toggle'; b.textContent = String(i + 1);
@@ -117,6 +118,13 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
     $('m-g8-bars').append(b);
   }
   $('m-g8-less').addEventListener('click', () => { g8Take(); if (g8.lens[g8.cur] > 1) g8.lens[g8.cur]--; g8Send(); g8Draw(); });
+  // "+": a new bar on the end, a copy of the bar shown, and it's shown
+  $('m-g8-more').addEventListener('click', () => {
+    g8Take(); const n = g8.lens[g8.cur]; if (n >= 4) return;
+    const L = g8.lanes, from = g8.page * 16, to = n * 16;
+    for (const id of G8_IDS) for (let s = 0; s < 16; s++) { L[id].on[to + s] = L[id].on[from + s]; L[id].acc[to + s] = L[id].acc[from + s]; }
+    g8.lens[g8.cur] = n + 1; g8.page = n; g8Send(); g8Draw();
+  });
   $('m-g8-gen').addEventListener('click', () => { g8.mode = 'gen'; setSource('perform'); generate(); sendSeq(); g8Send(); g8Draw(); });
 }
 // the side panel: the controls of the sound last put on a lane (or whose name was tapped)
@@ -228,6 +236,7 @@ function g8Draw() {
     b.title = i < n ? `bar ${i + 1}: steps ${i * 16 + 1} to ${i * 16 + 16}` : `add bars up to ${i + 1} (${(i + 1) * 16} steps)`;
   });
   $('m-g8-less').disabled = n < 2;
+  $('m-g8-more').disabled = !lanes || n >= 4;
   $('m-g8-gen').setAttribute('aria-pressed', !lanes);
   $('m-g8-what').textContent = (lanes ? `pattern ${g8.cur + 1}` : 'generator') + (g8.rec < 0 ? '' : g8.recPos < 0 ? ` · ${g8.rec + 1} records from the next bar` : ` · recording ${g8.rec + 1}, bar ${Math.floor(g8.recPos / 16) + 1}`);
 }
