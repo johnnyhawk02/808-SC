@@ -167,3 +167,5 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 .m-irbtn { flex: none; min-height: 30px; font: inherit; font-size: var(--fs-xs); text-transform: uppercase; color: var(--ink); background: transparent;
   border: 2px solid var(--ink); border-radius: 3px; padding: 0 8px; cursor: pointer; }
 .m-irbtn[hidden] { display: none; }
+/* the generator button asking write? (tr808-grid.js) */
+.m .m-g8-foot #m-g8-gen.ask { background: var(--ink) !important; color: var(--panel); animation: g8rec .8s steps(1) infinite; }
