@@ -78,8 +78,8 @@
 .m .m-g8-cell { touch-action: none; min-width: 0; min-height: 0; padding: 0; border: 1.5px solid var(--ink) !important; border-radius: 2px; background: var(--ghost) !important; opacity: .5; cursor: pointer; box-shadow: none; }
 .m .m-g8-cell.beat { opacity: .8; }
 .m-g8-cell:nth-child(17n + 6), .m-g8-cell:nth-child(17n + 10), .m-g8-cell:nth-child(17n + 14) { margin-left: 4px; }
-.m .m-g8-cell.on { background: repeating-linear-gradient(to top, var(--spot, var(--ink)) 0 3px, transparent 3px 5px) !important; opacity: 1; }
-.m .m-g8-cell.acc { background: var(--spot, var(--ink)) !important; opacity: 1; }
+.m .m-g8-cell.on { background: repeating-linear-gradient(to top, var(--ink) 0 3px, transparent 3px 5px) !important; opacity: 1; }
+.m .m-g8-cell.acc { background: var(--ink) !important; opacity: 1; }
 .m-g8-cell.now { outline: 2px solid var(--ink); outline-offset: 1px; }
 .m-g8-foot { display: flex; align-items: center; gap: 12px; font-size: var(--fs-xs); white-space: nowrap; }
 .m .m-g8-foot .m-toggle { min-height: 34px; padding: 0 12px; font-size: var(--fs-xs) !important; text-transform: uppercase; }

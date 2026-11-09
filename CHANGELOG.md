@@ -3,6 +3,10 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.6.2
+
+- The grid's notes and accents stay in the ink; the spot colour is only for buttons, the page tab, play and the model switches.
+
 ## 0.6.1
 
 - The spot colour is a hot red (#fb2504) by default; "spot back to default" returns to it.

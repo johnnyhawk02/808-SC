@@ -289,7 +289,7 @@ function t8Panel(hex, keep = true) {
   $('m-set-panel-pink').addEventListener('click', () => t8Panel(T8_PANEL));
 }
 // ---- the spot colour (options › spot colour): one colour for what is on or lit (pressed buttons, the page tab, play,
-// the grid's notes and accents, the model switches' thumbs), a hot red by default, kept in this browser. The text on it
+// the model switches' thumbs; the grid's notes stay in the ink), a hot red by default, kept in this browser. The text on it
 // is black or white, whichever reads ----
 const T8_SPOT = '#fb2504', T8_SPOT_KEY = '808sc-spot';
 function t8Spot(hex, keep = true) {
