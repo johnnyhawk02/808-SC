@@ -3,6 +3,10 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.7.5
+
+- The line under the tabs stops exactly at the page's frame on both sides, and a clicked tab no longer gets a focus ring that closed it off from the page (a tab reached by keyboard underlines its name instead).
+
 ## 0.7.4
 
 - Play and rec are symbols on plain framed keys: play a black triangle, rec a circle in the spot colour. Playing, the play key fills black with a stop square; recording, the rec key fills with the spot colour, its circle blinks and the time shows beside it.
