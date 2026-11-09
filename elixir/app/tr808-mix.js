@@ -49,6 +49,8 @@ for (const id of T8_ORDER) {
   strip.lastElementChild.querySelector('.m-vtrack').append(meter);
   g8Meters[id] = { el: meter, in: 0, db: -60 };
   card.append(strip);
+  // (the knobs on the left and the strip share one row grid: at least the strip's three rows)
+  card.style.setProperty('--rows', Math.max(3, Math.ceil(T8_PARAMS[id].length / 2)));
 }
 // the meters: -48 dB to 0 dB up the fader, falling back at 30 dB a second
 let g8MRaf = 0, g8MT = 0;

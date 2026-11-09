@@ -3,6 +3,10 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.9.1
+
+- Drum card: the sound's dials and the echo/verb/pan dials share one row grid, each with its name and value under it. The level fader's top lines up with the first row of dials, and the echo and verb names are no longer cut short.
+
 ## 0.9.0
 
 - The engine is now **circuit** or **synthetic**: two joined keys on top (every sound) and on each drum card. Cached is no longer a mode of its own. Circuit plays its cached hits by itself, and the live circuit while you turn its knobs or while new hits render.
