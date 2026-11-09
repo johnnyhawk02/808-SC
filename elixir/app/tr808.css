@@ -95,7 +95,7 @@
 }
 
 /* ---- the glass: a pale pink by default (options › background colour changes it, tr808.js: t8Panel), the ink near black, the backlight's glow in the glass's hue ---- */
-.m { --panel: #f0dede; --glow: 240, 222, 222; --ink: #1a1818; --muted: rgba(26, 24, 24, .66); --tint: rgba(26, 24, 24, .07); --tint-2: rgba(26, 24, 24, .12);
+.m { --panel: #f0dede; --spot: #fb2504; --on-spot: #fff; --glow: 240, 222, 222; --ink: #1a1818; --muted: rgba(26, 24, 24, .66); --tint: rgba(26, 24, 24, .07); --tint-2: rgba(26, 24, 24, .12);
   --ghost: rgba(26, 24, 24, .12); --led: #1a1818; --rule: 1px solid rgba(26, 24, 24, .34);
   background-image: linear-gradient(170deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, 0) 38%, rgba(0, 0, 0, .05)),
     repeating-linear-gradient(0deg, rgba(0, 0, 0, .03) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(0, 0, 0, .03) 0 1px, transparent 1px 3px),

@@ -42,7 +42,7 @@ const HELP = [
 <li>Click a knob or fader, then the arrow keys step it. Scroll on one with the mouse wheel or trackpad to turn it.</li>
 <li>Right-click a knob or fader for its step sequencer and reset. Double-click one to reset it.</li></ul>`],
   ['more', 'more', `<ul><li><b>options</b> holds randomise on next bar, assign knobs, the bass drum at the top of the grid, reset sound, and:</li>
-<li><b>background colour</b>: any colour for the panel, kept in this browser; the ink and the logo follow it (<b>background back to default</b> undoes it). <b>spot colour</b>: one colour for what is on or lit (pressed buttons, the page tab, play, the grid's notes, the model switches); <b>spot back to ink</b> undoes it.</li>
+<li><b>background colour</b>: any colour for the panel, kept in this browser; the ink and the logo follow it (<b>background back to default</b> undoes it). <b>spot colour</b>: one colour for what is on or lit (pressed buttons, the page tab, play, the grid's notes, the model switches); red by default; <b>spot back to default</b> undoes a change.</li>
 <li><b>settings</b>: copy the knob assignments or your presets, export or clear presets, and the <b>rush</b> graph of how the rush builds (drag its squares).</li>
 <li><b>user settings</b>: <b>midi</b>, which CC moves each knob; <b>seq</b>, whether step sequencers follow the groove.</li>
 <li>Install it as an app from your browser's menu; it works offline.</li>

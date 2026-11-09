@@ -289,20 +289,20 @@ function t8Panel(hex, keep = true) {
   $('m-set-panel-pink').addEventListener('click', () => t8Panel(T8_PANEL));
 }
 // ---- the spot colour (options › spot colour): one colour for what is on or lit (pressed buttons, the page tab, play,
-// the grid's notes and accents, the model switches' thumbs), kept in this browser; without one these are in the ink.
-// The text on it is black or white, whichever reads ----
-const T8_SPOT_KEY = '808sc-spot';
+// the grid's notes and accents, the model switches' thumbs), a hot red by default, kept in this browser. The text on it
+// is black or white, whichever reads ----
+const T8_SPOT = '#fb2504', T8_SPOT_KEY = '808sc-spot';
 function t8Spot(hex, keep = true) {
-  const s = $('m').style, ok = /^#[0-9a-f]{6}$/i.test(hex || '');
-  if (!ok) { s.removeProperty('--spot'); s.removeProperty('--on-spot'); }
-  else {
+  const s = $('m').style;
+  if (!/^#[0-9a-f]{6}$/i.test(hex || '')) hex = T8_SPOT;
+  {
     const rgb = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
     const lin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
     const L = 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
     s.setProperty('--spot', hex.toLowerCase()); s.setProperty('--on-spot', L > 0.3 ? '#111' : '#fff');
   }
-  $('m-spot-pick').value = ok ? hex.toLowerCase() : '#e8361c';
-  if (keep) try { if (ok) localStorage.setItem(T8_SPOT_KEY, hex.toLowerCase()); else localStorage.removeItem(T8_SPOT_KEY); } catch {}
+  $('m-spot-pick').value = hex.toLowerCase();
+  if (keep) try { if (hex.toLowerCase() !== T8_SPOT) localStorage.setItem(T8_SPOT_KEY, hex.toLowerCase()); else localStorage.removeItem(T8_SPOT_KEY); } catch {}
 }
 {
   const pick = document.createElement('input');
@@ -312,5 +312,5 @@ function t8Spot(hex, keep = true) {
   let saved = null; try { saved = localStorage.getItem(T8_SPOT_KEY); } catch {}
   t8Spot(saved, false);
   $('m-set-spot').addEventListener('click', () => pick.click());
-  $('m-set-spot-ink').addEventListener('click', () => t8Spot(null));
+  $('m-set-spot-ink').addEventListener('click', () => t8Spot(T8_SPOT));
 }
