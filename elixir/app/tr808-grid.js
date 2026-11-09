@@ -136,7 +136,7 @@ const g8Cells = {}, g8Labs = {}, g8LabsR = {};
   $('m-g8-left').addEventListener('click', (e) => shift(e.metaKey || e.ctrlKey ? -16 : -1));
   $('m-g8-right').addEventListener('click', (e) => shift(e.metaKey || e.ctrlKey ? 16 : 1));
   // generator: press it and the generator page's pattern plays (generator mode, shown in the lanes); the button then says
-  // write?, and pressing that overwrites the pattern picked with what the generator is playing (one bar) and goes back to
+  // insert into pattern N, and pressing that overwrites the pattern picked with what the generator is playing (one bar) and goes back to
   // the patterns. A pattern button (or key 1 to 8) leaves generator mode without writing. Right-click a pattern > record
   // works here too: it loop-records the generator into that pattern
   $('m-g8-gen').addEventListener('click', () => {
@@ -292,8 +292,9 @@ function g8Draw() {
   });
   $('m-g8-less').disabled = n < 2;
   $('m-g8-more').disabled = !lanes || n >= 4;
-  $('m-g8-gen').setAttribute('aria-pressed', !lanes); $('m-g8-gen').classList.toggle('ask', !lanes); $('m-g8-gen').textContent = lanes ? 'generator' : 'write?';
-  $('m-g8-gen').title = lanes ? 'Play the generator page\'s pattern (then write? puts it into the pattern picked)' : `Write what the generator plays into pattern ${g8.cur + 1}`;
+  $('m-g8-gen').setAttribute('aria-pressed', !lanes); $('m-g8-gen').classList.toggle('ask', !lanes); $('m-g8-gen').textContent = lanes ? 'generator' : `insert into pattern ${g8.cur + 1}`;
+  $('m-g8-gen').title = lanes ? 'Open the generator over the grid and play its pattern (insert then puts it into the pattern picked)' : `Write what the generator plays into pattern ${g8.cur + 1}`;
+  g8Over(!lanes);
   $('m-g8-what').textContent = (lanes ? `pattern ${g8.cur + 1}` : 'generator') + (g8.rec < 0 ? '' : g8.recPos < 0 ? ` · ${g8.rec + 1} records from the next bar` : ` · recording ${g8.rec + 1}, bar ${Math.floor(g8.recPos / 16) + 1}`);
 }
 // the playhead, and redraws when the generator changes the pattern
@@ -314,6 +315,18 @@ function g8Flash(s) {
 }
 // (a drag that wanders off a knob mustn't start selecting the page's text; the help's text still selects)
 document.addEventListener('selectstart', (e) => { const t = e.target.nodeType === 1 ? e.target : e.target.parentElement; if (!t?.closest('.m-help-text, input, textarea')) e.preventDefault(); });
+// On a laptop screen the generator has no tab of its own: while it plays (generator mode) its card lies over the step
+// grid, covering it completely; back with the patterns, the card goes home to its (hidden) page
+const g8Wide = matchMedia('(min-width: 1000px)');
+function g8Over(on) {
+  const card = document.querySelector('.m-beat-card'), over = on && g8Wide.matches;
+  const home = over ? document.querySelector('.m-g8-card') : document.querySelector('[data-m-panel="beat"]');
+  if (card.parentNode !== home) home.append(card);
+  $('m').classList.toggle('g8-gen', over);
+}
+g8Wide.addEventListener('change', () => { g8Over(g8.mode === 'gen'); if (g8Wide.matches && $('m').dataset.page === 'beat') mTab('grid'); });
+// the tempo, always in reach under the grid
+mFader($('m-g8-tempo'), 'tempo', { ...pf('tempo'), num: true, show: () => `${perf.tempo} bpm`, travel: 2 });
 const g8Gen = generate;
 generate = function () { const r = g8Gen.apply(this, arguments); if (g8.mode === 'gen') g8Draw(); return r; };
 perfDraws.push(g8Draw);

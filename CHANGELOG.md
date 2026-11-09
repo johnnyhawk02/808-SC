@@ -3,6 +3,11 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.11.0
+
+- Desktop: the generator is no longer a tab. Press generator under the grid and its dials cover the grid while it plays. The button then reads insert into pattern N: it writes what the generator plays into that pattern and closes the generator; a pattern button closes it without writing.
+- A tempo box sits under the grid all the time (drag or scroll).
+
 ## 0.10.7
 
 - The line under the tab row is 1px too, and meets the open tab's sides cleanly.

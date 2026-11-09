@@ -462,3 +462,24 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
   #m.m [data-m-panel] .m-vf.m-knob .m-flab, #m.m [data-m-panel] .m-vf.m-knob output { font-size: 10px !important; letter-spacing: 0; }
   #m.m #m-faders .m-vf.m-knob .m-flab { font-size: 9px !important; }
 }
+
+/* ---- the generator: no tab on a laptop screen; while it plays, its card lies over the step grid ---- */
+.m-g8-tempo { display: none; }
+@media (min-width: 1000px) {
+  .m > .m-tabs button[data-m-tab="beat"] { display: none; }
+  #m.m .m-g8-card > .m-beat-card { grid-area: 2 / 1; z-index: 3; align-self: stretch !important; height: auto; min-height: 0 !important; overflow: auto; padding: 12px 14px;
+    border: 1px solid var(--ink); border-radius: 8px; background: var(--panel); }
+  .m-g8-card > .m-g8-presets { grid-row: 1; } .m-g8-card > .m-g8-grid { grid-row: 2; } .m-g8-card > .m-g8-foot { grid-row: 3; }
+  #m.m .m-g8-card > .m-beat-card { display: block; }
+  #m.m .m-g8-card > .m-beat-card #m-beat-faders { grid-template-rows: auto max-content auto max-content !important; }
+  #m.m .m-g8-card > .m-beat-card #m-dens-faders { grid-template-rows: max-content !important; }
+  #m.m .m-g8-card > .m-beat-card #m-beat-faders, #m.m .m-g8-card > .m-beat-card .m-dens, #m.m .m-g8-card > .m-beat-card #m-dens-faders { min-height: max-content; }
+  #m.m .m-g8-card > .m-beat-card #m-beat-faders .m-vf output { white-space: pre-line !important; height: auto !important; overflow: visible !important; display: block; }
+  .m-g8-tempo { display: block; }
+  .m .m-g8-tempo .m-num { display: block; }
+  .m .m-g8-tempo .m-num output, .m .m-g8-tempo .m-num .m-flab { display: none; }
+  .m .m-g8-tempo .m-num .m-vtrack { width: 76px; height: 34px; border: 1px solid var(--ink); border-radius: 3px; background: none; display: grid; place-items: center; overflow: hidden; cursor: ns-resize; }
+  .m .m-g8-tempo .m-num .m-vtrack i, .m .m-g8-tempo .m-num .m-vtrack b { display: none; }
+  .m .m-g8-tempo .m-num .m-vtrack::after { content: attr(aria-valuetext); font-size: var(--fs-xs); line-height: 1; }
+}
+@media (min-width: 1000px) { .m > .m-tabs { grid-template-columns: repeat(5, minmax(0, 1fr)); } .m.m-no808 > .m-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); } }

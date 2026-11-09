@@ -3,7 +3,7 @@ const HELP = [
   ['start', 'getting started', `<p>808 SC is a drum machine playing the sixteen TR-808 sounds, each one as a circuit simulation (played from hits it renders in advance) or as a synthetic version that is far lighter on the CPU. Three steps to a beat:</p>
 <ol><li>Press <b>play</b> (or space).</li><li>Press <b>everything</b> until you like what you hear: each press is a new beat, effects and mix.</li>
 <li>Paint steps on the <b>grid</b>, turn a sound's knobs, or press <b>pattern</b>, <b>random fx</b> or <b>alter fx</b> to change one part. <b>undo</b> takes back the last one.</li></ol>
-<p>The screen: the title line has the logo (click it for the options menu), <b>rnd</b> (the randomise buttons, in a pop-up), <b>undo</b>, the circuit and synthetic keys with the CPU readout, then <b>play</b> and <b>rec</b>. Under it, one page at a time: <b>grid</b>, <b>generator</b>, <b>fx · master</b>, <b>mix</b> and <b>prst</b>.</p>
+<p>The screen: the title line has the logo (click it for the options menu), <b>rnd</b> (the randomise buttons, in a pop-up), <b>undo</b>, the circuit and synthetic keys with the CPU readout, then <b>play</b> and <b>rec</b>. Under it, one page at a time: <b>grid</b>, <b>fx · master</b>, <b>mix</b> and <b>prst</b>. The generator has no page of its own: it opens over the grid while it plays.</p>
 <p>Drag a knob or fader up or down, or scroll on it; double-click to reset it. When you like the sound, <b>prst</b> › <b>save new</b>. <b>rec</b> records a WAV.</p>
 <p>(In a window under 1000 px wide it becomes the narrow layout: pages along the bottom, with the perform knobs on their own page.)</p>`],
   ['sounds', 'the two engines', `<p>Each sound plays one of two engines, picked on its card (grid page, right) or for every sound at once with the keys on top:</p>
@@ -13,11 +13,11 @@ const HELP = [
   ['grid', 'grid: patterns and sounds', `<p>Eight patterns (the <b>1</b> to <b>8</b> buttons, or keys 1 to 8), each a lane for each of the sixteen sounds, sixteen steps a bar and up to four bars.</p>
 <ul><li>Press a step and drag across others to paint: starting on an empty step puts notes on, on a full one takes them off. With cmd (ctrl) held it puts accents on or takes them off.</li>
 <li>The bar buttons under the grid show each bar; <b>−</b> takes the last bar off and <b>+</b> adds a copy of the one shown. <b>◀</b> and <b>▶</b> move the whole pattern a step earlier or later.</li>
-<li><b>generator</b> plays the generator page's pattern instead (shown in the lanes); your first edit makes it a pattern of your own.</li>
+<li><b>generator</b> opens the generator over the grid and plays its pattern instead (it covers the steps; <b>insert into pattern</b> writes what it plays into the pattern picked); the <b>bpm</b> box beside it is the tempo, there all the time; your first edit makes it a pattern of your own.</li>
 <li>Right-click a pattern's number to record into it: from the next bar what you hear is written into it until you press it again.</li>
 <li>cmd (ctrl) + c copies the pattern, cmd + v pastes it over the one picked.</li>
 <li>On the right, the card of the sound picked (click its name above): its model and its knobs.</li></ul>`],
-  ['beat', 'generator: the pattern', `<ul><li><b>tempo</b>; <b>genre</b> picks a style, <b>beat</b> one of its grooves, <b>energy</b> how busy it is, <b>fills</b> how often it fills.</li>
+  ['beat', 'generator: the pattern', `<ul><li>It lies over the grid while the grid's <b>generator</b> button is on; <b>insert into pattern</b> writes what it plays into the pattern picked and closes it; a pattern button closes it without writing.</li><li><b>tempo</b>; <b>genre</b> picks a style, <b>beat</b> one of its grooves, <b>energy</b> how busy it is, <b>fills</b> how often it fills.</li>
 <li><b>velocity</b>; <b>groove</b> and <b>depth</b> give it swing or push; <b>accent</b> how loud the accents are.</li>
 <li><b>rush</b> builds a roll: the chosen sound (<b>rush on</b>) rolls faster and faster while the others drop out and a high-pass rises. Push it up for a build, drop it for the drop. Its curve is in <b>options</b> › <b>settings</b> › <b>rush</b>.</li>
 <li><b>density</b>, a fader for each of the generator's seven tracks (named after the sound each one plays): under 100% it thins that track, off-beats first; over 100% it adds hits on its empty steps, eighths first, until at 200% every step plays. The same steps go or come each time, and presets keep it.</li></ul>`],
