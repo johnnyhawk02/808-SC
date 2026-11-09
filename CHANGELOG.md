@@ -3,6 +3,11 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.6.0
+
+- The default background is a pale pink (#f0dede) with near-black ink, instead of hot pink.
+- Spot colour: options › spot colour (settings on the narrow layout) picks one colour for what is on or lit: pressed buttons, the page tab, play, the grid's notes and accents, the model switches' thumbs. Kept in this browser; "spot back to ink" undoes it.
+
 ## 0.5.0
 
 - Background colour: options › background colour (settings on the narrow layout) picks any colour for the panel, kept in this browser. The ink follows it (dark on a light colour, light on a dark one), the glows take its hue, and the logo stays ink: multiply on a light colour, inverted in screen on a dark one. "Background back to pink" undoes it.

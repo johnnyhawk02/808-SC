@@ -26,12 +26,12 @@
 .m .m-3way > .m-toggle[aria-pressed="true"] { opacity: 1; font-weight: bold; }
 .m-3way-track { grid-row: 2; grid-column: 1 / -1; position: relative; height: 16px; border: 1.5px solid var(--ink); border-radius: 9px;
   background: color-mix(in srgb, var(--ink) 14%, transparent); box-shadow: inset 0 1px 2px color-mix(in srgb, var(--ink) 35%, transparent); cursor: pointer; }
-.m-3way-track i { position: absolute; top: 1px; bottom: 1px; left: 1px; width: calc(33.333% - 2px); border-radius: 7px; background: var(--ink);
+.m-3way-track i { position: absolute; top: 1px; bottom: 1px; left: 1px; width: calc(33.333% - 2px); border-radius: 7px; background: var(--spot, var(--ink));
   transition: left .12s ease-out, opacity .12s; }
 .m-3way[data-pos="1"] .m-3way-track i { left: calc(33.333% + 1px); }
 .m-3way[data-pos="2"] .m-3way-track i { left: calc(66.667% + 1px); }
 .m-3way[data-pos="mixed"] .m-3way-track i { left: calc(33.333% + 1px); opacity: .25; }
-.m-3way-track i::after { content: ""; position: absolute; inset: 4px 45%; border-radius: 1px; background: var(--panel); opacity: .6; }
+.m-3way-track i::after { content: ""; position: absolute; inset: 4px 45%; border-radius: 1px; background: var(--on-spot, var(--panel)); opacity: .6; }
 /* ---- the 808 page: every sound in its own box, eight across, two rows: its name (tap to hear it), circuit or cached,
    its knobs, then its cache button and what it plays ---- */
 .m-808-card { display: grid; min-height: 0; padding: 8px 2px; }
@@ -78,8 +78,8 @@
 .m .m-g8-cell { touch-action: none; min-width: 0; min-height: 0; padding: 0; border: 1.5px solid var(--ink) !important; border-radius: 2px; background: var(--ghost) !important; opacity: .5; cursor: pointer; box-shadow: none; }
 .m .m-g8-cell.beat { opacity: .8; }
 .m-g8-cell:nth-child(17n + 6), .m-g8-cell:nth-child(17n + 10), .m-g8-cell:nth-child(17n + 14) { margin-left: 4px; }
-.m .m-g8-cell.on { background: repeating-linear-gradient(to top, var(--ink) 0 3px, transparent 3px 5px) !important; opacity: 1; }
-.m .m-g8-cell.acc { background: var(--ink) !important; opacity: 1; }
+.m .m-g8-cell.on { background: repeating-linear-gradient(to top, var(--spot, var(--ink)) 0 3px, transparent 3px 5px) !important; opacity: 1; }
+.m .m-g8-cell.acc { background: var(--spot, var(--ink)) !important; opacity: 1; }
 .m-g8-cell.now { outline: 2px solid var(--ink); outline-offset: 1px; }
 .m-g8-foot { display: flex; align-items: center; gap: 12px; font-size: var(--fs-xs); white-space: nowrap; }
 .m .m-g8-foot .m-toggle { min-height: 34px; padding: 0 12px; font-size: var(--fs-xs) !important; text-transform: uppercase; }
@@ -94,9 +94,9 @@
   .m .m-panel:not([data-m-panel="play"]) { grid-area: 3 / 1 / 5 / 3; padding-left: 4px; border-left: 0; }
 }
 
-/* ---- 80s magenta: the glass a hot pink, the ink a deep plum, the backlight's glow and the faded patches pink too ---- */
-.m { --panel: #ff4fbf; --glow: 255, 79, 191; --ink: #1d0019; --muted: rgba(29, 0, 25, .66); --tint: rgba(29, 0, 25, .07); --tint-2: rgba(29, 0, 25, .12);
-  --ghost: rgba(29, 0, 25, .12); --led: #1d0019; --rule: 1px solid rgba(29, 0, 25, .34);
+/* ---- the glass: a pale pink by default (options › background colour changes it, tr808.js: t8Panel), the ink near black, the backlight's glow in the glass's hue ---- */
+.m { --panel: #f0dede; --glow: 240, 222, 222; --ink: #1a1818; --muted: rgba(26, 24, 24, .66); --tint: rgba(26, 24, 24, .07); --tint-2: rgba(26, 24, 24, .12);
+  --ghost: rgba(26, 24, 24, .12); --led: #1a1818; --rule: 1px solid rgba(26, 24, 24, .34);
   background-image: linear-gradient(170deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, 0) 38%, rgba(0, 0, 0, .05)),
     repeating-linear-gradient(0deg, rgba(0, 0, 0, .03) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(0, 0, 0, .03) 0 1px, transparent 1px 3px),
     radial-gradient(60% 34% at 12% 100%, color-mix(in srgb, rgb(var(--glow)) 45%, rgba(255, 255, 255, .55)), transparent 70%),
@@ -112,7 +112,7 @@
 /* (on a dark background the black logo is inverted and printed in screen instead of multiply) */
 .m-dark .m-logo { filter: invert(1); mix-blend-mode: screen; }
 .m-card { background-color: var(--panel); }
-.fit .m-turn > div { background: #ff4fbf; color: #1d0019; }
+.fit .m-turn > div { background: #f0dede; color: #1a1818; }
 
 /* the grid page's side panel: the controls of the sound last put on a lane, beside the grid */
 .m-g8-presets, .m-g8-grid, .m-g8-foot { grid-column: 1; }
@@ -163,7 +163,7 @@
 /* the sound's name lights as it hits (tr808-grid.js: g8Flash) */
 /* (on at once, then a short fade away) */
 .m .m-808-vname { transition: background-color .3s ease-out, color .3s ease-out; }
-.m .m-808-vname.hit { background: var(--ink) !important; color: var(--panel); text-shadow: none; transition: none; }
+.m .m-808-vname.hit { background: var(--spot, var(--ink)) !important; color: var(--on-spot, var(--panel)); text-shadow: none; transition: none; }
 /* nothing on the page selects as text when a knob is held or dragged */
 html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 
@@ -196,7 +196,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 @keyframes g8rec { 50% { opacity: .55; } }
 /* the pick buttons light as their sound hits, and fade (the one picked, already dark, lights the other way) */
 .m .m-g8-picks .m-toggle { transition: background-color .3s ease-out, color .3s ease-out, opacity .3s ease-out; }
-.m .m-g8-picks .m-toggle.hit { background: var(--ink) !important; color: var(--panel); opacity: 1; text-shadow: none; transition: none; }
+.m .m-g8-picks .m-toggle.hit { background: var(--spot, var(--ink)) !important; color: var(--on-spot, var(--panel)); opacity: 1; text-shadow: none; transition: none; }
 .m .m-g8-picks .m-toggle[aria-pressed="true"].hit { background: var(--panel) !important; color: var(--ink); }
 /* the reverb's IR picker (app/irverb.js), in the fx page's reverb header */
 .m-irpick { display: flex; gap: 6px; flex: 1; min-width: 0; justify-content: flex-end; }
