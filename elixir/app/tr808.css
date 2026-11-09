@@ -19,7 +19,7 @@
 /* ---- the model keys (the row on top, and each sound's on its card): two keys joined in one bar, like a hardware
    selector; the one playing is lit in the spot colour (none on top while the sounds play different models) ---- */
 .m-seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; align-items: stretch; }
-.m .m-seg > .m-toggle { min-width: 0; min-height: 28px; padding: 0 2px; border: 2px solid var(--ink) !important; border-radius: 0; box-shadow: none !important;
+.m .m-seg > .m-toggle { min-width: 0; min-height: 28px; padding: 0 2px; border: 1px solid var(--ink) !important; border-radius: 0; box-shadow: none !important;
   background: transparent !important; color: var(--ink) !important; font-size: 9px !important; letter-spacing: .05em; text-transform: uppercase; line-height: 1; opacity: 1; }
 .m .m-seg > .m-toggle + .m-toggle { border-left-width: 0 !important; }
 .m .m-seg > .m-toggle:first-of-type { border-radius: 6px 0 0 6px; }
@@ -30,7 +30,7 @@
    its knobs, then what its cached hits are ---- */
 .m-808-card { display: grid; min-height: 0; padding: 8px 2px; }
 .m-808-all { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 8px; min-height: 0; }
-.m-808-v { display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; gap: 4px; min-width: 0; min-height: 0; padding: 6px 4px; border: 1.5px solid var(--ink); border-radius: 8px; }
+.m-808-v { display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; gap: 4px; min-width: 0; min-height: 0; padding: 6px 4px; border: 1px solid var(--ink); border-radius: 8px; }
 .m .m-808-vname { min-height: 30px; padding: 0; border: 0 !important; background: none !important; box-shadow: none !important; color: var(--ink);
   font-family: var(--display); font-size: var(--fs-m) !important; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
 .m .m-808-vname:active { background: var(--ink) !important; color: var(--panel); }
@@ -68,12 +68,12 @@
   font-size: var(--fs-xs) !important; line-height: 1; text-align: left; text-transform: uppercase; opacity: .55; cursor: pointer; }
 .m .m-g8-lab.used { opacity: 1; }
 .m .m-g8-lab:active { background: var(--ink) !important; color: var(--panel); }
-.m .m-g8-cell { touch-action: none; min-width: 0; min-height: 0; padding: 0; border: 1.5px solid var(--ink) !important; border-radius: 2px; background: var(--ghost) !important; opacity: .5; cursor: pointer; box-shadow: none; }
+.m .m-g8-cell { touch-action: none; min-width: 0; min-height: 0; padding: 0; border: 1px solid var(--ink) !important; border-radius: 2px; background: var(--ghost) !important; opacity: .5; cursor: pointer; box-shadow: none; }
 .m .m-g8-cell.beat { opacity: .8; }
 .m-g8-cell:nth-child(17n + 6), .m-g8-cell:nth-child(17n + 10), .m-g8-cell:nth-child(17n + 14) { margin-left: 4px; }
 .m .m-g8-cell.on { background: repeating-linear-gradient(to top, var(--ink) 0 3px, transparent 3px 5px) !important; opacity: 1; }
 .m .m-g8-cell.acc { background: var(--ink) !important; opacity: 1; }
-.m-g8-cell.now { outline: 2px solid var(--ink); outline-offset: 1px; }
+.m-g8-cell.now { outline: 1px solid var(--ink); outline-offset: 1px; }
 .m-g8-foot { display: flex; align-items: center; gap: 12px; font-size: var(--fs-xs); white-space: nowrap; }
 .m .m-g8-foot .m-toggle { min-height: 34px; padding: 0 12px; font-size: var(--fs-xs) !important; text-transform: uppercase; }
 .m-g8-key { margin-left: auto; opacity: .6; }
@@ -127,7 +127,7 @@
 /* ---- the mix page: a strip a sound, sixteen across: name, echo, reverb and pan knobs, then the level fader ---- */
 .m-mix-card[hidden] { display: none !important; }
 .m-808-mixer { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 4px; min-height: 0; padding: 8px 2px; }
-.m-808-strip { display: grid; grid-template-rows: auto repeat(3, minmax(0, .7fr)) minmax(0, 2fr); gap: 4px; min-width: 0; min-height: 0; padding: 4px 2px; border: 1.5px solid var(--ink); border-radius: 6px; }
+.m-808-strip { display: grid; grid-template-rows: auto repeat(3, minmax(0, .7fr)) minmax(0, 2fr); gap: 4px; min-width: 0; min-height: 0; padding: 4px 2px; border: 1px solid var(--ink); border-radius: 6px; }
 .m .m-808-strip .m-knob { display: flex; flex-direction: column; align-items: center; min-height: 0; gap: 1px; }
 .m .m-808-strip .m-knob .m-vtrack { container-type: size; flex: 1; width: 100%; min-height: 20px; background: none; overflow: visible; border-radius: 0; }
 .m .m-808-strip output, .m .m-808-strip .m-flab { font-size: 10px !important; line-height: 1; height: auto !important; }
@@ -184,7 +184,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 .m-g8-bars { display: flex; gap: 3px; }
 .m .m-g8-foot .m-g8-barbox .m-toggle { min-width: 34px; padding: 0 6px; }
 .m .m-g8-bars .m-toggle:not(.in) { opacity: .4; border-style: dashed !important; }
-.m .m-g8-bars .m-toggle.now { outline: 2px solid var(--ink); outline-offset: 2px; }
+.m .m-g8-bars .m-toggle.now { outline: 1px solid var(--ink); outline-offset: 2px; }
 .m-g8-foot { gap: 10px; min-width: 0; }
 .m-g8-foot > * { flex: none; }
 .m-g8-foot > .m-g8-key { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; opacity: .8; }
@@ -197,10 +197,10 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 /* the reverb's IR picker (app/irverb.js), in the fx page's reverb header */
 .m-irpick { display: flex; gap: 6px; flex: 1; min-width: 0; justify-content: flex-end; }
 .m-irpick select { flex: 0 1 15em; min-width: 0; min-height: 30px; font: inherit; font-size: var(--fs-s); text-transform: uppercase; color: var(--ink);
-  background: transparent; border: 2px solid var(--ink); border-radius: 3px; padding: 0 6px; }
+  background: transparent; border: 1px solid var(--ink); border-radius: 3px; padding: 0 6px; }
 .m-irpick select option, .m-irpick select optgroup { color: #000; background: #fff; }
 .m-irbtn { flex: none; min-height: 30px; font: inherit; font-size: var(--fs-xs); text-transform: uppercase; color: var(--ink); background: transparent;
-  border: 2px solid var(--ink); border-radius: 3px; padding: 0 8px; cursor: pointer; }
+  border: 1px solid var(--ink); border-radius: 3px; padding: 0 8px; cursor: pointer; }
 .m-irbtn[hidden] { display: none; }
 /* the generator button asking write? (tr808-grid.js) */
 .m .m-g8-foot #m-g8-gen.ask { background: var(--ink) !important; color: var(--panel); animation: g8rec .8s steps(1) infinite; }
@@ -216,21 +216,21 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
      focus ring round a tab, which would close it off from the page: a tab reached by keyboard underlines its name) */
   .m > .m-tabs button:focus { outline: none; }
   .m > .m-tabs button:focus-visible { text-decoration: underline; text-underline-offset: 4px; }
-  .m > .m-tabs button { position: relative; min-height: 38px; border: 2px solid color-mix(in srgb, var(--ink) 55%, transparent) !important; border-bottom: 0 !important;
+  .m > .m-tabs button { position: relative; min-height: 38px; border: 1px solid color-mix(in srgb, var(--ink) 55%, transparent) !important; border-bottom: 0 !important;
     border-radius: 9px 9px 0 0; background: var(--tint) !important; color: var(--muted) !important; opacity: 1; box-shadow: none !important; }
   /* (the page's top edge under a closed tab, in the full ink, reaching across the gaps on both sides to the next tab's
      outer edge, so it meets the picked tab's sides with no break) */
   .m > .m-tabs button::after { content: ""; position: absolute; left: -12px; right: -12px; bottom: 0; height: 2px; background: var(--ink); }
   .m > .m-tabs button[aria-selected="true"] { min-height: 46px; z-index: 1; border-color: var(--ink) !important; color: var(--ink) !important; background: transparent !important; opacity: 1;
-    box-shadow: inset 0 5px 0 var(--spot, var(--ink)) !important; }
+    box-shadow: inset 0 3px 0 var(--spot, var(--ink)) !important; }
   .m > .m-tabs button[aria-selected="true"]::after { display: none; }
   .m > .m-tabs button[aria-selected="true"]::before { content: ""; position: absolute; left: -2px; right: -2px; bottom: 0; height: 2px; }
-  .m .m-panel:not([data-m-panel="play"]) { margin: 0 4px; padding: 12px 12px 10px !important; border: 2px solid var(--ink) !important; border-top: 0 !important; border-radius: 0 0 10px 10px; }
+  .m .m-panel:not([data-m-panel="play"]) { margin: 0 4px; padding: 12px 12px 10px !important; border: 1px solid var(--ink) !important; border-top: 0 !important; border-radius: 0 0 10px 10px; }
 }
 /* ---- the transport as symbols: play a black triangle, rec a circle in the spot colour, on plain framed keys. Playing,
    the play key fills with the ink and shows a stop square; recording, the rec key fills with the spot colour and its
    circle blinks (the time or the loop's progress beside it) ---- */
-.m .m-play { background: transparent !important; color: var(--ink) !important; border: 2px solid var(--ink) !important; }
+.m .m-play { background: transparent !important; color: var(--ink) !important; border: 1px solid var(--ink) !important; }
 .m .m-play > span, .m #m-rec:not(.on) > span { display: none; }
 .m .m-play svg { width: 28px; height: 28px; }
 .m .m-play[aria-pressed="true"] { background: var(--ink) !important; color: var(--panel) !important; }
@@ -247,7 +247,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
   .m .m-undobtn:disabled { opacity: .3; }
   .m-pages .m-rand-card { display: none; }
   .m.m-rnd-open .m-pages .m-rand-card { display: block; position: absolute; z-index: 50; top: 76px; left: 150px; width: 300px; margin: 0 !important; padding: 12px !important;
-    background: var(--panel); border: 2px solid var(--ink) !important; border-radius: 10px; box-shadow: 4px 5px 0 color-mix(in srgb, var(--ink) 20%, transparent); }
+    background: var(--panel); border: 1px solid var(--ink) !important; border-radius: 10px; box-shadow: 4px 5px 0 color-mix(in srgb, var(--ink) 20%, transparent); }
   .m.m-rnd-open .m-rand-card .m-rand { display: grid; grid-template-columns: 1fr; grid-template-rows: none; gap: 8px; }
   .m.m-rnd-open .m-rand-card .m-rand > * { grid-column: auto !important; grid-row: auto !important; }
   .m.m-rnd-open .m-rand-card .m-rand .m-btn { min-height: 44px; }
@@ -277,7 +277,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 .m #m-rec.on > span { color: var(--spot, var(--ink)); }
 @keyframes m-rec-pulse { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .m #m-rec.on > i { animation: none; } }
-.m #m-play:focus-visible, .m #m-rec:focus-visible { outline: 2px solid var(--ink); outline-offset: -4px; }
+.m #m-play:focus-visible, .m #m-rec:focus-visible { outline: 1px solid var(--ink); outline-offset: -4px; }
 /* dials: no pointer line from the centre; the filled ticks show the value */
 .m .m-knob .m-vtrack::after { display: none; }
 

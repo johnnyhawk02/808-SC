@@ -3,6 +3,10 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.10.6
+
+- Thinner lines to match the new face: buttons, keys, cards, tabs, grid cells, checkboxes and focus outlines are 1px, the dial rings are slimmer, and the buttons' hard drop shadow is a hairline.
+
 ## 0.10.5
 
 - A smaller, clean sans-serif face for every label, readout, tab and button, in place of the pixel face. The help page uses it too.

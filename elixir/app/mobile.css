@@ -52,7 +52,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
    (--d, set per control by mobile-glass.js: 1 at the bottom left, about 1.7 at the top right) */
 .m, .m button, .m-title, .m .m-flab, .m .m-vf output { text-shadow: none; }
 .m .m-vtrack i, .m .m-seq-steps i::after, .m .m-seq-steps i::before, .m .m-gr i b { filter: drop-shadow(calc(2px * var(--d, 1)) calc(2.2px * var(--d, 1)) 0 rgba(23, 32, 14, .17)); }
-.m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button, .m .m-xy, .m .m-seq-len, .m .m-xyrow select { box-shadow: calc(2px * var(--d, 1)) calc(2.2px * var(--d, 1)) 0 rgba(23, 32, 14, .14); }
+.m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button, .m .m-xy, .m .m-seq-len, .m .m-xyrow select { box-shadow: 1px 1px 0 rgba(23, 32, 14, .12); }
 .m .m-tabs button:not([aria-selected="true"]) { box-shadow: none; }
 
 /* cards: the sheets are glass of their own; the sections inside the screen are bare */
@@ -69,7 +69,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m-big { font-size: .75rem !important; }
 .m-toggle { min-width: 64px; min-height: 36px; font-size: var(--fs-s) !important; }
 .m .m-btn, .m .m-rec, .m .m-toggle, .m .m-pload, .m-tabs button {
-  background: transparent !important; border: 2px solid var(--ink); border-radius: 3px; font-weight: 400; text-transform: uppercase; letter-spacing: .06em; }
+  background: transparent !important; border: 1px solid var(--ink); border-radius: 3px; font-weight: 400; text-transform: uppercase; letter-spacing: .06em; }
 .m .m-btn:active, .m .m-big, .m .m-play, .m-tabs button[aria-selected="true"], .m .m-toggle[aria-pressed="true"], .m .m-plist li.cur .m-pload, .m .m-rec.on,
 .m .m-voice .m-btn[aria-selected="true"], .m .m-rs-tabs .m-btn[aria-selected="true"], .m .m-ch-list .m-btn[aria-pressed="true"], .m .m-looplens .m-btn[aria-pressed="true"] {
   background: var(--spot, var(--ink)) !important; border-color: var(--ink) !important; color: var(--on-spot, var(--panel)) !important; text-shadow: none; }
@@ -79,9 +79,9 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 /* a checkbox drawn as an LCD box: a ticked one is filled */
 .m-chk { position: relative; display: flex; align-items: center; gap: 10px; min-height: 40px; text-transform: uppercase; font-size: var(--fs-xs); cursor: pointer; }
 .m-chk input { position: absolute; left: 0; top: 0; opacity: 0; width: 1px; height: 1px; margin: 0; }
-.m-chk i { flex: none; width: 24px; height: 24px; border: 2px solid var(--ink); border-radius: 2px; box-shadow: inset 0 0 0 3px var(--panel); }
+.m-chk i { flex: none; width: 24px; height: 24px; border: 1px solid var(--ink); border-radius: 2px; box-shadow: inset 0 0 0 3px var(--panel); }
 .m-chk input:checked + i { background: var(--ink); }
-.m-chk input:focus-visible + i { outline: 2px dashed var(--ink); outline-offset: 2px; }
+.m-chk input:focus-visible + i { outline: 1px dashed var(--ink); outline-offset: 2px; }
 
 /* a heading with its controls */
 .m-chead { display: flex; align-items: center; justify-content: space-between; }
@@ -106,7 +106,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m .m-vtrack i { position: absolute; left: 0; right: 0; bottom: 0; height: round(down, calc(var(--f) * 100%), 8px);
   background: repeating-linear-gradient(to top, var(--ink) 0 5px, transparent 5px 8px); background-position: bottom; }
 .m .m-vtrack b { position: absolute; display: none; }
-.m .m-vf.held .m-vtrack { outline: 2px solid var(--ink); outline-offset: 3px; }
+.m .m-vf.held .m-vtrack { outline: 1px solid var(--ink); outline-offset: 3px; }
 /* a fader with a sequencer moving it: its label inverted, its own setting a bar across the track */
 .m .m-vf.seq .m-flab { background: var(--ink); color: var(--panel); padding: 0 4px; text-shadow: none; }
 .m .m-vtrack.mod { overflow: visible; }
@@ -158,7 +158,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m > .m-card.m-trans { border-bottom: var(--rule); }
 .m-play { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 46px; background: var(--ink) !important;
   color: var(--panel) !important; font-weight: 400; text-transform: uppercase; }
-.m .m-play { border: 2px solid var(--spot, var(--ink)); border-radius: 3px; letter-spacing: .1em; font-size: var(--fs-m) !important; }
+.m .m-play { border: 1px solid var(--spot, var(--ink)); border-radius: 3px; letter-spacing: .1em; font-size: var(--fs-m) !important; }
 .m-play svg { width: 20px; height: 20px; fill: currentColor; }
 .m-play .i-stop, .m-play[aria-pressed="true"] .i-play { display: none; }
 .m-play[aria-pressed="true"] .i-stop { display: inline; }
@@ -200,11 +200,11 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
   --k: min(100cqw, 100cqh); position: absolute; left: 50%; top: 50%; width: var(--k); height: var(--k); margin: calc(var(--k) / -2) 0 0 calc(var(--k) / -2); bottom: auto; right: auto; }
 .m .m-knob .m-vtrack::before { content: ''; border-radius: 50%;
   background: conic-gradient(from 225deg, var(--ghost) 0 270deg, transparent 270deg);
-  -webkit-mask: repeating-conic-gradient(from 225deg, #000 0 10deg, transparent 10deg 13.5deg), radial-gradient(closest-side, transparent 64%, #000 66% 98%, transparent 100%);
+  -webkit-mask: repeating-conic-gradient(from 225deg, #000 0 10deg, transparent 10deg 13.5deg), radial-gradient(closest-side, transparent 74%, #000 76% 98%, transparent 100%);
   -webkit-mask-composite: source-in; mask-composite: intersect; }
 .m .m-knob .m-vtrack i { height: var(--k); border-radius: 50%;
   background: conic-gradient(from 225deg, var(--ink) 0 round(down, calc(var(--f) * 270deg + .01deg), 13.5deg), transparent 0);
-  -webkit-mask: repeating-conic-gradient(from 225deg, #000 0 10deg, transparent 10deg 13.5deg), radial-gradient(closest-side, transparent 64%, #000 66% 98%, transparent 100%);
+  -webkit-mask: repeating-conic-gradient(from 225deg, #000 0 10deg, transparent 10deg 13.5deg), radial-gradient(closest-side, transparent 74%, #000 76% 98%, transparent 100%);
   -webkit-mask-composite: source-in; mask-composite: intersect; }
 .m .m-knob .m-vtrack::after { content: ''; transform: rotate(calc(var(--f) * 270deg - 135deg));
   background: linear-gradient(var(--ink), var(--ink)) 50% 22% / 3px 30% no-repeat; }
@@ -224,9 +224,9 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m-nextbar i { width: 18px; height: 18px; }
 /* next bar: a button waiting for the bar flashes */
 .m .m-rand .m-btn.pending { animation: m-flash .5s steps(1) infinite; }
-@media (prefers-reduced-motion: reduce) { .m .m-rand .m-btn.pending { animation: none; outline: 2px dashed var(--ink); outline-offset: 2px; } }
+@media (prefers-reduced-motion: reduce) { .m .m-rand .m-btn.pending { animation: none; outline: 1px dashed var(--ink); outline-offset: 2px; } }
 /* assign mode: every slot dashed, tap one to choose what it does */
-#m-faders.assigning .m-vf[data-slot] { outline: 2px dashed var(--ink); outline-offset: 2px; cursor: pointer; }
+#m-faders.assigning .m-vf[data-slot] { outline: 1px dashed var(--ink); outline-offset: 2px; cursor: pointer; }
 #m-faders.assigning .m-vf[data-slot] .m-vtrack { pointer-events: none; }
 
 /* ---- beat: tempo, genre, beat, energy / fills, rush, rush on, velocity / groove, depth, accent ---- */
@@ -239,12 +239,12 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
    4 by 3 grid as the beat page, any spare places left empty at the end ---- */
 .m-dice-card { display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 10px; min-height: 0; padding: 10px 2px; }
 .m-voice { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
-.m-vsec { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; align-items: end; border-bottom: 2px solid var(--ink); }
+.m-vsec { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; align-items: end; border-bottom: 1px solid var(--ink); }
 .m .m-voice .m-btn { min-height: 44px; min-width: 0; padding: 0 1px; font-size: min(1.05rem, 3.6vw, 14.8px) !important; letter-spacing: 0; overflow: hidden; }
 /* the pages are tabs: the chosen one opens into a frame round its faders, the others sit on the line */
 .m .m-vsec .m-btn { min-height: 40px; margin-bottom: -2px; border-color: transparent; border-bottom: 0; border-radius: 4px 4px 0 0; box-shadow: none; opacity: .8; }
 .m .m-vsec .m-btn[aria-selected="true"] { position: relative; z-index: 1; background: var(--panel) !important; color: var(--ink) !important; border-color: var(--ink); opacity: 1; text-shadow: inherit; }
-.m-vsets { display: grid; min-height: 0; margin-top: -10px; padding: 14px 4px 6px; border: 2px solid var(--ink); border-top: 0; }
+.m-vsets { display: grid; min-height: 0; margin-top: -10px; padding: 14px 4px 6px; border: 1px solid var(--ink); border-top: 0; }
 .m-vset { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 8px 4px; min-height: 0; }
 .m-vset[hidden] { display: none; }
 
@@ -254,9 +254,9 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m-xybox + .m-xybox { border-top: var(--rule); padding-top: 8px; }
 .m-xyrow { display: grid; grid-template-columns: auto 1fr 1.3fr; gap: 8px; align-items: center; text-transform: uppercase; }
 .m-xyrow select { flex: 1; min-width: 0; min-height: 34px; font: inherit; font-size: var(--fs-s); text-transform: uppercase; color: var(--ink);
-  background: transparent; border: 2px solid var(--ink); border-radius: 3px; padding: 0 6px; }
+  background: transparent; border: 1px solid var(--ink); border-radius: 3px; padding: 0 6px; }
 /* the pad: a dot grid with a square cursor */
-.m .m-xy { position: relative; min-height: 0; border: 2px solid var(--ink); border-radius: 2px; touch-action: none; cursor: crosshair; overflow: hidden;
+.m .m-xy { position: relative; min-height: 0; border: 1px solid var(--ink); border-radius: 2px; touch-action: none; cursor: crosshair; overflow: hidden;
   background: radial-gradient(circle, var(--ghost) 1.2px, transparent 1.6px) 0 0 / 12px 12px; }
 .m .m-xy i { position: absolute; left: calc(16px + (100% - 32px) * var(--x, 0)); bottom: calc(16px + (100% - 32px) * var(--y, 0)); width: 22px; height: 22px; margin: 0 0 -11px -11px;
   border-radius: 2px; background: var(--ink); box-shadow: 0 0 0 3px var(--panel), 0 0 0 5px var(--ink); pointer-events: none; }
@@ -284,11 +284,11 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m .m-xhead { min-height: 0; padding: 0; border: 0; background: none; display: grid; place-items: center; line-height: .9; font-size: min(var(--fs-xs), 3.7vw, 15.2px); text-transform: uppercase; }
 .m .m-xhead small { font-size: .8em; opacity: .75; }
 .m-xlab { display: grid; place-items: center start; font-size: min(var(--fs-xs), 3.7vw, 15.2px); text-transform: uppercase; }
-.m-xcell { --a: 0; position: relative; border: 1.5px solid var(--ink); border-radius: 2px; display: grid; place-items: center; font-size: min(var(--fs-xs), 3.5vw, 14.4px); font-variant-numeric: tabular-nums; cursor: ns-resize; touch-action: none;
+.m-xcell { --a: 0; position: relative; border: 1px solid var(--ink); border-radius: 2px; display: grid; place-items: center; font-size: min(var(--fs-xs), 3.5vw, 14.4px); font-variant-numeric: tabular-nums; cursor: ns-resize; touch-action: none;
   background: linear-gradient(to top, var(--ink) 0 calc(var(--a) * 100%), transparent calc(var(--a) * 100%)); }
 .m-xcell.neg { background: repeating-linear-gradient(135deg, var(--ink) 0 2px, transparent 2px 5px) top / 100% calc(var(--a) * 100%) no-repeat; }
 .m-xcell.diag { border-style: dashed; }
-.m-xcell.held { outline: 2px solid var(--ink); outline-offset: 2px; }
+.m-xcell.held { outline: 1px solid var(--ink); outline-offset: 2px; }
 /* (the number stays readable: on a box of glass, inverted once the fill covers it) */
 .m-xcell b { position: relative; font-weight: 400; padding: 0 2px; background: var(--panel); line-height: 1; }
 .m-xcell.hi { color: var(--panel); text-shadow: none; }
@@ -338,7 +338,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 /* a preset waiting for the next bar: its row flashes on and off */
 .m .m-plist li.pending .m-pload { animation: m-flash .5s steps(1) infinite; }
 @keyframes m-flash { 50% { opacity: .25; } }
-@media (prefers-reduced-motion: reduce) { .m .m-plist li.pending .m-pload { animation: none; outline: 2px dashed var(--ink); outline-offset: 2px; } }
+@media (prefers-reduced-motion: reduce) { .m .m-plist li.pending .m-pload { animation: none; outline: 1px dashed var(--ink); outline-offset: 2px; } }
 /* a preset's star, filled when it's a favourite, and a saved one's delete */
 .m .m-pfav { min-height: 46px; min-width: 44px; padding: 0 6px; background: none !important; border: 0 !important; box-shadow: none !important; font-size: 1.5rem !important; line-height: 1; color: var(--ink); }
 .m .m-pfav[aria-pressed="false"] { opacity: .45; }
@@ -376,11 +376,11 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m-seq-steps i::after { bottom: 50%; height: calc(var(--up) * 50%); background-position: bottom; }
 .m-seq-steps i::before { top: 50%; height: calc(var(--dn) * 50%); background: repeating-linear-gradient(to bottom, var(--ink) 0 5px, transparent 5px 8px); }
 .m-seq-steps i.off { opacity: .25; }
-.m-seq-steps i.now { outline: 2px solid var(--ink); outline-offset: 2px; }
+.m-seq-steps i.now { outline: 1px solid var(--ink); outline-offset: 2px; }
 /* a horizontal bar (also the randomisers' settings) */
 .m-seq-lenrow { display: grid; grid-template-columns: 4.5em 1fr 5.5em; gap: 12px; align-items: center; text-transform: uppercase; }
 .m-seq-lenrow output { min-width: 5.5em; text-align: right; }
-.m-seq-len { --f: 1; position: relative; height: 36px; touch-action: none; border: 2px solid var(--ink); border-radius: 2px;
+.m-seq-len { --f: 1; position: relative; height: 36px; touch-action: none; border: 1px solid var(--ink); border-radius: 2px;
   background: repeating-linear-gradient(to right, var(--ghost) 0 5px, transparent 5px 8px) 4px 4px / calc(100% - 8px) calc(100% - 8px) no-repeat; }
 .m-seq-len i { position: absolute; left: 4px; top: 4px; bottom: 4px; width: calc((100% - 8px) * var(--w, 1));
   background: repeating-linear-gradient(to right, var(--ink) 0 5px, transparent 5px 8px); }
@@ -475,7 +475,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 @media (prefers-reduced-motion: reduce) { .m .m-vtrack i, .m .m-gr i b, .m .m-seq-steps i::after, .m .m-seq-steps i::before, .m .m-btn, .m .m-toggle, .m .m-pload, .m .m-tabs button, .m .m-trans button, .m .m-xy i { transition: none; } }
 
 /* ---- the right-click and options menus (laptop): a small sheet of glass by the pointer ---- */
-.m-menu { position: fixed; z-index: 30; display: grid; gap: 4px; min-width: 190px; padding: 6px; background-color: var(--panel); border: 2px solid var(--ink); border-radius: 4px;
+.m-menu { position: fixed; z-index: 30; display: grid; gap: 4px; min-width: 190px; padding: 6px; background-color: var(--panel); border: 1px solid var(--ink); border-radius: 4px;
   box-shadow: 4px 5px 0 rgba(23, 32, 14, .25); }
 .m .m-menu .m-btn { min-height: 34px; justify-content: flex-start; text-align: left; padding: 0 10px; font-size: var(--fs-s) !important; }
 .m .m-menu .m-btn:hover, .m .m-menu .m-btn:focus-visible { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; outline: 0; }
@@ -484,11 +484,11 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 /* ---- mute and solo (laptop only) ---- */
 .m-mutes { display: none; }
 /* ---- the presets search, and a presets file dropped anywhere on the page ---- */
-.m .m-psearch { min-height: 38px; padding: 0 10px; border: 2px solid var(--ink); border-radius: 3px; background: transparent; color: var(--ink);
+.m .m-psearch { min-height: 38px; padding: 0 10px; border: 1px solid var(--ink); border-radius: 3px; background: transparent; color: var(--ink);
   font: inherit; font-size: var(--fs-s); text-transform: uppercase; letter-spacing: .06em; }
 .m .m-psearch::placeholder { color: var(--muted); }
 .m .m-psearch::-webkit-search-cancel-button { display: none; } /* (esc clears it) */
-.m .m-psearch:focus { outline: 2px solid var(--ink); outline-offset: 2px; }
+.m .m-psearch:focus { outline: 1px solid var(--ink); outline-offset: 2px; }
 .m.dropping::before { content: "drop presets file to import"; position: absolute; inset: 10px; z-index: 40; display: grid; place-items: center; border: 3px dashed var(--ink);
   border-radius: 6px; background: rgba(167, 181, 140, .85); font-size: var(--fs-l); letter-spacing: .12em; text-transform: uppercase; pointer-events: none; }
 /* ---- randomise depth: a bar along the foot of a randomise button, as far across as its depth (shown below 100%) ---- */
@@ -539,7 +539,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
   /* (the box as wide as the step sequencer's steps under it (both 80% of what the bars' column used to leave), each knob's readout over its
      ring and its name under it) */
   .m-play-card { grid-template-columns: calc((100% - 288px) * .8) minmax(0, 1fr); column-gap: 18px; }
-  #m-faders { grid-column: 1; gap: 8px 10px; padding: 10px 12px; border: 1.5px solid var(--ink); border-radius: 14px; }
+  #m-faders { grid-column: 1; gap: 8px 10px; padding: 10px 12px; border: 1px solid var(--ink); border-radius: 14px; }
   #m-faders .m-knob { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 0; }
   .m #m-faders .m-knob .m-vtrack { flex: 1; width: 100%; height: auto; min-height: 28px; max-height: 64px; }
   #m-faders .m-knob output { height: auto; max-width: 100%; text-align: center; font-size: var(--fs-xs); letter-spacing: -.03em; }
@@ -570,7 +570,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
   .m-seq-rnds > :first-child { grid-column: 7; }
   #m-seq-close, #m-seq-rand { display: none; }
   .m .m-seq-shapes .m-btn { min-height: 0; padding: 0 2px; font-size: 10px !important; letter-spacing: 0; white-space: nowrap; overflow: hidden; }
-  .m .m-vf.seq-edit { outline: 2px dashed var(--ink); outline-offset: 2px; }
+  .m .m-vf.seq-edit { outline: 1px dashed var(--ink); outline-offset: 2px; }
 
   /* -- every slider on the pages the same (not the knobs or number boxes): a 44px segmented track filling its cell's
      height, a two-line readout over it (bottom-aligned, so the tracks start level) and its name under it, both in the
@@ -596,12 +596,12 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
   /* the number boxes read as one line each; the send's mute under it, the level fader fills the rest, its meter beside its track */
   .m-mute-col .m-num { width: 100%; display: block; }
   .m-mute-col .m-num output, .m-mute-col .m-num .m-flab { display: none; }
-  .m .m-mute-col .m-num .m-vtrack { width: 100%; height: 26px; border: 1.5px solid var(--ink); border-radius: 3px; background: none; display: grid; place-items: center; overflow: hidden; }
+  .m .m-mute-col .m-num .m-vtrack { width: 100%; height: 26px; border: 1px solid var(--ink); border-radius: 3px; background: none; display: grid; place-items: center; overflow: hidden; }
   .m .m-mute-col .m-num .m-vtrack i { display: none; }
   .m .m-mute-col .m-num .m-vtrack::after { content: attr(aria-valuetext); font-size: var(--fs-xs); line-height: 1; }
   .m .m-mute-col .m-num.muted .m-vtrack { background: var(--ink); color: var(--panel); text-shadow: none; }
   /* a send's mute: a small square under its box, empty while the send is heard, filled when it's muted */
-  .m .m-mute-col .m-send-mute { align-self: center; width: 16px !important; height: 16px !important; min-height: 16px !important; flex: none; min-width: 0 !important; min-height: 0; padding: 0; border: 1.5px solid var(--ink) !important; border-radius: 2px; background: none !important; box-shadow: none !important; }
+  .m .m-mute-col .m-send-mute { align-self: center; width: 16px !important; height: 16px !important; min-height: 16px !important; flex: none; min-width: 0 !important; min-height: 0; padding: 0; border: 1px solid var(--ink) !important; border-radius: 2px; background: none !important; box-shadow: none !important; }
   .m .m-mute-col .m-send-mute[aria-pressed="true"] { background: var(--ink) !important; }
   .m-mute-col .m-mute-level { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; }
   .m-mute-col .m-mute-level .m-vtrack { position: relative; flex: 1; width: 44px; height: auto; min-height: 60px; overflow: visible; }
@@ -652,7 +652,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
   [data-m-panel="fx"] .m-fx-row + .m-fx-row { border-left: 0; padding-left: 10px; margin-left: 0; border-top: 0; padding-top: 0; }
   [data-m-panel="fx"] .m-fx-row:nth-child(2) { border-left: var(--rule); }
   [data-m-panel="fx"] .m-fx-row.m-fx-slot { display: grid; border-top: var(--rule); padding-top: 8px; }
-  [data-m-panel="fx"] .m-fx-empty { border: 1.5px dashed var(--ghost); border-radius: 4px; display: grid; place-items: center; color: var(--muted); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .08em; }
+  [data-m-panel="fx"] .m-fx-empty { border: 1px dashed var(--ghost); border-radius: 4px; display: grid; place-items: center; color: var(--muted); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .08em; }
   #m [data-m-panel="fx"] #m-fx-echo > .m-vf:first-child, #m [data-m-panel="fx"] #m-fx-ring > .m-vf:first-child { display: none; }
   #m-fx-echo { grid-template-columns: repeat(5, minmax(0, 1fr)); min-height: 0; }
   #m-fx-ring { grid-template-columns: repeat(7, minmax(0, 1fr)); min-height: 0; }
