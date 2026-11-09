@@ -9,29 +9,23 @@
   .m-logo { height: 32px; }
   .m .m-title .m-ver { position: static; transform: none; width: auto; margin-left: 6px; color: var(--ink); font-size: 13px; opacity: .8; }
 }
-/* ---- the switch on top: every sound as circuit, cached or synthetic; the thumb sits under the model when every sound
-   plays it ---- */
+/* ---- the keys on top: every sound as circuit, cached or synthetic; lit when every sound plays that ---- */
 .m-allmodels { grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)) 64px; }
-.m-allmodels .m-3way-track { grid-column: 1 / 4; margin-right: 8px; }
-.m-allmodels .m-cpu { grid-column: 4; grid-row: 1 / 3; }
+.m-allmodels.m-seg { grid-template-columns: repeat(3, minmax(0, 1fr)) 64px; }
+.m-allmodels .m-cpu { padding-left: 8px; align-self: center; }
 .m-cpu { font-size: 13px; line-height: 1; text-align: right; white-space: nowrap; letter-spacing: .02em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
 .m-cpu.m-cpu-hot { font-weight: bold; text-decoration: underline; }
 @media (min-width: 1000px) { .m > .m-card.m-trans { row-gap: 6px; } }
-/* ---- the 3-way switch (the one on top, and each sound's on its card): the three words over a slide, and a thumb in
-   the slide under the one playing ---- */
-.m-3way { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: auto auto; column-gap: 0; row-gap: 3px; align-items: end; }
-.m-3way > button { grid-row: 1; }
-.m .m-3way > .m-toggle { min-width: 0; min-height: 0; padding: 0 0 1px; border: 0 !important; background: none !important; box-shadow: none !important;
-  color: var(--ink) !important; opacity: .6; font-size: 11px !important; letter-spacing: .04em; text-transform: uppercase; line-height: 1.2; }
-.m .m-3way > .m-toggle[aria-pressed="true"] { opacity: 1; font-weight: bold; }
-.m-3way-track { grid-row: 2; grid-column: 1 / -1; position: relative; height: 16px; border: 1.5px solid var(--ink); border-radius: 9px;
-  background: color-mix(in srgb, var(--ink) 14%, transparent); box-shadow: inset 0 1px 2px color-mix(in srgb, var(--ink) 35%, transparent); cursor: pointer; }
-.m-3way-track i { position: absolute; top: 1px; bottom: 1px; left: 1px; width: calc(33.333% - 2px); border-radius: 7px; background: var(--spot, var(--ink));
-  transition: left .12s ease-out, opacity .12s; }
-.m-3way[data-pos="1"] .m-3way-track i { left: calc(33.333% + 1px); }
-.m-3way[data-pos="2"] .m-3way-track i { left: calc(66.667% + 1px); }
-.m-3way[data-pos="mixed"] .m-3way-track i { left: calc(33.333% + 1px); opacity: .25; }
-.m-3way-track i::after { content: ""; position: absolute; inset: 4px 45%; border-radius: 1px; background: var(--on-spot, var(--panel)); opacity: .6; }
+/* ---- the model keys (the row on top, and each sound's on its card): three keys joined in one bar, like a hardware
+   selector; the one playing is lit in the spot colour (none on top while the sounds play different models) ---- */
+.m-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; align-items: stretch; }
+.m .m-seg > .m-toggle { min-width: 0; min-height: 28px; padding: 0 2px; border: 2px solid var(--ink) !important; border-radius: 0; box-shadow: none !important;
+  background: transparent !important; color: var(--ink) !important; font-size: 11px !important; letter-spacing: .05em; text-transform: uppercase; line-height: 1; opacity: 1; }
+.m .m-seg > .m-toggle + .m-toggle { border-left-width: 0 !important; }
+.m .m-seg > .m-toggle:first-of-type { border-radius: 6px 0 0 6px; }
+.m .m-seg > .m-toggle:nth-of-type(3) { border-radius: 0 6px 6px 0; }
+.m .m-seg > .m-toggle:not([aria-pressed="true"]):hover { background: var(--tint) !important; }
+.m .m-seg > .m-toggle[aria-pressed="true"] { background: var(--spot, var(--ink)) !important; color: var(--on-spot, var(--panel)) !important; }
 /* ---- the 808 page: every sound in its own box, eight across, two rows: its name (tap to hear it), circuit or cached,
    its knobs, then its cache button and what it plays ---- */
 .m-808-card { display: grid; min-height: 0; padding: 8px 2px; }
@@ -40,7 +34,7 @@
 .m .m-808-vname { min-height: 30px; padding: 0; border: 0 !important; background: none !important; box-shadow: none !important; color: var(--ink);
   font-family: var(--display); font-size: var(--fs-m) !important; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
 .m .m-808-vname:active { background: var(--ink) !important; color: var(--panel); }
-.m .m-808-models > .m-toggle { font-size: 9px !important; letter-spacing: 0; }
+.m .m-808-models > .m-toggle { font-size: 9px !important; letter-spacing: 0; min-height: 24px; }
 .m-808-set { display: grid; grid-auto-rows: minmax(0, 1fr); gap: 2px; min-height: 0; }
 .m .m-808-set .m-knob { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; column-gap: 2px; min-height: 0; }
 .m .m-808-set .m-knob .m-vtrack { grid-row: 1 / 3; container-type: size; width: 100%; height: 100%; min-height: 26px; max-height: 52px; background: none; overflow: visible; border-radius: 0; }
@@ -153,9 +147,7 @@
 .m .m-g8-side .m-808-set { gap: 4px 10px; }
 .m .m-g8-side .m-808-set .m-knob .m-vtrack { max-height: 74px; min-height: 30px; }
 .m .m-g8-side .m-808-set .m-knob .m-flab, .m .m-g8-side .m-808-set .m-knob output { font-size: 13px; }
-.m .m-g8-side .m-808-models > .m-toggle { font-size: 12px !important; letter-spacing: .04em; }
-.m .m-g8-side .m-808-models .m-3way-track { height: 20px; border-radius: 11px; }
-.m .m-g8-side .m-808-models .m-3way-track i { border-radius: 9px; }
+.m .m-g8-side .m-808-models > .m-toggle { min-height: 32px; font-size: 12px !important; letter-spacing: .05em; }
 .m .m-g8-side .m-808-vname { font-size: var(--fs-l) !important; }
 
 .m .m-g8-lab.right { padding: 0 2px 0 6px; }

@@ -3,14 +3,14 @@ const HELP = [
   ['start', 'getting started', `<p>808 SC is a drum machine playing the sixteen TR-808 sounds, each one as a circuit simulation, as cached hits of that simulation, or as a synthetic version that is far lighter on the CPU. Three steps to a beat:</p>
 <ol><li>Press <b>play</b> (or space).</li><li>Press <b>everything</b> until you like what you hear: each press is a new beat, effects and mix.</li>
 <li>Paint steps on the <b>grid</b>, turn a sound's knobs, or press <b>pattern</b>, <b>random fx</b> or <b>alter fx</b> to change one part. <b>undo</b> takes back the last one.</li></ol>
-<p>The screen: the title line has <b>options</b>, the randomise buttons, <b>undo</b>, the circuit, cached and synthetic switch with the CPU readout, then <b>play</b> and <b>rec</b>. Under it, one page at a time: <b>grid</b>, <b>generator</b>, <b>fx</b>, <b>mix</b>, <b>mstr</b> and <b>prst</b>.</p>
+<p>The screen: the title line has <b>options</b>, the randomise buttons, <b>undo</b>, the circuit, cached and synthetic keys with the CPU readout, then <b>play</b> and <b>rec</b>. Under it, one page at a time: <b>grid</b>, <b>generator</b>, <b>fx</b>, <b>mix</b>, <b>mstr</b> and <b>prst</b>.</p>
 <p>Drag a knob or fader up or down, or scroll on it; double-click to reset it. When you like the sound, <b>prst</b> › <b>save new</b>. <b>rec</b> records a WAV.</p>
 <p>(In a window under 1000 px wide it becomes the narrow layout: pages along the bottom, with the perform knobs on their own page.)</p>`],
-  ['sounds', 'the three models', `<p>Each sound plays one of three models, picked on its card (grid page, right) or for every sound at once with the switch on top:</p>
+  ['sounds', 'the three models', `<p>Each sound plays one of three models, picked on its card (grid page, right) or for every sound at once with the keys on top:</p>
 <ul><li><b>circuit</b>: the 808's schematic simulated part by part, sample by sample. The real thing, and heavy: a busy pattern can need most of a CPU core.</li>
 <li><b>cached</b> (the default): hits the circuit rendered in advance, played back at almost no CPU. Level, snap and accent stay live; the other knobs take effect when you press <b>cache</b> on the sound's card, which renders fresh hits at those settings.</li>
 <li><b>synthetic</b>: a simplified circuit, built from a few oscillators, filters and envelopes. Its knobs are live and mean the same as the circuit's, and its levels are matched to the circuit at the default settings.</li></ul>
-<p>The <b>cpu</b> readout beside the switch shows how much of the audio thread's time the sound takes; it turns dark at 80%.</p>`],
+<p>The <b>cpu</b> readout beside them shows how much of the audio thread's time the sound takes; it turns dark at 80%.</p>`],
   ['grid', 'grid: patterns and sounds', `<p>Eight patterns (the <b>1</b> to <b>8</b> buttons, or keys 1 to 8), each a lane for each of the sixteen sounds, sixteen steps a bar and up to four bars.</p>
 <ul><li>Press a step and drag across others to paint: starting on an empty step puts notes on, on a full one takes them off. With cmd (ctrl) held it puts accents on or takes them off.</li>
 <li>The bar buttons under the grid show each bar; <b>−</b> takes the last bar off and <b>+</b> adds a copy of the one shown. <b>◀</b> and <b>▶</b> move the whole pattern a step earlier or later.</li>
@@ -42,7 +42,7 @@ const HELP = [
 <li>Click a knob or fader, then the arrow keys step it. Scroll on one with the mouse wheel or trackpad to turn it.</li>
 <li>Right-click a knob or fader for its step sequencer and reset. Double-click one to reset it.</li></ul>`],
   ['more', 'more', `<ul><li><b>options</b> holds randomise on next bar, assign knobs, the bass drum at the top of the grid, reset sound, and:</li>
-<li><b>background colour</b>: any colour for the panel, kept in this browser; the ink and the logo follow it (<b>background back to default</b> undoes it). <b>spot colour</b>: one colour for what is on or lit (pressed buttons, the page tab, play, the model switches; the grid's notes stay in the ink); red by default; <b>spot back to default</b> undoes a change.</li>
+<li><b>background colour</b>: any colour for the panel, kept in this browser; the ink and the logo follow it (<b>background back to default</b> undoes it). <b>spot colour</b>: one colour for what is on or lit (pressed buttons, the page tab, play, the model keys; the grid's notes stay in the ink); red by default; <b>spot back to default</b> undoes a change.</li>
 <li><b>settings</b>: copy the knob assignments or your presets, export or clear presets, and the <b>rush</b> graph of how the rush builds (drag its squares).</li>
 <li><b>user settings</b>: <b>midi</b>, which CC moves each knob; <b>seq</b>, whether step sequencers follow the groove.</li>
 <li>Install it as an app from your browser's menu; it works offline.</li>
