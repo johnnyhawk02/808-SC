@@ -321,3 +321,74 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 #m.m .m-g8-side .m-g8-strip .m-vf:not(.m-knob) .m-vtrack { order: 0; flex: 1; height: auto; }
 #m.m .m-g8-side .m-g8-strip .m-vf:not(.m-knob) .m-flab { order: 1; text-align: center; width: 100%; }
 #m.m .m-g8-side .m-g8-strip .m-vf:not(.m-knob) output { order: 2; text-align: center; width: 100%; opacity: .8; }
+
+/* ---- laptop polish: everything on one grid, no stretched gaps ---- */
+@media (min-width: 1000px) {
+  /* the header's right side: the engine keys, and play and rec centred under them, the cpu readout after */
+  .m > .m-card.m-trans { grid-template-columns: 120px 120px 70px; column-gap: 0; row-gap: 10px; justify-content: end; align-items: center; }
+  .m .m-allmodels.m-seg { grid-template-columns: 120px 120px 70px; }
+  .m .m-trans #m-play { grid-column: 1; } .m .m-trans #m-rec { grid-column: 2; }
+  .m .m-trans #m-play, .m .m-trans #m-rec { min-height: 40px; padding: 0; justify-self: stretch; }
+  /* (the echo's and the reverb's send knobs live on the mix page: hidden here) */
+  #m.m [data-m-panel="fx"] #m-fx-echo > .m-vf:first-child, #m.m [data-m-panel="fx"] #m-fx-ring > .m-vf:first-child { display: none !important; }
+  /* control pages: rows as tall as their dials, sections spaced the same everywhere */
+  #m-beat-faders { grid-template-rows: auto auto auto auto !important; row-gap: 14px !important; align-content: start; padding-bottom: 22px; }
+  #m-beat-faders::after { padding-top: 18px; }
+  .m-dens { grid-template-rows: auto auto !important; align-content: start; padding-top: 18px !important; row-gap: 14px !important; }
+  #m-dens-faders { grid-template-rows: auto !important; }
+  [data-m-panel="beat"] { align-content: start; grid-template-rows: auto auto !important; }
+  .m-comp-card { grid-template-rows: auto auto auto auto auto auto !important; align-content: start; row-gap: 14px !important; }
+  .m-comp-card .m-chead:not(:first-child) { margin-top: 8px; padding-top: 18px !important; }
+  .m-comp-card .m-faders { grid-template-columns: repeat(7, minmax(0, 1fr)) !important; }
+  [data-m-panel="fx"] .m-fx-card { grid-template-rows: auto minmax(0, 1fr) !important; }
+  [data-m-panel="fx"] .m-fx-row:not(.m-fx-slot) { padding-bottom: 22px; row-gap: 14px; }
+  /* (the two insert slots hold nothing yet: hidden, so the page isn't half empty boxes) */
+  #m.m [data-m-panel="fx"] .m-fx-row.m-fx-slot { display: none !important; }
+  [data-m-panel="fx"] .m-fx-row:not(.m-fx-slot) { border-bottom: var(--rule); }
+  /* every section heading the same size, spacing and colour */
+  #m-beat-faders::before, #m-beat-faders::after, .m-dens > b, .m-comp-card .m-chead b, [data-m-panel="fx"] .m-fx-row > b, [data-m-panel="fx"] .m-fxhead b {
+    font-size: var(--fs-s) !important; letter-spacing: .1em !important; padding-left: 0 !important; color: var(--ink); }
+  /* dial names and values: one size on every page (the drum card and mix strips included) */
+  #m.m .m-vf.m-knob .m-flab { font-size: var(--fs-xs) !important; letter-spacing: .02em; }
+  #m.m .m-vf.m-knob output { font-size: var(--fs-xs) !important; }
+  #m.m .m-g8-side .m-vf.m-knob .m-flab, #m.m .m-g8-side .m-vf.m-knob output, #m.m .m-808-strip .m-vf.m-knob .m-flab, #m.m .m-808-strip .m-vf.m-knob output { font-size: 14px !important; }
+  #m.m .m-g8-side .m-g8-strip .m-vf:not(.m-knob) .m-flab, #m.m .m-g8-side .m-g8-strip .m-vf:not(.m-knob) output { font-size: 14px !important; }
+}
+
+/* ---- phone: the grid and mixer pages (laid out for the laptop first) ---- */
+@media (max-width: 999.98px) {
+  [data-m-panel="grid"], [data-m-panel="mix"] { overflow-y: auto; overflow-x: hidden; align-content: start; grid-template-rows: auto; }
+  .m-g8-card { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto auto; gap: 10px; padding: 6px 0; }
+  .m-g8-presets { gap: 3px; }
+  .m .m-g8-presets .m-toggle { min-height: 30px; }
+  .m-g8-grid { grid-template-columns: 26px repeat(16, minmax(0, 1fr)); grid-template-rows: repeat(16, 18px); gap: 2px; }
+  .m .m-g8-lab.right { display: none; }
+  .m-g8-cell:nth-child(17n + 6), .m-g8-cell:nth-child(17n + 10), .m-g8-cell:nth-child(17n + 14) { margin-left: 2px; }
+  .m-g8-foot { flex-wrap: wrap; row-gap: 6px; }
+  .m-g8-foot > .m-g8-key { display: none; }
+  .m-g8-side { grid-area: auto / 1 / auto / 2; min-height: 0; }
+  .m-g8-side .m-808-v { grid-template-rows: auto auto auto auto auto; padding: 8px; }
+  .m .m-g8-side .m-808-set, .m .m-g8-side .m-g8-strip { grid-template-rows: repeat(var(--rows, 3), auto); row-gap: 12px; }
+  #m.m .m-g8-side .m-g8-strip .m-vf:not(.m-knob) .m-vtrack { min-height: 0 !important; }
+  /* (as tall as their contents: the page scrolls) */
+  .m-g8-card, .m-g8-card > *, .m-g8-side, .m-g8-side .m-808-v, .m .m-g8-side .m-808-set, .m .m-g8-side .m-g8-strip, #m.m .m-g8-side .m-vf { min-height: max-content !important; }
+  .m-g8-card { height: auto; align-self: start; }
+  /* the mixer: sixteen strips side by side, scrolled sideways */
+  [data-m-panel="mix"] { overflow-x: auto; }
+  .m-808-mixer { grid-template-columns: repeat(16, 72px); grid-template-rows: minmax(420px, 1fr); }
+  /* generator, effects, master: rows as tall as their dials, the page scrolls; four dials a row */
+  [data-m-panel="beat"], [data-m-panel="fx"], [data-m-panel="comp"] { overflow-y: auto; align-content: start; grid-template-rows: auto; }
+  .m-beat-card, [data-m-panel="fx"] .m-fx-card, .m-comp-card { grid-template-rows: none !important; grid-auto-rows: auto; align-content: start; height: auto; min-height: max-content; }
+  #m-beat-faders { grid-template-rows: none; grid-auto-rows: auto; row-gap: 14px; }
+  .m-dens { display: grid; grid-template-rows: auto auto; row-gap: 10px; padding-top: 14px; margin-top: 14px; border-top: var(--rule); }
+  .m-dens > b { font-weight: 400; text-transform: uppercase; letter-spacing: .1em; font-size: var(--fs-s); }
+  #m-dens-faders { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: auto; row-gap: 14px; }
+  [data-m-panel="fx"] .m-fx-card { grid-template-columns: minmax(0, 1fr); }
+  [data-m-panel="fx"] .m-fx-row { grid-template-rows: auto auto; row-gap: 10px; border-left: 0 !important; margin-left: 0 !important; padding-left: 0 !important; }
+  [data-m-panel="fx"] .m-fx-row + .m-fx-row { border-top: var(--rule); padding-top: 12px; margin-top: 6px; }
+  [data-m-panel="fx"] .m-fx-slot { display: none !important; }
+  #m-fx-echo, #m-fx-ring { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; grid-template-rows: none !important; grid-auto-rows: auto; row-gap: 14px; }
+  #m.m #m-fx-echo > .m-vf:first-child, #m.m #m-fx-ring > .m-vf:first-child { display: none !important; }
+  .m-comp-card .m-faders { grid-template-rows: none !important; grid-auto-rows: auto; }
+  #m.m .m-vf.m-knob { min-height: max-content !important; }
+}

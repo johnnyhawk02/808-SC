@@ -3,6 +3,15 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.10.0
+
+Polish pass over every page.
+
+- **Phone:** fixed a stray line in the stylesheet that had been ending the laptop-only section early. Because of it, every phone tab showed the perform page. Grid, generator, effects, mixer and master now show on a phone. Each has a phone layout: the grid page scrolls (pattern, grid, then the drum card), the mixer scrolls sideways, and the generator, effects and master pages put four dials to a row.
+- **Header (laptop):** play and rec sit centred under the circuit and synthetic keys.
+- **Generator, effects, master (laptop):** rows are as tall as their dials, with the same section spacing and heading style on every page. The rush dials close up to the rest of their row. Master uses the same column grid as the generator. The effects page no longer shows its send dials twice (they're on the mixer) or two empty insert boxes.
+- **Dial names and values:** one size on every page.
+
 ## 0.9.3
 
 - Every dial, on every page, has its name and then its value centred underneath it. The drum card's level fader does the same.
