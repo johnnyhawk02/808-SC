@@ -11,7 +11,7 @@ from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.git
   **write?**, which overwrites the pattern picked with it (one bar); a pattern button leaves without writing, and
   right-click a pattern › record loop-records the generator into it. The beat page is now called
   generator. The lanes are kept in this browser.
-- **808 page** (hidden for now: `T8_PAGE` in app/tr808.js brings it back): all sixteen sounds at once, each with circuit/cached and its knobs.
+- **808 page** (hidden for now: `T8_PAGE` in app/tr808.js brings it back): all sixteen sounds at once, each with circuit/synthetic and its knobs.
 - **Reverb** (fx page): a convolution reverb. The IR is picked in its header: plate and gated 80s (made in the app), ten
   recorded spaces in `irs/` (OpenAIR and Reverb.js, public domain and Creative Commons: `irs/README.md`), or your own
   (**load IR**, any audio file, up to 5 s; kept in this browser's IndexedDB, `elixir808-irs`). Knobs: pre-delay, length,
@@ -22,11 +22,11 @@ from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.git
   player (`vmix808`; the echo takes them through `renderFx`'s extra input in `lxr.js`). The kick keys the sidechain and
   the rest duck. Each sound still has a track (`BUS808`) for mutes and the rush.
 - Looks: 80s magenta. The version (808-SC's, `dsp/version.js`) on the cauldron and in the presets footer.
-- Each voice plays as the **circuit** simulation (every knob works, costs CPU), **cached** hits (1 normal + 1
-  accented hits rendered by the circuit; level, decay and the clap's snap stay live; almost no CPU) or **synthetic**
+- Each voice plays as the **circuit** (played from 1 normal + 1 accented hits the circuit rendered: level, decay and
+  the clap's snap stay live, almost no CPU; the live circuit while its knobs are turned or new hits render) or **synthetic**
   (the SC model, a simplified circuit: every knob live, little CPU; autocache leaves a synthetic sound alone), with its own knobs.
 - **Background and spot colours** (options): any panel colour (pale pink by default; ink and logo follow it) and a spot colour for what is on or lit (hot red by default), kept in this browser.
-- **The model keys on top** (circuit / cached / synthetic, three joined keys; each sound's card has its own) sets every sound's model at once; the **CPU** readout beside it
+- **The model keys on top** (circuit / synthetic, two joined keys; each sound's card has its own) sets every sound's model at once; the **CPU** readout beside it
   shows how much of the real-time budget the sound takes (not in the plugin).
 - **Caching is automatic** (no button): moving off an edited sound records 1 normal + 1 accented hit ("cached hits per sound" in the options picks 4, 8 or 16) through the circuit at its current knobs in a worker (a
   few seconds, the cymbal longest) and plays them as cached, random robin (picked at random, never the same one twice

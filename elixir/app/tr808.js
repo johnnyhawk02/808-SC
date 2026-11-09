@@ -25,6 +25,7 @@ try { const n = Number(localStorage.getItem(T8_HITS_KEY)); if (T8_HITS_OPTS.incl
 // test/cache-one.mjs): one folder up when served from elixir/ (locally), beside the app on the live site
 const T8_CACHE_URL = new URL(location.pathname.includes('/elixir/') ? '../cache1/' : 'cache1/', location.href);
 
+let t8PendingAuto = null; try { t8PendingAuto = JSON.parse(localStorage.getItem('808sc-autocache'))?.id ?? null; } catch (e) {}
 let t8SavedVals = {}; // the sounds whose knobs were saved here (those win over the knobs their saved hits were made at)
 const t8 = { map: T8_KIT.slice(), models: Object.fromEntries(T8_IDS.map((id) => [id, 'cached'])),
   values: Object.fromEntries(T8_SPEC.map((v) => [v.id, { ...v.values }])) };
@@ -35,6 +36,9 @@ try {
     t8SavedVals = s.values ?? {};
     for (const id of T8_IDS) {
       if (['circuit', 'cached', 'sc'].includes(s.models?.[id])) t8.models[id] = s.models[id];
+      // (circuit plays from its cached hits; it plays the live circuit only mid-edit, so a sound left there by a
+      // reload during an edit is picked up after loading, and any other goes back to its hits)
+      if (t8.models[id] === 'circuit' && t8PendingAuto !== id) t8.models[id] = 'cached';
       for (const p of T8_PARAMS[id]) if (typeof s.values?.[id]?.[p.id] === 'number') t8.values[id][p.id] = s.values[id][p.id];
     }
   }
@@ -157,7 +161,8 @@ function t8MakeCache(id) {
     t8DbDo('readwrite', (st) => st.put(entry, id)).catch((err) => console.warn('could not save 808 cache', err));
     await t8Loading[id]; // a shipped load in flight must not land after ours
     t8Sent.delete(id); delete t8Loading[id];
-    t8SetModel(id, 'cached');
+    if (t8.models[id] !== 'sc') t8SetModel(id, 'cached'); // (unless it was switched to synthetic meanwhile)
+    else t8Draw();
   };
   w.postMessage({ id, values: { ...t8.values[id] }, variants: t8Hits });
 }
@@ -178,6 +183,16 @@ async function t8Revert(id) {
   mDrawAll(); t8Draw();
 }
 
+// ---- the engine, as the keys show it: circuit (the circuit's cached hits, the live circuit while editing or while
+// its hits render) or synthetic (sc) ----
+const t8Eng = (id) => (t8.models[id] === 'sc' ? 'sc' : 'circuit');
+function t8Engine(id, e) {
+  if (t8Eng(id) === e) return;
+  if (e === 'sc') { t8SetModel(id, 'sc'); return; }
+  t8SetModel(id, 'cached');
+  t8UseKnobs(id, { ...t8.values[id] }); // (new hits if its knobs moved while it was synthetic)
+}
+
 // ---- the page: every sound in its own box, all on one page: its name (tap to hear it), circuit or cached, its knobs,
 // and what its cached hits are (they're made automatically when you move off a sound) ----
 async function t8Audition(id) {
@@ -190,15 +205,14 @@ function t8Card(id, into) {
   const card = document.createElement('div');
   card.className = 'm-808-v';
   card.innerHTML = `<div class="m-808-head"><button class="m-808-vname" type="button" title="${T8_NAME[id]}: tap to hear it">${id}</button>`
-    + '<span class="m-808-models m-seg" role="group" aria-label="Plays as"><button class="m-toggle" type="button" data-m="circuit" title="The circuit simulation: every knob works, costs CPU">circuit</button>'
-    + '<button class="m-toggle" type="button" data-m="cached" title="Recorded hits, one picked at random each time: almost no CPU">cached</button>'
-    + '<button class="m-toggle" type="button" data-m="sc" title="Synthetic: a simplified circuit, every knob works, a fraction of the CPU">synthetic</button></span></div>'
+    + '<span class="m-808-models m-seg" role="group" aria-label="Plays as"><button class="m-toggle" type="button" data-m="circuit" title="The circuit simulation: plays from hits it renders by itself, the live circuit while you turn its knobs">circuit</button>'
+    + '<button class="m-toggle" type="button" data-m="sc" title="Synthetic: a simplified circuit, every knob live, a fraction of the CPU">synthetic</button></span></div>'
     + '<div class="m-808-set"></div>'
     + '<span class="m-808-status"></span>'
     + '<button class="m-808-revert" type="button" hidden title="Forget your hits and go back to the shipped ones (default knobs)">revert</button>';
   into.append(card);
   card.querySelector('.m-808-vname').addEventListener('click', () => t8Audition(id));
-  card.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => t8SetModel(id, b.dataset.m)));
+  card.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => t8Engine(id, b.dataset.m)));
   card.querySelector('.m-808-revert').addEventListener('click', () => t8Revert(id));
   const box = card.querySelector('.m-808-set');
   for (const p of T8_PARAMS[id]) {
@@ -212,10 +226,10 @@ for (const id of T8_ORDER) t8Card(id, $('m-808-all'));
 
 const t8KnobText = (id, knobs) => T8_PARAMS[id].filter((p) => knobs?.[p.id] !== undefined).map((p) => `${p.name.toLowerCase()} ${Math.round(knobs[p.id] * 100)}`).join(' · ');
 function t8Draw() {
-  document.querySelectorAll('#m-allmodels [data-all]').forEach((b) => b.setAttribute('aria-pressed', T8_IDS.every((id) => t8.models[id] === b.dataset.all)));
+  document.querySelectorAll('#m-allmodels [data-all]').forEach((b) => b.setAttribute('aria-pressed', T8_IDS.every((id) => t8Eng(id) === b.dataset.all)));
   for (const id in t8Cards) for (const card of t8Cards[id]) {
     const j = t8Jobs[id], c = t8Custom[id], st = card.querySelector('.m-808-status');
-    card.querySelectorAll('[data-m]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.m === t8.models[id]));
+    card.querySelectorAll('[data-m]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.m === t8Eng(id)));
     card.querySelector('.m-808-revert').hidden = !c || !!j;
     st.title = '';
     if (j) st.textContent = j.error ? 'failed' : j.total ? `${Math.round(100 * j.done / j.total)}%` : '…';
@@ -230,7 +244,7 @@ function t8Draw() {
   }
 }
 // the switch on top: every sound as circuit, cached or synthetic (sc) at once; each sound can still be set on its own
-const t8SetAll = (m) => { for (const id of T8_IDS) if (t8.models[id] !== m) t8SetModel(id, m); t8Draw(); };
+const t8SetAll = (e) => { for (const id of T8_IDS) t8Engine(id, e); t8Draw(); };
 document.querySelectorAll('#m-allmodels [data-all]').forEach((b) => b.addEventListener('click', () => t8SetAll(b.dataset.all)));
 
 // the CPU readout beside it: the player's render time over the audio's time (sent every ~0.5 s from the audio thread)

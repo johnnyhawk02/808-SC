@@ -3,6 +3,11 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.9.0
+
+- The engine is now **circuit** or **synthetic**: two joined keys on top (every sound) and on each drum card. Cached is no longer a mode of its own. Circuit plays its cached hits by itself, and the live circuit while you turn its knobs or while new hits render.
+- The level fader on the drum card fills its full width, like the mixer's. Its meter is a thin bar beside it.
+
 ## 0.8.10
 
 - Fixed controls getting stuck "held" and then turning on hover with no button down. A drag now ends whenever the mouse button is up, whatever happened to the release (a right click, a release outside the window, lost capture). The same guard is on the randomise depth drag and grid painting.
