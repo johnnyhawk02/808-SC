@@ -3,6 +3,12 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.10.5
+
+- A smaller, clean sans-serif face for every label, readout, tab and button, in place of the pixel face. The help page uses it too.
+- No text shadow anywhere.
+- Help: the page list no longer names the old master tab.
+
 ## 0.10.4
 
 - FX and master are one page: echo and reverb on top, then the sidechain, distortion and compressor under them. One tab, "fx · master", instead of two.

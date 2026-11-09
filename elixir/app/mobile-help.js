@@ -3,7 +3,7 @@ const HELP = [
   ['start', 'getting started', `<p>808 SC is a drum machine playing the sixteen TR-808 sounds, each one as a circuit simulation (played from hits it renders in advance) or as a synthetic version that is far lighter on the CPU. Three steps to a beat:</p>
 <ol><li>Press <b>play</b> (or space).</li><li>Press <b>everything</b> until you like what you hear: each press is a new beat, effects and mix.</li>
 <li>Paint steps on the <b>grid</b>, turn a sound's knobs, or press <b>pattern</b>, <b>random fx</b> or <b>alter fx</b> to change one part. <b>undo</b> takes back the last one.</li></ol>
-<p>The screen: the title line has the logo (click it for the options menu), <b>rnd</b> (the randomise buttons, in a pop-up), <b>undo</b>, the circuit and synthetic keys with the CPU readout, then <b>play</b> and <b>rec</b>. Under it, one page at a time: <b>grid</b>, <b>generator</b>, <b>fx</b>, <b>mix</b>, <b>mstr</b> and <b>prst</b>.</p>
+<p>The screen: the title line has the logo (click it for the options menu), <b>rnd</b> (the randomise buttons, in a pop-up), <b>undo</b>, the circuit and synthetic keys with the CPU readout, then <b>play</b> and <b>rec</b>. Under it, one page at a time: <b>grid</b>, <b>generator</b>, <b>fx · master</b>, <b>mix</b> and <b>prst</b>.</p>
 <p>Drag a knob or fader up or down, or scroll on it; double-click to reset it. When you like the sound, <b>prst</b> › <b>save new</b>. <b>rec</b> records a WAV.</p>
 <p>(In a window under 1000 px wide it becomes the narrow layout: pages along the bottom, with the perform knobs on their own page.)</p>`],
   ['sounds', 'the two engines', `<p>Each sound plays one of two engines, picked on its card (grid page, right) or for every sound at once with the keys on top:</p>

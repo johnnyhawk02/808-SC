@@ -7,20 +7,20 @@
   .m-pages .m-rand-card { margin-left: 266px !important; }
   .m .m-title-short { display: none; }
   .m-logo { height: 32px; }
-  .m .m-title .m-ver { position: static; transform: none; width: auto; margin-left: 6px; color: var(--ink); font-size: 13px; opacity: .8; }
+  .m .m-title .m-ver { position: static; transform: none; width: auto; margin-left: 6px; color: var(--ink); font-size: 10px; opacity: .8; }
 }
 /* ---- the keys on top: every sound as circuit or synthetic; lit when every sound plays that ---- */
 .m-allmodels { grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)) 64px; }
 .m-allmodels.m-seg { grid-template-columns: repeat(2, minmax(0, 1fr)) 64px; }
 .m-allmodels .m-cpu { padding-left: 8px; align-self: center; }
-.m-cpu { font-size: 13px; line-height: 1; text-align: right; white-space: nowrap; letter-spacing: .02em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
+.m-cpu { font-size: 10px; line-height: 1; text-align: right; white-space: nowrap; letter-spacing: .02em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
 .m-cpu.m-cpu-hot { font-weight: bold; text-decoration: underline; }
 @media (min-width: 1000px) { .m > .m-card.m-trans { row-gap: 6px; } }
 /* ---- the model keys (the row on top, and each sound's on its card): two keys joined in one bar, like a hardware
    selector; the one playing is lit in the spot colour (none on top while the sounds play different models) ---- */
 .m-seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; align-items: stretch; }
 .m .m-seg > .m-toggle { min-width: 0; min-height: 28px; padding: 0 2px; border: 2px solid var(--ink) !important; border-radius: 0; box-shadow: none !important;
-  background: transparent !important; color: var(--ink) !important; font-size: 11px !important; letter-spacing: .05em; text-transform: uppercase; line-height: 1; opacity: 1; }
+  background: transparent !important; color: var(--ink) !important; font-size: 9px !important; letter-spacing: .05em; text-transform: uppercase; line-height: 1; opacity: 1; }
 .m .m-seg > .m-toggle + .m-toggle { border-left-width: 0 !important; }
 .m .m-seg > .m-toggle:first-of-type { border-radius: 6px 0 0 6px; }
 .m .m-seg > .m-toggle:last-of-type { border-radius: 0 6px 6px 0; }
@@ -38,10 +38,10 @@
 .m-808-set { display: grid; grid-auto-rows: minmax(0, 1fr); gap: 2px; min-height: 0; }
 .m .m-808-set .m-knob { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; column-gap: 2px; min-height: 0; }
 .m .m-808-set .m-knob .m-vtrack { grid-row: 1 / 3; container-type: size; width: 100%; height: 100%; min-height: 26px; max-height: 52px; background: none; overflow: visible; border-radius: 0; }
-.m .m-808-set .m-knob output { grid-area: 1 / 2; font-size: 14px; line-height: 1; text-align: right; }
-.m .m-808-set .m-knob .m-flab { grid-area: 2 / 2; font-size: 12px; line-height: 1; text-align: right; white-space: nowrap; }
-.m-808-status { font-size: 13px; line-height: 1; text-align: center; opacity: .8; white-space: nowrap; overflow: hidden; }
-.m .m-808-revert { min-height: 0; padding: 0; border: 0 !important; background: none !important; box-shadow: none !important; font-size: 12px !important; text-decoration: underline; color: var(--ink); text-transform: uppercase; }
+.m .m-808-set .m-knob output { grid-area: 1 / 2; font-size: 10px; line-height: 1; text-align: right; }
+.m .m-808-set .m-knob .m-flab { grid-area: 2 / 2; font-size: 10px; line-height: 1; text-align: right; white-space: nowrap; }
+.m-808-status { font-size: 10px; line-height: 1; text-align: center; opacity: .8; white-space: nowrap; overflow: hidden; }
+.m .m-808-revert { min-height: 0; padding: 0; border: 0 !important; background: none !important; box-shadow: none !important; font-size: 10px !important; text-decoration: underline; color: var(--ink); text-transform: uppercase; }
 .m-808-revert[hidden] { display: none; }
 /* ---- no LXR-02 voices: the voice page, crossfeed and the kit, alter and crossfeed randomisers are gone; the 808 page
    takes the voice page's place ---- */
@@ -112,7 +112,7 @@
 .m-g8-side { grid-area: 1 / 2 / 4 / 3; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 6px; min-height: 0; }
 /* the sound pickers over the controls: two rows of eight; sounds with no steps in the pattern dimmed */
 .m-g8-picks { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; }
-.m .m-g8-picks .m-toggle { min-width: 0; min-height: 26px; padding: 0; font-size: 14px !important; letter-spacing: 0; text-transform: uppercase; opacity: .55; }
+.m .m-g8-picks .m-toggle { min-width: 0; min-height: 26px; padding: 0; font-size: 10px !important; letter-spacing: 0; text-transform: uppercase; opacity: .55; }
 .m .m-g8-picks .m-toggle.used, .m .m-g8-picks .m-toggle[aria-pressed="true"] { opacity: 1; }
 .m-g8-side > [hidden] { display: none; }
 .m-g8-side .m-808-v { grid-template-rows: auto minmax(0, 1fr) auto auto auto; }
@@ -130,7 +130,7 @@
 .m-808-strip { display: grid; grid-template-rows: auto repeat(3, minmax(0, .7fr)) minmax(0, 2fr); gap: 4px; min-width: 0; min-height: 0; padding: 4px 2px; border: 1.5px solid var(--ink); border-radius: 6px; }
 .m .m-808-strip .m-knob { display: flex; flex-direction: column; align-items: center; min-height: 0; gap: 1px; }
 .m .m-808-strip .m-knob .m-vtrack { container-type: size; flex: 1; width: 100%; min-height: 20px; background: none; overflow: visible; border-radius: 0; }
-.m .m-808-strip output, .m .m-808-strip .m-flab { font-size: 13px !important; line-height: 1; height: auto !important; }
+.m .m-808-strip output, .m .m-808-strip .m-flab { font-size: 10px !important; line-height: 1; height: auto !important; }
 /* (each lane's row and column are set by g8Order, app/tr808-grid.js) */
 
 /* (many knobs a sound: two knobs a row, each its ring over its name and value on one line) */
@@ -138,20 +138,20 @@
 /* (the two columns share the knob's width evenly, so a value's digits changing never resizes the ring) */
 .m .m-808-set .m-knob { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; align-items: end; column-gap: 3px; min-width: 0; min-height: 0; }
 .m .m-808-set .m-knob .m-vtrack { grid-area: 1 / 1 / 2 / 3; justify-self: center; width: 100%; height: 100%; min-height: 14px; max-height: 60px; }
-.m .m-808-set .m-knob .m-flab { grid-area: 2 / 1; font-size: 11px; text-align: right; }
-.m .m-808-set .m-knob output { grid-area: 2 / 2; font-size: 11px; text-align: left; opacity: .8; white-space: nowrap; overflow: hidden; }
+.m .m-808-set .m-knob .m-flab { grid-area: 2 / 1; font-size: 9px; text-align: right; }
+.m .m-808-set .m-knob output { grid-area: 2 / 2; font-size: 9px; text-align: left; opacity: .8; white-space: nowrap; overflow: hidden; }
 .m .m-808-set .m-knob .m-flab { overflow: hidden; }
 /* (the 808 page's small boxes: three knobs a row, the names under them) */
 .m-808-all .m-808-set { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; }
 .m .m-808-all .m-808-set .m-knob { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
 .m .m-808-all .m-808-set .m-knob .m-vtrack { grid-area: 1 / 1; min-height: 16px; }
-.m .m-808-all .m-808-set .m-knob .m-flab { grid-area: 2 / 1; text-align: center; font-size: 10px; letter-spacing: -.04em; overflow: hidden; }
+.m .m-808-all .m-808-set .m-knob .m-flab { grid-area: 2 / 1; text-align: center; font-size: 9px; letter-spacing: -.04em; overflow: hidden; }
 .m .m-808-all .m-808-set .m-knob output { display: none; }
 /* (the grid's side panel, wider: two columns of bigger knobs, name and value under each) */
 .m .m-g8-side .m-808-set { gap: 4px 10px; }
 .m .m-g8-side .m-808-set .m-knob .m-vtrack { max-height: 74px; min-height: 30px; }
-.m .m-g8-side .m-808-set .m-knob .m-flab, .m .m-g8-side .m-808-set .m-knob output { font-size: 13px; }
-.m .m-g8-side .m-808-models > .m-toggle { min-height: 32px; font-size: 12px !important; letter-spacing: .05em; }
+.m .m-g8-side .m-808-set .m-knob .m-flab, .m .m-g8-side .m-808-set .m-knob output { font-size: 10px; }
+.m .m-g8-side .m-808-models > .m-toggle { min-height: 32px; font-size: 10px !important; letter-spacing: .05em; }
 .m .m-g8-side .m-808-vname { font-size: var(--fs-l) !important; }
 
 .m .m-g8-lab.right { padding: 0 2px 0 6px; }
@@ -170,7 +170,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 .m-g8-strip { display: grid; grid-template-columns: minmax(0, 1fr) 52px; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 6px 6px; min-height: 0; padding-left: 8px; border-left: var(--rule); }
 .m .m-g8-strip .m-knob { grid-column: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 0; }
 .m .m-g8-strip .m-knob .m-vtrack { container-type: size; width: 100%; flex: 1; height: auto; min-height: 30px; max-height: 64px; background: none; overflow: visible; border-radius: 0; }
-.m .m-g8-strip output, .m .m-g8-strip .m-flab { font-size: 12px !important; line-height: 1; height: auto !important; width: 100%; text-align: center; white-space: nowrap; }
+.m .m-g8-strip output, .m .m-g8-strip .m-flab { font-size: 10px !important; line-height: 1; height: auto !important; width: 100%; text-align: center; white-space: nowrap; }
 .m .m-g8-strip .m-vf:not(.m-knob) { grid-column: 2; grid-row: 1 / 4; display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 0; }
 .m .m-g8-strip .m-vf:not(.m-knob) .m-vtrack { flex: 1; width: 100%; height: auto; min-height: 60px; }
 /* (the fader's fill on the left, the meter up the right) */
@@ -180,7 +180,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 /* the bars of a pattern, under the grid: the one shown pressed, the ones in the pattern solid, the one playing outlined */
 .m-g8-barbox { display: flex; align-items: center; gap: 4px; }
 .m-g8-shift { display: flex; align-items: center; gap: 4px; }
-.m .m-g8-foot .m-g8-shift .m-toggle { min-width: 34px; padding: 0 6px; font-size: 13px !important; }
+.m .m-g8-foot .m-g8-shift .m-toggle { min-width: 34px; padding: 0 6px; font-size: 10px !important; }
 .m-g8-bars { display: flex; gap: 3px; }
 .m .m-g8-foot .m-g8-barbox .m-toggle { min-width: 34px; padding: 0 6px; }
 .m .m-g8-bars .m-toggle:not(.in) { opacity: .4; border-style: dashed !important; }
@@ -296,9 +296,9 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
   column-gap: 3px; row-gap: 4px; min-width: 0; min-height: 0; }
 .m .m-g8-side .m-808-set .m-knob .m-vtrack, .m .m-g8-side .m-g8-strip .m-knob .m-vtrack { grid-area: 1 / 1 / 2 / 3; justify-self: center; align-self: start; }
 .m .m-g8-side .m-808-set .m-knob .m-flab, .m .m-g8-side .m-g8-strip .m-knob .m-flab,
-#m.m .m-g8-side .m-g8-strip .m-vf:not(.m-knob) .m-flab { grid-area: 2 / 1; font-size: 12px !important; text-align: right; width: auto; }
+#m.m .m-g8-side .m-g8-strip .m-vf:not(.m-knob) .m-flab { grid-area: 2 / 1; font-size: 10px !important; text-align: right; width: auto; }
 .m .m-g8-side .m-808-set .m-knob output, .m .m-g8-side .m-g8-strip .m-knob output,
-#m.m .m-g8-side .m-g8-strip .m-vf:not(.m-knob) output { grid-area: 2 / 2; font-size: 12px !important; text-align: left; width: auto; opacity: .8; }
+#m.m .m-g8-side .m-g8-strip .m-vf:not(.m-knob) output { grid-area: 2 / 2; font-size: 10px !important; text-align: left; width: auto; opacity: .8; }
 .m .m-g8-side .m-g8-strip { grid-template-columns: minmax(0, 1fr) 60px; }
 #m.m .m-g8-side .m-g8-strip .m-vf:not(.m-knob) { grid-row: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto;
   column-gap: 3px; row-gap: 4px; align-items: start; }
@@ -351,8 +351,8 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
   /* dial names and values: one size on every page (the drum card and mix strips included) */
   #m.m .m-vf.m-knob .m-flab { font-size: var(--fs-xs) !important; letter-spacing: .02em; }
   #m.m .m-vf.m-knob output { font-size: var(--fs-xs) !important; }
-  #m.m .m-g8-side .m-vf.m-knob .m-flab, #m.m .m-g8-side .m-vf.m-knob output, #m.m .m-808-strip .m-vf.m-knob .m-flab, #m.m .m-808-strip .m-vf.m-knob output { font-size: 14px !important; }
-  #m.m .m-g8-side .m-g8-strip .m-vf:not(.m-knob) .m-flab, #m.m .m-g8-side .m-g8-strip .m-vf:not(.m-knob) output { font-size: 14px !important; }
+  #m.m .m-g8-side .m-vf.m-knob .m-flab, #m.m .m-g8-side .m-vf.m-knob output, #m.m .m-808-strip .m-vf.m-knob .m-flab, #m.m .m-808-strip .m-vf.m-knob output { font-size: 10px !important; }
+  #m.m .m-g8-side .m-g8-strip .m-vf:not(.m-knob) .m-flab, #m.m .m-g8-side .m-g8-strip .m-vf:not(.m-knob) output { font-size: 10px !important; }
 }
 
 /* ---- phone: the grid and mixer pages (laid out for the laptop first) ---- */
@@ -455,4 +455,10 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
   #m.m [data-m-panel="fx"] .m-comp-card > :nth-child(4) { grid-area: 2 / 2; }
   #m.m [data-m-panel="fx"] .m-comp-card > :nth-child(5) { grid-area: 3 / 1 / 4 / 3; }
   #m.m [data-m-panel="fx"] .m-comp-card > :nth-child(6) { grid-area: 4 / 1 / 5 / 3; }
+}
+/* ---- a clean, smaller face: tight spots on a phone ---- */
+@media (max-width: 999px) {
+  .m .m-pagename { font-size: .72rem; letter-spacing: .05em; }
+  #m.m [data-m-panel] .m-vf.m-knob .m-flab, #m.m [data-m-panel] .m-vf.m-knob output { font-size: 10px !important; letter-spacing: 0; }
+  #m.m #m-faders .m-vf.m-knob .m-flab { font-size: 9px !important; }
 }
