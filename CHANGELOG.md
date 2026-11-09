@@ -3,6 +3,11 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.10.4
+
+- FX and master are one page: echo and reverb on top, then the sidechain, distortion and compressor under them. One tab, "fx · master", instead of two.
+- On a wide window the sidechain and distortion sit side by side so the whole page fits without scrolling.
+
 ## 0.10.3
 
 - Every dial and fader has its name above it and its readout below it, on every page.

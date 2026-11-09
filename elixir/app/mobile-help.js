@@ -21,13 +21,13 @@ const HELP = [
 <li><b>velocity</b>; <b>groove</b> and <b>depth</b> give it swing or push; <b>accent</b> how loud the accents are.</li>
 <li><b>rush</b> builds a roll: the chosen sound (<b>rush on</b>) rolls faster and faster while the others drop out and a high-pass rises. Push it up for a build, drop it for the drop. Its curve is in <b>options</b> › <b>settings</b> › <b>rush</b>.</li>
 <li><b>density</b>, a fader for each of the generator's seven tracks (named after the sound each one plays): under 100% it thins that track, off-beats first; over 100% it adds hits on its empty steps, eighths first, until at 200% every step plays. The same steps go or come each time, and presets keep it.</li></ul>`],
-  ['fx', 'fx: echo and reverb', `<ul><li><b>echo</b>: time (musical lengths, or free with <b>sync</b> off), tone, feedback, width and fine; tick <b>ping pong</b> to bounce it left and right.</li>
+  ['fx', 'fx · master: echo, reverb and the master chain', `<ul><li><b>echo</b>: time (musical lengths, or free with <b>sync</b> off), tone, feedback, width and fine; tick <b>ping pong</b> to bounce it left and right.</li>
 <li><b>reverb</b>: a convolution reverb, a recorded space (its impulse response, IR) put on the sound. Pick the IR in its header: a plate and a gated 80s one made here, or ten recorded rooms (wood shop to cathedral, from the OpenAIR library). <b>load IR</b> takes your own (a wav or other audio file; up to 5 s of it is used). Knobs: pre (the delay before it), length, low cut, tone, width, and the <b>gate</b>: each hit into the reverb opens it for a note length at the tempo, and <b>gate fine</b> stretches or shortens that by up to 50%.</li>
-<li>Each sound's echo and reverb sends are on the <b>mix</b> page.</li></ul>`],
-  ['mix', 'mix: the channel strips', `<p>A strip for each of the sixteen sounds: its echo send, reverb send and pan knobs over its level fader, with a level meter beside it.</p>`],
-  ['mstr', 'mstr: the master chain', `<p>The whole mix runs top to bottom:</p>
+<li>Each sound's echo and reverb sends are on the <b>mix</b> page.</li></ul>
+<p>Under them, the master chain; the whole mix runs through it top to bottom:</p>
 <ul><li><b>bd sidechain</b>: the bass drum ducks the rest; the meter shows how much. <b>space</b> carves the kick's room out of the others.</li>
 <li><b>distortion</b>: mix, type, drive, colour, tone and volume.</li><li><b>compressor</b>: glues it together; the meter shows the gain reduction.</li></ul>`],
+  ['mix', 'mix: the channel strips', `<p>A strip for each of the sixteen sounds: its echo send, reverb send and pan knobs over its level fader, with a level meter beside it.</p>`],
   ['prst', 'prst: presets', `<ul><li>Click a preset to load it: while playing it flashes until the next bar, then takes over. Untick the tempo box to keep your tempo.</li>
 <li>Type in the search box (or press /) to find one by name; enter loads the first found, esc clears it.</li>
 <li>The star makes it a favourite (favourites are listed first).</li>

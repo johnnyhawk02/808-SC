@@ -107,6 +107,14 @@
       <div class="m-fx-row m-fx-slot"><b>insert</b><div class="m-fx-empty">empty slot</div></div>
       <div class="m-fx-row m-fx-slot"><b>insert</b><div class="m-fx-empty">empty slot</div></div>
     </section>
+    <section class="m-card m-comp-card">
+      <div class="m-chead"><b>bd sidechain</b><div class="m-gr" aria-label="sidechain duck"><i><b id="m-dk"></b></i><output id="m-dk-out">0 dB</output></div></div>
+      <div class="m-faders" id="m-duck"></div>
+      <div class="m-chead"><b>distortion</b></div>
+      <div class="m-faders" id="m-dist"></div>
+      <div class="m-chead"><b>compressor</b><div class="m-gr" aria-label="gain reduction"><i><b id="m-gr"></b></i><output id="m-gr-out">0 dB</output></div><button class="m-toggle" id="m-comp-on" type="button" aria-pressed="true">on</button></div>
+      <div class="m-faders" id="m-comp"></div>
+    </section>
   </div>
 
   <div class="m-panel" data-m-panel="mix">
@@ -119,16 +127,6 @@
     </section>
   </div>
 
-  <div class="m-panel" data-m-panel="comp">
-    <section class="m-card m-comp-card">
-      <div class="m-chead"><b>bd sidechain</b><div class="m-gr" aria-label="sidechain duck"><i><b id="m-dk"></b></i><output id="m-dk-out">0 dB</output></div></div>
-      <div class="m-faders" id="m-duck"></div>
-      <div class="m-chead"><b>distortion</b></div>
-      <div class="m-faders" id="m-dist"></div>
-      <div class="m-chead"><b>compressor</b><div class="m-gr" aria-label="gain reduction"><i><b id="m-gr"></b></i><output id="m-gr-out">0 dB</output></div><button class="m-toggle" id="m-comp-on" type="button" aria-pressed="true">on</button></div>
-      <div class="m-faders" id="m-comp"></div>
-    </section>
-  </div>
 
   <div class="m-panel" data-m-panel="presets">
     <section class="m-card m-presets-card">
@@ -240,9 +238,8 @@
     <button type="button" role="tab" data-m-tab="beat" aria-selected="false">gen<span class="m-tab-long">erator</span></button>
     <button type="button" role="tab" data-m-tab="t808" aria-selected="false">808</button>
     <button type="button" role="tab" data-m-tab="xy" aria-selected="false">x/y</button>
-    <button type="button" role="tab" data-m-tab="fx" aria-selected="false">fx</button>
+    <button type="button" role="tab" data-m-tab="fx" aria-selected="false">fx<span class="m-tab-long"> · master</span></button>
     <button type="button" role="tab" data-m-tab="mix" aria-selected="false">mix</button>
-    <button type="button" role="tab" data-m-tab="comp" aria-selected="false">mstr</button>
     <button type="button" role="tab" data-m-tab="presets" aria-selected="false">prst</button>
   </nav>
 </main>

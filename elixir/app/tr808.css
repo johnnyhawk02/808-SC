@@ -46,12 +46,12 @@
 /* ---- no LXR-02 voices: the voice page, crossfeed and the kit, alter and crossfeed randomisers are gone; the 808 page
    takes the voice page's place ---- */
 #m-kit, #m-alter, #m-xrand { display: none !important; }
-.m > .m-tabs { grid-template-columns: repeat(9, minmax(0, 1fr)); }
-@media (min-width: 1000px) { .m > .m-tabs { grid-template-columns: repeat(7, minmax(0, 1fr)); } }
+.m > .m-tabs { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+@media (min-width: 1000px) { .m > .m-tabs { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
 /* (the 808 page hidden: tr808.js, T8_PAGE) */
 .m [data-m-tab][hidden], .m [data-m-panel][hidden] { display: none !important; }
-.m.m-no808 > .m-tabs { grid-template-columns: repeat(8, minmax(0, 1fr)); }
-@media (min-width: 1000px) { .m.m-no808 > .m-tabs { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.m.m-no808 > .m-tabs { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+@media (min-width: 1000px) { .m.m-no808 > .m-tabs { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 @media (min-width: 1000px) { .m[data-page="grid"] [data-m-panel="grid"] { display: grid; } }
 @media (min-width: 1000px) {
   .m .m-rand > #m-everything { grid-column: 1; } .m .m-rand > #m-pattern { grid-column: 2; }
@@ -441,3 +441,18 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 @media (min-width: 1000px) { #m.m .m-808-mixer { grid-template-rows: minmax(max-content, 1fr); } }
 /* the phone's perform dials: a long value takes a second line, not an ellipsis */
 #m.m #m-faders .m-vf.m-knob output { white-space: pre-line; height: auto; overflow: visible; text-overflow: clip; }
+
+/* ---- fx and master share a page: echo and reverb, then the master chain under them ---- */
+#m.m [data-m-panel="fx"] { grid-template-columns: minmax(0, 1fr); grid-template-rows: none !important; grid-auto-rows: max-content; align-content: start; row-gap: 14px; overflow-y: auto; overflow-x: hidden; }
+#m.m [data-m-panel="fx"] > .m-card { height: auto; min-height: max-content; }
+#m.m [data-m-panel="fx"] > .m-card { min-width: 0; }
+/* a wide window: the sidechain and the distortion side by side, the compressor under them, so the page fits without scrolling */
+@media (min-width: 1150px) {
+  #m.m [data-m-panel="fx"] .m-comp-card { display: grid; grid-template-columns: 372px minmax(0, 1fr); grid-template-rows: auto auto auto auto !important; column-gap: 24px; }
+  #m.m [data-m-panel="fx"] .m-comp-card > :nth-child(1) { grid-area: 1 / 1; }
+  #m.m [data-m-panel="fx"] .m-comp-card > :nth-child(2) { grid-area: 2 / 1; }
+  #m.m [data-m-panel="fx"] .m-comp-card > :nth-child(3) { grid-area: 1 / 2; margin-top: 0; padding-top: 0 !important; border-top: 0; }
+  #m.m [data-m-panel="fx"] .m-comp-card > :nth-child(4) { grid-area: 2 / 2; }
+  #m.m [data-m-panel="fx"] .m-comp-card > :nth-child(5) { grid-area: 3 / 1 / 4 / 3; }
+  #m.m [data-m-panel="fx"] .m-comp-card > :nth-child(6) { grid-area: 4 / 1 / 5 / 3; }
+}
