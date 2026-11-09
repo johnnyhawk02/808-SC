@@ -3,6 +3,10 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.7.0
+
+- The pages (grid, generator, fx, mix, mstr, prst) are folder tabs on the laptop layout: rounded tabs over a framed page, the picked tab open into it with a strip of the spot colour along its top.
+
 ## 0.6.2
 
 - The grid's notes and accents stay in the ink; the spot colour is only for buttons, the page tab, play and the model switches.

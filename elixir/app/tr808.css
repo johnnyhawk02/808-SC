@@ -210,3 +210,20 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 .m .m-g8-foot #m-g8-gen.ask { background: var(--ink) !important; color: var(--panel); animation: g8rec .8s steps(1) infinite; }
 /* (the narrow layout's tab says gen, the wide one generator) */
 @media (max-width: 999.98px) { .m-tab-long { display: none; } }
+/* ---- the page tabs on the laptop: folder tabs over the page. Each tab has a rounded top and sides; the page's top
+   edge runs along under them (each closed tab draws its piece, reaching half way into the gaps) and is open under the
+   tab picked, which joins the page, framed on its other three sides. The picked tab's name is in the ink with a strip
+   of the spot colour along its top ---- */
+@media (min-width: 1000px) {
+  .m > .m-tabs { gap: 8px; padding: 10px 4px 0; border-top: 0; align-items: end; }
+  .m > .m-tabs button { position: relative; min-height: 38px; border: 2px solid var(--ink) !important; border-bottom: 0 !important;
+    border-radius: 9px 9px 0 0; background: var(--tint) !important; color: var(--ink) !important; opacity: .7; box-shadow: none !important; }
+  .m > .m-tabs button::after { content: ""; position: absolute; left: -6px; right: -6px; bottom: 0; height: 2px; background: var(--ink); }
+  .m > .m-tabs button:first-child::after { left: -2px; }
+  .m > .m-tabs button:last-child::after { right: -2px; }
+  .m > .m-tabs button[aria-selected="true"] { min-height: 46px; background: transparent !important; opacity: 1;
+    box-shadow: inset 0 5px 0 var(--spot, var(--ink)) !important; }
+  .m > .m-tabs button[aria-selected="true"]::after { display: none; }
+  .m > .m-tabs button[aria-selected="true"]::before { content: ""; position: absolute; left: -2px; right: -2px; bottom: 0; height: 2px; }
+  .m .m-panel:not([data-m-panel="play"]) { margin: 0 4px; padding: 12px 12px 10px !important; border: 2px solid var(--ink) !important; border-top: 0 !important; border-radius: 0 0 10px 10px; }
+}
