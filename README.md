@@ -87,6 +87,7 @@ test/analyze.mjs, env.mjs, wave.mjs   side-by-side detail for one knob case
 test/profile.mjs      circuit kit cost per voice and per stage (Newton passes, rebuilds)
 test/regress.mjs      circuit renders vs a saved reference (for solver changes)
 test/cache-render.mjs renders the cached circuit hits into cache/
+test/cache-one.mjs    cuts cache/ to one plain + one accented hit a voice in cache1/ (what the app ships)
 test/cache-check.mjs  cached kit: size, CPU
 ```
 

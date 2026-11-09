@@ -22,7 +22,7 @@ from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.git
   player (`vmix808`; the echo takes them through `renderFx`'s extra input in `lxr.js`). The kick keys the sidechain and
   the rest duck. Each sound still has a track (`BUS808`) for mutes and the rush.
 - Looks: 80s magenta. The version (808-SC's, `dsp/version.js`) on the cauldron and in the presets footer.
-- Each voice plays as the **circuit** simulation (every knob works, costs CPU), **cached** hits (16 normal + 16
+- Each voice plays as the **circuit** simulation (every knob works, costs CPU), **cached** hits (1 normal + 1
   accented hits rendered by the circuit; level, decay and the clap's snap stay live; almost no CPU) or **synthetic**
   (the SC model, a simplified circuit: every knob live, little CPU; autocache leaves a synthetic sound alone), with its own knobs.
 - **Background and spot colours** (options): any panel colour (pale pink by default; ink and logo follow it) and a spot colour for what is on or lit (hot red by default), kept in this browser.
@@ -30,7 +30,7 @@ from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.git
   shows how much of the real-time budget the sound takes (not in the plugin).
 - **Caching is automatic** (no button): moving off an edited sound records 1 normal + 1 accented hit ("cached hits per sound" in the options picks 4, 8 or 16) through the circuit at its current knobs in a worker (a
   few seconds, the cymbal longest) and plays them as cached, random robin (picked at random, never the same one twice
-  running); **revert** goes back to the shipped 16 + 16 hits (`../cache/`). They're kept in
+  running); **revert** goes back to the shipped hits, one plain and one accented a voice (`../cache1/`, cut from the bench's `../cache/` by `test/cache-one.mjs`). They're kept in
   this browser under the bench's own IndexedDB store, so a cache made on the bench shows up here and the other way round.
 - No LXR-02 voices: they're silenced in the player. The voice page and crossfeed are deleted (crossfeed is off in the
   player too); the kit / alter / crossfeed randomisers and the LXR sound macros (pitch, decay, filter, fm) are gone. What's left of Elixir is the sequencer and

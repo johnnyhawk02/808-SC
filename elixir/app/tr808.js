@@ -17,13 +17,13 @@ const T8_ORDER = ['bd', 'sd', 'rs', 'cp', 'lt', 'mt', 'ht', 'lc', 'mc', 'hc', 'c
 const T8_KIT = ['bd', 'lt', 'ht', 'sd', 'cy', 'ch', 'oh'];
 const T8_KEY = 'elixir808-tr808';
 // a new cache records this many hits a voice, plain and accented each, played in random order, never the same one
-// twice running (the shipped cache has 16). One by default (quick); the options menu picks more
+// twice running (the shipped cache1/ has 1). One by default (quick); the options menu picks more
 const T8_HITS_OPTS = [1, 4, 8, 16], T8_HITS_KEY = '808sc-hits';
 let t8Hits = 1;
 try { const n = Number(localStorage.getItem(T8_HITS_KEY)); if (T8_HITS_OPTS.includes(n)) t8Hits = n; } catch (e) {}
-// shipped cached hits: the bench's cache/ folder, beside this app's folder
-// the bench's cache/: one folder up when served from elixir/ (locally), bench/cache/ on the live site (the app at the root)
-const T8_CACHE_URL = new URL(location.pathname.includes('/elixir/') ? '../cache/' : 'bench/cache/', location.href);
+// shipped cached hits: cache1/, one plain and one accented hit a voice (cut from the bench's cache/ by
+// test/cache-one.mjs): one folder up when served from elixir/ (locally), beside the app on the live site
+const T8_CACHE_URL = new URL(location.pathname.includes('/elixir/') ? '../cache1/' : 'cache1/', location.href);
 
 let t8SavedVals = {}; // the sounds whose knobs were saved here (those win over the knobs their saved hits were made at)
 const t8 = { map: T8_KIT.slice(), models: Object.fromEntries(T8_IDS.map((id) => [id, 'cached'])),
@@ -220,7 +220,7 @@ function t8Draw() {
     st.title = '';
     if (j) st.textContent = j.error ? 'failed' : j.total ? `${Math.round(100 * j.done / j.total)}%` : '…';
     else if (t8Missing.has(id) && !c) st.textContent = 'no hits';
-    else if (!c) st.textContent = '16 shipped';
+    else if (!c) st.textContent = 'shipped';
     else {
       const k = c.info.knobs ?? {}, moved = Object.keys(k).some((p) => Math.abs((t8.values[id][p] ?? k[p]) - k[p]) > 1e-9);
       st.textContent = `${moved ? 'old ' : ''}${c.info.normal.length} yours`;

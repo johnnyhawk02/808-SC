@@ -3,6 +3,10 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.8.5
+
+- The app ships one cached hit per drum (one plain, one accented, plus the clap's dry pair) in `cache1/`, 2.2 MB instead of the bench's 46 MB. `test/cache-one.mjs` cuts it from `cache/`. The bench keeps its 16 + 16.
+
 ## 0.8.4
 
 - A new cache records one hit (and one accented) by default, so it's quick. "Cached hits per sound" in the options menu (and settings) picks 4, 8 or 16, and re-records the sounds that have their own hits.
