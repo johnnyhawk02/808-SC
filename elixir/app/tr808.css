@@ -392,3 +392,22 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
   .m-comp-card .m-faders { grid-template-rows: none !important; grid-auto-rows: auto; }
   #m.m .m-vf.m-knob { min-height: max-content !important; }
 }
+
+/* ---- dials sit close together: columns as wide as a dial and its name, packed from the left, not spread over the page ---- */
+@media (min-width: 1000px) {
+  #m-beat-faders, #m-dens-faders { grid-template-columns: repeat(7, 116px) minmax(0, 1fr) !important; column-gap: 4px !important; }
+  .m-comp-card .m-faders { grid-template-columns: repeat(7, 116px) !important; justify-content: start; column-gap: 4px !important; }
+  #m-fx-echo { grid-template-columns: repeat(5, 92px) !important; justify-content: start; column-gap: 4px !important; }
+  #m-fx-ring { grid-template-columns: repeat(7, 80px) !important; justify-content: start; column-gap: 4px !important; }
+  /* the drum card: as wide as its dials, the step grid takes the room; rows as tall as a dial, from the top */
+  .m-g8-card { grid-template-columns: minmax(0, 1fr) 340px; }
+  .m-g8-side { grid-template-rows: auto auto; align-content: start; }
+  .m .m-g8-side .m-808-set, .m .m-g8-side .m-g8-strip { grid-template-rows: repeat(var(--rows, 3), auto); row-gap: 14px; align-content: start; }
+  .m-g8-side .m-808-v { grid-template-columns: minmax(0, 1fr) 124px; grid-template-rows: auto auto auto auto auto; }
+  .m .m-g8-side .m-g8-strip { grid-template-columns: minmax(0, 1fr) 48px; }
+}
+@media (max-width: 999.98px) {
+  /* perform: its rows of dials from the top, not spread down the page */
+  #m-faders { grid-template-rows: none !important; grid-auto-rows: auto; align-content: start; row-gap: 16px; }
+  #m-faders .m-vtrack { flex: none; }
+}
