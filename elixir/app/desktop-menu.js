@@ -54,4 +54,12 @@ $('m-opts').addEventListener('click', (e) => {
     ['settings', () => $('m-set-open').click()], ['user settings', () => $('m-user-open').click()], ['help', () => $('m-help-open').click()],
     // (install app, while the browser offers it; its button under the presets is the phone's)
     ...(mInstallEv ? [['install app', () => $('m-install').click()]] : [])]);
+  // the tempo: a slider at the top of the menu (it stays open while it's dragged)
+  const t = document.createElement('label'); t.className = 'm-menu-tempo';
+  t.innerHTML = `<span>tempo</span><input type="range" min="${PERF_RANGE.tempo[0]}" max="${PERF_RANGE.tempo[1]}" step="1" aria-label="tempo"><output></output>`;
+  const [inp, out] = [t.querySelector('input'), t.querySelector('output')];
+  const show = () => { inp.value = perf.tempo; out.textContent = `${perf.tempo} bpm`; };
+  inp.addEventListener('input', () => { setPerf('tempo', Number(inp.value)); setDirty(true); mDrawAll(); show(); });
+  t.addEventListener('dblclick', () => { setPerf('tempo', PERF_RANGE.tempo[2]); setDirty(true); mDrawAll(); show(); });
+  show(); $('m-menu').prepend(t);
 });

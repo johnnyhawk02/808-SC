@@ -325,8 +325,6 @@ function g8Over(on) {
   $('m').classList.toggle('g8-gen', over);
 }
 g8Wide.addEventListener('change', () => { g8Over(g8.mode === 'gen'); if (g8Wide.matches && $('m').dataset.page === 'beat') mTab('grid'); });
-// the tempo, always in reach under the grid
-mFader($('m-g8-tempo'), 'tempo', { ...pf('tempo'), num: true, show: () => `${perf.tempo} bpm`, travel: 2 });
 const g8Gen = generate;
 generate = function () { const r = g8Gen.apply(this, arguments); if (g8.mode === 'gen') g8Draw(); return r; };
 perfDraws.push(g8Draw);

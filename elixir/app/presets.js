@@ -185,7 +185,8 @@ function useSong(g, keepTempo) {
   if (STYLES[styleIdx].user && g.user) { const i = ensureUserPat(g.user); if (i >= 0) useUserSlot(i); }
   Object.assign(master, MASTER0, g.master); buildMaster(); // presets saved before the sidechain switch have it on
   sendMix();
-  perf.rush = Math.max(0, Math.min(100, Number(g.rush) || 0)); perf.rushT = Number.isInteger(g.rushT) ? Math.max(0, Math.min(6, g.rushT)) : 3;
+  perf.rush = 0; // (the rush dials are gone from the screen, so a preset saved with the rush up loads with it off)
+  perf.rushT = Number.isInteger(g.rushT) ? Math.max(0, Math.min(6, g.rushT)) : 3;
   send({ type: 'rush', v: perf.rush, t: perf.rushT });
   useRushSet(g.rushSet);
   // the dial readouts come from generate; then the saved pattern, which may have been edited by hand

@@ -8,7 +8,7 @@ try { localStorage.removeItem('elixir808-perfmap'); localStorage.removeItem('eli
 // (Elixir 808: no LXR sound macros, so the beat page and the two sends fill their places)
 const SLOT0 = [['perf', 'perf', 'tempo'], ['perf', 'perf', 'sidechain'], ['beat', 'beat', 'energy'], ['beat', 'beat', 'velocity'],
   ['beat', 'beat', 'groove'], ['beat', 'beat', 'accent'], ['fx', 'echo', 'send'], ['fx', 'reverb', 'send'],
-  ['beat', 'beat', 'genre'], ['beat', 'beat', 'beat'], ['beat', 'beat', 'fills'], ['beat', 'beat', 'rush']];
+  ['beat', 'beat', 'genre'], ['beat', 'beat', 'beat'], ['beat', 'beat', 'fills'], ['beat', 'beat', 'depth']];
 let mSlots = (() => { try { const v = JSON.parse(localStorage.getItem(SLOT_KEY)); return Array.isArray(v) && v.length >= 7 ? v : null; } catch (e) { return null; } })() || SLOT0.map((x) => x.slice());
 while (mSlots.length < SLOT0.length) mSlots.push(SLOT0[mSlots.length].slice());
 mSlots.length = SLOT0.length; // (picks kept from when there were twenty-four: the first twelve)

@@ -24,7 +24,7 @@
 <body>
 <main>
 <div class="lcd">
-  <h1>808 SC <small>v<!--v-->0.12.0<!--/v--></small></h1>
+  <h1>808 SC <small>v<!--v-->0.13.0<!--/v--></small></h1>
   <p class="lead">The sixteen TR-808 sounds as circuit simulations, cached hits or synthetic models, with a pattern grid, a generator, effects and a mixer. The same help is in the app: options › help, or press ?.</p>
 
   <h2>getting started</h2>
@@ -45,15 +45,14 @@
   <p>Eight patterns (the <b>1</b> to <b>8</b> buttons, or keys 1 to 8), each a lane for each of the sixteen sounds, sixteen steps a bar and up to four bars.</p>
 <ul><li>Press a step and drag across others to paint: starting on an empty step puts notes on, on a full one takes them off. With cmd (ctrl) held it puts accents on or takes them off.</li>
 <li>The bar buttons under the grid show each bar; <b>−</b> takes the last bar off and <b>+</b> adds a copy of the one shown. <b>◀</b> and <b>▶</b> move the whole pattern a step earlier or later.</li>
-<li><b>generator</b> opens the generator over the grid and plays its pattern instead (it covers the steps; <b>insert into pattern</b> writes what it plays into the pattern picked); the <b>bpm</b> box beside it is the tempo, there all the time; your first edit makes it a pattern of your own.</li>
+<li><b>generator</b> opens the generator over the grid and plays its pattern instead (it covers the steps; <b>insert into pattern</b> writes what it plays into the pattern picked); your first edit makes it a pattern of your own.</li>
 <li>Right-click a pattern's number to record into it: from the next bar what you hear is written into it until you press it again.</li>
 <li>cmd (ctrl) + c copies the pattern, cmd + v pastes it over the one picked.</li>
 <li>On the right, the card of the sound picked (click its name above): its model and its knobs.</li></ul>
 
   <h2>generator: the pattern</h2>
-  <ul><li>It lies over the grid while the grid's <b>generator</b> button is on; <b>insert into pattern</b> writes what it plays into the pattern picked and closes it; a pattern button closes it without writing.</li><li><b>tempo</b>; <b>genre</b> picks a style, <b>beat</b> one of its grooves, <b>energy</b> how busy it is, <b>fills</b> how often it fills.</li>
+  <ul><li>It lies over the grid while the grid's <b>generator</b> button is on; <b>insert into pattern</b> writes what it plays into the pattern picked and closes it; a pattern button closes it without writing.</li><li><b>genre</b> picks a style, <b>beat</b> one of its grooves, <b>energy</b> how busy it is, <b>fills</b> how often it fills.</li>
 <li><b>velocity</b>; <b>groove</b> and <b>depth</b> give it swing or push; <b>accent</b> how loud the accents are.</li>
-<li><b>rush</b> builds a roll: the chosen sound (<b>rush on</b>) rolls faster and faster while the others drop out and a high-pass rises. Push it up for a build, drop it for the drop. Its curve is in <b>options</b> › <b>settings</b> › <b>rush</b>.</li>
 <li><b>density</b>, a fader for each of the generator's seven tracks (named after the sound each one plays): under 100% it thins that track, off-beats first; over 100% it adds hits on its empty steps, eighths first, until at 200% every step plays. The same steps go or come each time, and presets keep it.</li></ul>
 
   <h2>fx · master: the effects, in the order the sound runs through them</h2>
@@ -88,7 +87,7 @@
   <h2>more</h2>
   <ul><li>The options menu (click the logo) holds randomise on next bar, assign knobs, the bass drum at the top of the grid, reset sound, and:</li>
 <li><b>background colour</b>: any colour for the panel, kept in this browser; the ink and the logo follow it (<b>background back to default</b> undoes it). <b>spot colour</b>: one colour for what is on or lit (pressed buttons, the page tab, play, the model keys; the grid's notes stay in the ink); red by default; <b>spot back to default</b> undoes a change.</li>
-<li><b>settings</b>: copy the knob assignments or your presets, export or clear presets, and the <b>rush</b> graph of how the rush builds (drag its squares).</li>
+<li><b>settings</b>: copy the knob assignments or your presets, export or clear presets.</li><li><b>tempo</b>: the slider at the top of the options menu (double-click it for 118).</li>
 <li><b>user settings</b>: <b>midi</b>, which CC moves each knob; <b>seq</b>, whether step sequencers follow the groove.</li>
 <li>Install it as an app from your browser's menu; it works offline.</li>
 <li>The version number is beside the logo; the latest arrives when you open it with a connection (cmd+shift+R to be sure).</li></ul>

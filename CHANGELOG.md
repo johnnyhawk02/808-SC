@@ -3,6 +3,11 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.13.0
+
+- The rush and rush on dials are gone (and the rush graph in settings); a preset saved with the rush up loads with it off.
+- Tempo is a slider at the top of the options menu; its dial in the generator and its box under the grid are gone. The phone keeps tempo on its perform page.
+
 ## 0.12.0
 
 - fx · master follows the signal path, in three numbered groups: 1 the bd sidechain (on each drum, before anything else), 2 the sends (echo and reverb, side by side), 3 the master inserts (distortion, then compressor, left to right).
