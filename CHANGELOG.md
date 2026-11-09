@@ -3,6 +3,11 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.8.4
+
+- A new cache records one hit (and one accented) by default, so it's quick. "Cached hits per sound" in the options menu (and settings) picks 4, 8 or 16, and re-records the sounds that have their own hits.
+- Reloading part-way through an edit no longer loses it: the sound keeps its knobs and gets cached after the reload. Any cached sound whose knobs don't match its hits is re-cached on load.
+
 ## 0.8.3
 
 - The cache button is gone. Caching already happens by itself: an edited sound plays on the circuit while you turn its knobs, then renders new hits when you move to another sound or page.

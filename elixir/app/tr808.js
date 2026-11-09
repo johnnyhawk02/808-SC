@@ -17,18 +17,22 @@ const T8_ORDER = ['bd', 'sd', 'rs', 'cp', 'lt', 'mt', 'ht', 'lc', 'mc', 'hc', 'c
 const T8_KIT = ['bd', 'lt', 'ht', 'sd', 'cy', 'ch', 'oh'];
 const T8_KEY = 'elixir808-tr808';
 // a new cache records this many hits a voice, plain and accented each, played in random order, never the same one
-// twice running (the shipped cache has 16)
-const T8_HITS = 4;
+// twice running (the shipped cache has 16). One by default (quick); the options menu picks more
+const T8_HITS_OPTS = [1, 4, 8, 16], T8_HITS_KEY = '808sc-hits';
+let t8Hits = 1;
+try { const n = Number(localStorage.getItem(T8_HITS_KEY)); if (T8_HITS_OPTS.includes(n)) t8Hits = n; } catch (e) {}
 // shipped cached hits: the bench's cache/ folder, beside this app's folder
 // the bench's cache/: one folder up when served from elixir/ (locally), bench/cache/ on the live site (the app at the root)
 const T8_CACHE_URL = new URL(location.pathname.includes('/elixir/') ? '../cache/' : 'bench/cache/', location.href);
 
+let t8SavedVals = {}; // the sounds whose knobs were saved here (those win over the knobs their saved hits were made at)
 const t8 = { map: T8_KIT.slice(), models: Object.fromEntries(T8_IDS.map((id) => [id, 'cached'])),
   values: Object.fromEntries(T8_SPEC.map((v) => [v.id, { ...v.values }])) };
 try {
   const s = JSON.parse(localStorage.getItem(T8_KEY));
   if (s) {
     if (Array.isArray(s.map) && s.map.length === 7) t8.map = s.map.map((id, t) => (T8_IDS.includes(id) ? id : T8_KIT[t]));
+    t8SavedVals = s.values ?? {};
     for (const id of T8_IDS) {
       if (['circuit', 'cached', 'sc'].includes(s.models?.[id])) t8.models[id] = s.models[id];
       for (const p of T8_PARAMS[id]) if (typeof s.values?.[id]?.[p.id] === 'number') t8.values[id][p.id] = s.values[id][p.id];
@@ -103,8 +107,9 @@ const t8CustomReady = (async () => {
     keys.forEach((id, i) => {
       if (!T8_PARAMS[id] || !vals[i]?.info) return;
       t8Custom[id] = vals[i];
-      // the knobs show what the cached hits were rendered at
-      for (const [p, x] of Object.entries(vals[i].info.knobs ?? {})) t8SetKnob(id, p, x, false);
+      // the knobs show what the cached hits were rendered at (unless this app saved its own knobs: then, if they
+      // differ, the sound gets new hits after loading)
+      if (!t8SavedVals[id]) for (const [p, x] of Object.entries(vals[i].info.knobs ?? {})) t8SetKnob(id, p, x, false);
     });
   } catch (err) { console.warn('no saved 808 caches (IndexedDB unavailable)', err); }
   t8Draw();
@@ -154,7 +159,13 @@ function t8MakeCache(id) {
     t8Sent.delete(id); delete t8Loading[id];
     t8SetModel(id, 'cached');
   };
-  w.postMessage({ id, values: { ...t8.values[id] }, variants: T8_HITS });
+  w.postMessage({ id, values: { ...t8.values[id] }, variants: t8Hits });
+}
+// more (or fewer) hits a cache: sounds with their own hits get new ones at the new count
+function t8SetHits(n) {
+  t8Hits = n; try { localStorage.setItem(T8_HITS_KEY, String(n)); } catch (e) {}
+  for (const id of T8_IDS) if (t8Custom[id] && t8Custom[id].info.normal.length !== n && !t8Jobs[id]) t8MakeCache(id);
+  t8Draw();
 }
 async function t8Revert(id) {
   if (!t8Custom[id]) return;
@@ -303,4 +314,11 @@ $('m-title').addEventListener('click', (e) => { if (mWide.matches) { e.stopPropa
   key.addEventListener('click', (e) => { e.stopPropagation(); show(!$('m').classList.contains('m-rnd-open')); });
   addEventListener('pointerdown', (e) => { if ($('m').classList.contains('m-rnd-open') && !card.contains(e.target) && !key.contains(e.target)) show(false); });
   addEventListener('keydown', (e) => { if (e.key === 'Escape') show(false); });
+}
+
+// the settings pane's button for it (the phone's way in; the laptop has it in the logo's menu)
+{
+  const b = $('m-set-hits'), show = () => { b.textContent = `cached hits per sound: ${t8Hits}`; };
+  b.addEventListener('click', () => { t8SetHits(T8_HITS_OPTS[(T8_HITS_OPTS.indexOf(t8Hits) + 1) % T8_HITS_OPTS.length]); show(); });
+  show();
 }

@@ -25,7 +25,7 @@
 <body>
 <main>
 <div class="lcd">
-  <h1>808 SC <small>v<!--v-->0.8.3<!--/v--></small></h1>
+  <h1>808 SC <small>v<!--v-->0.8.4<!--/v--></small></h1>
   <p class="lead">The sixteen TR-808 sounds as circuit simulations, cached hits or synthetic models, with a pattern grid, a generator, effects and a mixer. The same help is in the app: options › help, or press ?.</p>
 
   <h2>getting started</h2>
@@ -39,7 +39,7 @@
   <h2>the three models</h2>
   <p>Each sound plays one of three models, picked on its card (grid page, right) or for every sound at once with the keys on top:</p>
 <ul><li><b>circuit</b>: the 808's schematic simulated part by part, sample by sample. The real thing, and heavy: a busy pattern can need most of a CPU core.</li>
-<li><b>cached</b> (the default): hits the circuit rendered in advance, played back at almost no CPU. Level, snap and accent stay live; while you turn the other knobs the sound plays on the circuit so you hear them, and when you move on to another sound or page it renders fresh hits at those settings by itself, then goes back to cached.</li>
+<li><b>cached</b> (the default): hits the circuit rendered in advance, played back at almost no CPU. Level, snap and accent stay live; while you turn the other knobs the sound plays on the circuit so you hear them, and when you move on to another sound or page it renders fresh hits at those settings by itself, then goes back to cached. It records one hit (plus an accented one) by default; <b>cached hits per sound</b> in the options menu (or settings) records 4, 8 or 16 for more variety, and re-records the sounds you've edited. A reload part-way through an edit still caches that sound.</li>
 <li><b>synthetic</b>: a simplified circuit, built from a few oscillators, filters and envelopes. Its knobs are live and mean the same as the circuit's, and its levels are matched to the circuit at the default settings.</li></ul>
 <p>The <b>cpu</b> readout beside them shows how much of the audio thread's time the sound takes; it turns dark at 80%.</p>
 

@@ -45,6 +45,8 @@ $('m-opts').addEventListener('click', (e) => {
     [tick('m-assign') + 'assign knobs', () => $('m-assign').click()],
     [(g8.bdTop ? '■ ' : '□ ') + 'bass drum at the top of the grid', () => g8SetBdTop(!g8.bdTop)],
     ['reset sound (plain 808, patterns kept)', () => t8ResetSound()],
+    [`cached hits per sound: ${t8Hits} (click for ${T8_HITS_OPTS[(T8_HITS_OPTS.indexOf(t8Hits) + 1) % T8_HITS_OPTS.length]})`,
+      () => t8SetHits(T8_HITS_OPTS[(T8_HITS_OPTS.indexOf(t8Hits) + 1) % T8_HITS_OPTS.length])],
     ['background colour…', () => $('m-panel-pick').click()],
     ...($('m-panel-pick').value !== T8_PANEL ? [['background back to default', () => t8Panel(T8_PANEL)]] : []),
     ['spot colour…', () => $('m-spot-pick').click()],

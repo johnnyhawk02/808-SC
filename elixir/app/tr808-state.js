@@ -61,3 +61,15 @@ async function t8ResetSound() {
   await Promise.all(T8_ORDER.map((id) => t8UseKnobs(id, t8Defaults(id))));
   t8Save(); mDrawAll(); t8Draw(); g8Draw(); setDirty(true);
 }
+
+// after a reload: a sound left mid-edit gets cached now, and a cached sound whose knobs don't match its hits gets new ones
+t8CustomReady.then(() => {
+  let a = null;
+  try { a = JSON.parse(localStorage.getItem(G8_AUTO_KEY)); localStorage.removeItem(G8_AUTO_KEY); } catch (e) {}
+  for (const id of T8_IDS) {
+    if (t8.models[id] === 'sc') continue;
+    if (a?.id === id) { if (t8.models[id] === 'circuit') t8UseKnobs(id, { ...t8.values[id] }); continue; }
+    if (t8.models[id] === 'cached') t8UseKnobs(id, { ...t8.values[id] });
+  }
+  t8Draw();
+});

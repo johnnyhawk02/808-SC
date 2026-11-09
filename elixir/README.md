@@ -28,7 +28,7 @@ from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.git
 - **Background and spot colours** (options): any panel colour (pale pink by default; ink and logo follow it) and a spot colour for what is on or lit (hot red by default), kept in this browser.
 - **The model keys on top** (circuit / cached / synthetic, three joined keys; each sound's card has its own) sets every sound's model at once; the **CPU** readout beside it
   shows how much of the real-time budget the sound takes (not in the plugin).
-- **Caching is automatic** (no button): moving off an edited sound records 4 normal + 4 accented hits through the circuit at its current knobs in a worker (a
+- **Caching is automatic** (no button): moving off an edited sound records 1 normal + 1 accented hit ("cached hits per sound" in the options picks 4, 8 or 16) through the circuit at its current knobs in a worker (a
   few seconds, the cymbal longest) and plays them as cached, random robin (picked at random, never the same one twice
   running); **revert** goes back to the shipped 16 + 16 hits (`../cache/`). They're kept in
   this browser under the bench's own IndexedDB store, so a cache made on the bench shows up here and the other way round.

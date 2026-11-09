@@ -195,8 +195,11 @@ for (const id of T8_ORDER) t8Card(id, $('m-g8-side'));
 // sound, or another page) caches it at its new knobs and plays that (if no knob moved, it just goes back to cached).
 // Picking circuit by hand keeps it on the circuit; a sound on SC stays on SC (every knob plays live there).
 let g8Auto = null, g8Quiet = 0; // { id, moved }
+// (kept in the browser, so a reload in the middle of an edit still caches that sound)
+const G8_AUTO_KEY = '808sc-autocache';
+const g8AutoSave = () => { try { if (g8Auto) localStorage.setItem(G8_AUTO_KEY, JSON.stringify(g8Auto)); else localStorage.removeItem(G8_AUTO_KEY); } catch (e) {} };
 function g8Unauto() {
-  const a = g8Auto; g8Auto = null;
+  const a = g8Auto; g8Auto = null; g8AutoSave();
   if (!a) return;
   if (a.moved) t8MakeCache(a.id); // (plays the circuit until its hits are ready, then cached)
   else if (t8.models[a.id] === 'circuit') g8SetModel(a.id, 'cached');
@@ -209,6 +212,7 @@ function g8Edit(id, moved) {
     g8Auto = { id, moved: false };
   }
   if (moved) g8Auto.moved = true;
+  g8AutoSave();
   if (t8.models[id] === 'cached') g8SetModel(id, 'circuit');
 }
 function g8Select(id) {
