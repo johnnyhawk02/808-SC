@@ -3,6 +3,10 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.7.3
+
+- The page's top edge runs unbroken under the closed tabs and meets the picked tab's sides (no gap); closed tabs are drawn in a lighter ink instead of faded as a whole.
+
 ## 0.7.2
 
 - On a sound's card the model keys sit on the same line as its name, to the right of it (BD [circuit | cached | synthetic]).
