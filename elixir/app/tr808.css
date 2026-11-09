@@ -220,11 +220,11 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
     border-radius: 9px 9px 0 0; background: var(--tint) !important; color: var(--muted) !important; opacity: 1; box-shadow: none !important; }
   /* (the page's top edge under a closed tab, in the full ink, reaching across the gaps on both sides to the next tab's
      outer edge, so it meets the picked tab's sides with no break) */
-  .m > .m-tabs button::after { content: ""; position: absolute; left: -12px; right: -12px; bottom: 0; height: 2px; background: var(--ink); }
+  .m > .m-tabs button::after { content: ""; position: absolute; left: -10px; right: -10px; bottom: 0; height: 1px; background: var(--ink); }
   .m > .m-tabs button[aria-selected="true"] { min-height: 46px; z-index: 1; border-color: var(--ink) !important; color: var(--ink) !important; background: transparent !important; opacity: 1;
     box-shadow: inset 0 3px 0 var(--spot, var(--ink)) !important; }
   .m > .m-tabs button[aria-selected="true"]::after { display: none; }
-  .m > .m-tabs button[aria-selected="true"]::before { content: ""; position: absolute; left: -2px; right: -2px; bottom: 0; height: 2px; }
+  .m > .m-tabs button[aria-selected="true"]::before { content: ""; position: absolute; left: -1px; right: -1px; bottom: 0; height: 1px; }
   .m .m-panel:not([data-m-panel="play"]) { margin: 0 4px; padding: 12px 12px 10px !important; border: 1px solid var(--ink) !important; border-top: 0 !important; border-radius: 0 0 10px 10px; }
 }
 /* ---- the transport as symbols: play a black triangle, rec a circle in the spot colour, on plain framed keys. Playing,

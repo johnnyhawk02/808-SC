@@ -3,6 +3,10 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.10.7
+
+- The line under the tab row is 1px too, and meets the open tab's sides cleanly.
+
 ## 0.10.6
 
 - Thinner lines to match the new face: buttons, keys, cards, tabs, grid cells, checkboxes and focus outlines are 1px, the dial rings are slimmer, and the buttons' hard drop shadow is a hairline.
