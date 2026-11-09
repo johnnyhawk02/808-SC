@@ -3,6 +3,10 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.10.2
+
+- Fixed the drum card losing its dial names and values on sounds with many dials (the snare in synthetic mode): the dials now sit three across, so they always fit, and a dial is never squeezed out of its labels.
+
 ## 0.10.1
 
 - Dials sit close together on every page instead of being spread across it: the generator, effects and master rows pack from the left, the drum card is as wide as its dials (the step grid gets the room), and the phone's perform page stacks its rows from the top.

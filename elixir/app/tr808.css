@@ -400,7 +400,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
   #m-fx-echo { grid-template-columns: repeat(5, 92px) !important; justify-content: start; column-gap: 4px !important; }
   #m-fx-ring { grid-template-columns: repeat(7, 80px) !important; justify-content: start; column-gap: 4px !important; }
   /* the drum card: as wide as its dials, the step grid takes the room; rows as tall as a dial, from the top */
-  .m-g8-card { grid-template-columns: minmax(0, 1fr) 340px; }
+  .m-g8-card { grid-template-columns: minmax(0, 1fr) 400px; }
   .m-g8-side { grid-template-rows: auto auto; align-content: start; }
   .m .m-g8-side .m-808-set, .m .m-g8-side .m-g8-strip { grid-template-rows: repeat(var(--rows, 3), auto); row-gap: 14px; align-content: start; }
   .m-g8-side .m-808-v { grid-template-columns: minmax(0, 1fr) 124px; grid-template-rows: auto auto auto auto auto; }
@@ -411,3 +411,8 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
   #m-faders { grid-template-rows: none !important; grid-auto-rows: auto; align-content: start; row-gap: 16px; }
   #m-faders .m-vtrack { flex: none; }
 }
+
+/* the drum card's dials three across (at most four rows, so they fit a short window), and a dial never squeezed out of its name and value */
+.m .m-g8-side .m-808-set { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#m.m .m-g8-side .m-808-set .m-knob, #m.m .m-g8-side .m-g8-strip .m-knob { min-height: max-content; }
+#m.m .m-g8-side .m-vf.m-knob .m-flab, #m.m .m-g8-side .m-vf.m-knob output { flex: none; overflow: visible; }
