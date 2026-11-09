@@ -203,6 +203,7 @@ for (const id of T8_ORDER) t8Card(id, $('m-808-all'));
 
 const t8KnobText = (id, knobs) => T8_PARAMS[id].filter((p) => knobs?.[p.id] !== undefined).map((p) => `${p.name.toLowerCase()} ${Math.round(knobs[p.id] * 100)}`).join(' · ');
 function t8Draw() {
+  document.querySelectorAll('#m-allmodels [data-all]').forEach((b) => b.setAttribute('aria-pressed', T8_IDS.every((id) => t8.models[id] === b.dataset.all)));
   for (const id in t8Cards) for (const card of t8Cards[id]) {
     const j = t8Jobs[id], c = t8Custom[id], st = card.querySelector('.m-808-status');
     card.querySelectorAll('[data-m]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.m === t8.models[id]));
@@ -220,6 +221,11 @@ function t8Draw() {
     if (j?.error) st.title = j.error;
   }
 }
+// the switch on top: every sound as circuit, cached or synthetic (sc) at once; each sound can still be set on its own
+document.querySelectorAll('#m-allmodels [data-all]').forEach((b) => b.addEventListener('click', () => {
+  for (const id of T8_IDS) if (t8.models[id] !== b.dataset.all) t8SetModel(id, b.dataset.all);
+  t8Draw();
+}));
 M_PAGE_NAMES.t808 = '808';
 // The 808 page is hidden for now (the grid's controls panel edits every sound); true brings its tab back
 const T8_PAGE = false;

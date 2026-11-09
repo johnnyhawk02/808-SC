@@ -1593,6 +1593,13 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
   .fit .m-turn b::before { content: "\21BB"; display: block; text-align: center; font-size: 200px; line-height: 1; }
   .fit .m-turn button { font: inherit; font-size: 64px; color: inherit; background: none; border: 5px solid #17200e; border-radius: 10px; padding: 10px 40px; cursor: pointer; }
 }
+/* ---- the switch on top: every sound as circuit, cached or synthetic (SC); lit when every sound plays that ---- */
+.m-allmodels { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.m .m-allmodels .m-toggle { min-width: 0; min-height: 30px; padding: 0 4px; font-size: 13px !important; letter-spacing: .04em; text-transform: uppercase; }
+@media (min-width: 1000px) {
+  .m > .m-card.m-trans { row-gap: 6px; }
+  .m .m-allmodels .m-toggle { min-height: 26px; font-size: 12px !important; letter-spacing: .02em; }
+}
 /* ---- the 808 page: every sound in its own box, eight across, two rows: its name (tap to hear it), circuit or cached,
    its knobs, then its cache button and what it plays ---- */
 .m-808-card { display: grid; min-height: 0; padding: 8px 2px; }
@@ -1768,7 +1775,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">808 circuit</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->0.1.0<!--/v--></small><small class="m-loading" id="m-loading" hidden>caching sounds…</small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">808 circuit</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->0.2.0<!--/v--></small><small class="m-loading" id="m-loading" hidden>caching sounds…</small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1776,6 +1783,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
   </header>
   <section class="m-card m-trans">
+    <div class="m-allmodels" id="m-allmodels" role="group" aria-label="Every sound plays as"><button class="m-toggle" type="button" data-all="circuit" title="Every sound as the circuit simulation (every knob works, the most CPU)">circuit</button><button class="m-toggle" type="button" data-all="cached" title="Every sound as cached hits rendered by the circuit (almost no CPU)">cached</button><button class="m-toggle" type="button" data-all="sc" title="Every sound as SC, the simplified circuit from synthetic-808 (every knob works, little CPU)">synthetic</button></div>
     <button class="m-play" id="m-play" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M7 4.5v15l13-7.5z"/><rect class="i-stop" x="5.5" y="5.5" width="13" height="13" rx="2"/></svg><span>play</span></button>
     <button class="m-rec" id="m-rec" type="button" aria-pressed="false" aria-label="Record"><i></i><span id="m-rec-t">rec</span></button>
     <button class="m-rec m-loop" id="m-loop" type="button" aria-pressed="false" aria-label="Record a loop"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h9a4 4 0 0 1 0 8h-1"/><path d="M17 17H8a4 4 0 0 1 0-8h1"/><path d="M14 4l3 3-3 3"/><path d="M10 20l-3-3 3-3"/></svg><span id="m-loop-t">loop</span></button>
@@ -1865,7 +1873,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->0.1.0<!--/v-->, 9 Nov, 13:23</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->0.2.0<!--/v-->, 9 Nov, 13:28</footer>
     </section>
   </div>
   </div>
@@ -16316,6 +16324,7 @@ for (const id of T8_ORDER) t8Card(id, $('m-808-all'));
 
 const t8KnobText = (id, knobs) => T8_PARAMS[id].filter((p) => knobs?.[p.id] !== undefined).map((p) => `${p.name.toLowerCase()} ${Math.round(knobs[p.id] * 100)}`).join(' · ');
 function t8Draw() {
+  document.querySelectorAll('#m-allmodels [data-all]').forEach((b) => b.setAttribute('aria-pressed', T8_IDS.every((id) => t8.models[id] === b.dataset.all)));
   for (const id in t8Cards) for (const card of t8Cards[id]) {
     const j = t8Jobs[id], c = t8Custom[id], st = card.querySelector('.m-808-status');
     card.querySelectorAll('[data-m]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.m === t8.models[id]));
@@ -16333,6 +16342,11 @@ function t8Draw() {
     if (j?.error) st.title = j.error;
   }
 }
+// the switch on top: every sound as circuit, cached or synthetic (sc) at once; each sound can still be set on its own
+document.querySelectorAll('#m-allmodels [data-all]').forEach((b) => b.addEventListener('click', () => {
+  for (const id of T8_IDS) if (t8.models[id] !== b.dataset.all) t8SetModel(id, b.dataset.all);
+  t8Draw();
+}));
 M_PAGE_NAMES.t808 = '808';
 // The 808 page is hidden for now (the grid's controls panel edits every sound); true brings its tab back
 const T8_PAGE = false;

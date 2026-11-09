@@ -3,6 +3,11 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.2.0 (2026-11-09)
+
+- A switch on top of the app, **circuit / cached / synthetic**, sets every sound's model at once (synthetic is SC).
+  It lights when every sound plays that model; each sound can still be set on its own.
+
 ## 0.1.0 (2026-11-09)
 
 - Every voice has a third model, **SC** (simplified circuit), next to Circuit and Cached: the voices of
