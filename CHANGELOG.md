@@ -3,6 +3,12 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.14.0
+
+- On a laptop the app is now a window of fixed 16:10 proportion, centred in the browser. Everything in it scales together, so the layout is the same at every size.
+- A small triangle in the window's bottom right corner drags it smaller or larger, keeping the proportion. The size is remembered; a double click on the triangle makes it fill the browser window again.
+- Phones and tablets are unchanged.
+
 ## 0.13.0
 
 - The rush and rush on dials are gone (and the rush graph in settings); a preset saved with the rush up loads with it off.

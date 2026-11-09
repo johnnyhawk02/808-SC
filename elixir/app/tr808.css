@@ -514,3 +514,12 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
   #m.m #m-beat-faders > :nth-child(-n+4) { grid-row: 2; grid-column: auto; }
   #m.m #m-beat-faders > :nth-child(n+5) { grid-row: 4; grid-column: auto; }
 }
+
+/* ---- 0.14.0: the laptop window (html.win, set by desktop-menu.js): a 16:10 panel laid out at 1280 x 800, scaled
+   as one piece (--z) and centred, with a small triangle in its bottom right corner to drag it smaller or larger ---- */
+.win body { padding: 0; height: 100dvh; min-height: 0; overflow: hidden; }
+.win #m.m { position: fixed; inset: 0; margin: auto; width: 1280px; height: 800px; max-width: none; zoom: var(--z, 1); border-radius: 5px; box-shadow: 0 8px 36px rgba(0, 0, 0, .5); }
+#m-grip { display: none; }
+.win #m-grip { display: block; position: absolute; right: 0; bottom: 0; z-index: 40; width: calc(18px / var(--z, 1)); height: calc(18px / var(--z, 1)); cursor: nwse-resize; touch-action: none;
+  background: var(--ink); opacity: .6; clip-path: polygon(100% 0, 100% 100%, 0 100%); border-bottom-right-radius: 5px; }
+.win #m-grip:hover { opacity: .85; }

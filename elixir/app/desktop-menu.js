@@ -19,7 +19,8 @@ function mMenu(e, items) {
   $('m').append(m);
   // (by the pointer, kept on the screen)
   const r = m.getBoundingClientRect();
-  m.style.left = Math.min(e.clientX, innerWidth - r.width - 8) + 'px'; m.style.top = Math.min(e.clientY, innerHeight - r.height - 8) + 'px';
+  const z = mWinZoom(); // (inside the scaled window its own pixels are z screen pixels)
+  m.style.left = Math.min(e.clientX, innerWidth - r.width - 8) / z + 'px'; m.style.top = Math.min(e.clientY, innerHeight - r.height - 8) / z + 'px';
   m.querySelector('button').focus();
 }
 $('m').addEventListener('contextmenu', (e) => {
@@ -63,3 +64,36 @@ $('m-opts').addEventListener('click', (e) => {
   t.addEventListener('dblclick', () => { setPerf('tempo', PERF_RANGE.tempo[2]); setDirty(true); mDrawAll(); show(); });
   show(); $('m-menu').prepend(t);
 });
+
+// ---- the laptop window: a panel of fixed 16:10 proportion, laid out at 1280 x 800 and scaled as one piece to its
+// size. It starts as big as the browser window allows; the triangle in its bottom right corner drags it smaller or
+// larger (kept, and never past what fits), and a double click on the triangle lets it fill the window again ----
+const M_WIN_W = 1280, M_WIN_MIN = 640;
+let mWinW = 0; // (the width chosen with the triangle; 0: as big as fits)
+try { mWinW = Number(localStorage.getItem('808sc-win')) || 0; } catch (e) {}
+const mWinFit = () => Math.max(320, Math.min(innerWidth - 16, (innerHeight - 16) * 1.6));
+function mWinZoom() { return parseFloat($('m').style.getPropertyValue('--z')) || 1; }
+function mWinSize() {
+  const on = mWide.matches && !document.documentElement.classList.contains('fit');
+  document.documentElement.classList.toggle('win', on);
+  if (!on) { $('m').style.removeProperty('--z'); return; }
+  const fit = mWinFit(), w = Math.max(Math.min(M_WIN_MIN, fit), Math.min(mWinW || fit, fit));
+  $('m').style.setProperty('--z', (w / M_WIN_W).toFixed(4));
+}
+{
+  const grip = document.createElement('i'); grip.id = 'm-grip'; grip.title = 'drag to resize · double click to fill the window';
+  $('m').append(grip);
+  let on = false;
+  grip.addEventListener('pointerdown', (e) => { if (e.button !== 0) return; e.preventDefault(); grip.setPointerCapture(e.pointerId); on = true; });
+  grip.addEventListener('pointermove', (e) => {
+    if (!on) return;
+    // (the window stays centred, so its corner follows the pointer from the middle of the screen)
+    const w = Math.max(2 * (e.clientX - innerWidth / 2), 3.2 * (e.clientY - innerHeight / 2));
+    mWinW = w >= mWinFit() ? 0 : Math.max(M_WIN_MIN, Math.round(w)); mWinSize();
+  });
+  const end = () => { if (!on) return; on = false; try { localStorage.setItem('808sc-win', mWinW); } catch (e) {} };
+  grip.addEventListener('pointerup', end); grip.addEventListener('pointercancel', end);
+  grip.addEventListener('dblclick', () => { mWinW = 0; mWinSize(); try { localStorage.removeItem('808sc-win'); } catch (e) {} });
+  addEventListener('resize', mWinSize); mWide.addEventListener('change', mWinSize);
+  mWinSize();
+}
