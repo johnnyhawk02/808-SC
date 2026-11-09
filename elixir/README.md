@@ -11,7 +11,7 @@ from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.git
   **write?**, which overwrites the pattern picked with it (one bar); a pattern button leaves without writing, and
   right-click a pattern › record loop-records the generator into it. The beat page is now called
   generator. The lanes are kept in this browser.
-- **808 page** (hidden for now: `T8_PAGE` in app/tr808.js brings it back): all sixteen sounds at once, each with circuit/cached, its knobs and its cache button.
+- **808 page** (hidden for now: `T8_PAGE` in app/tr808.js brings it back): all sixteen sounds at once, each with circuit/cached and its knobs.
 - **Reverb** (fx page): a convolution reverb. The IR is picked in its header: plate and gated 80s (made in the app), ten
   recorded spaces in `irs/` (OpenAIR and Reverb.js, public domain and Creative Commons: `irs/README.md`), or your own
   (**load IR**, any audio file, up to 5 s; kept in this browser's IndexedDB, `elixir808-irs`). Knobs: pre-delay, length,
@@ -28,7 +28,7 @@ from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.git
 - **Background and spot colours** (options): any panel colour (pale pink by default; ink and logo follow it) and a spot colour for what is on or lit (hot red by default), kept in this browser.
 - **The model keys on top** (circuit / cached / synthetic, three joined keys; each sound's card has its own) sets every sound's model at once; the **CPU** readout beside it
   shows how much of the real-time budget the sound takes (not in the plugin).
-- **Cache**, on every voice, records 4 normal + 4 accented hits through the circuit at its current knobs in a worker (a
+- **Caching is automatic** (no button): moving off an edited sound records 4 normal + 4 accented hits through the circuit at its current knobs in a worker (a
   few seconds, the cymbal longest) and plays them as cached, random robin (picked at random, never the same one twice
   running); **revert** goes back to the shipped 16 + 16 hits (`../cache/`). They're kept in
   this browser under the bench's own IndexedDB store, so a cache made on the bench shows up here and the other way round.

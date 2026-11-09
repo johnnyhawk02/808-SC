@@ -10,13 +10,13 @@ const T8_IDS = TR808.VOICES.map(([id]) => id);
 const T8_NAME = Object.fromEntries(TR808.VOICES.map(([id, name]) => [id, name.toLowerCase()]));
 const T8_SPEC = new TR808.Kit(44100, { circuits: false }).spec(); // (no circuits: just the knob lists)
 const T8_PARAMS = Object.fromEntries(T8_SPEC.map((v) => [v.id, v.params]));
-const T8_LIVE = ['level', 'snap', 'accent']; // knobs cached plays live; the cache button bakes the rest in (drive too: it is in the circuit)
+const T8_LIVE = ['level', 'snap', 'accent']; // knobs cached plays live; its cached hits bake the rest in (drive too: it is in the circuit)
 // the sounds in the order the grid's lanes and the 808 page show them: kick, snares and claps, toms, congas and small
 // percussion, cymbals and hats
 const T8_ORDER = ['bd', 'sd', 'rs', 'cp', 'lt', 'mt', 'ht', 'lc', 'mc', 'hc', 'cl', 'ma', 'cb', 'cy', 'oh', 'ch'];
 const T8_KIT = ['bd', 'lt', 'ht', 'sd', 'cy', 'ch', 'oh'];
 const T8_KEY = 'elixir808-tr808';
-// the cache button records this many hits a voice, plain and accented each, played in random order, never the same one
+// a new cache records this many hits a voice, plain and accented each, played in random order, never the same one
 // twice running (the shipped cache has 16)
 const T8_HITS = 4;
 // shipped cached hits: the bench's cache/ folder, beside this app's folder
@@ -80,7 +80,7 @@ function t8SetModel(id, m) {
   t8Draw();
 }
 
-// ---- the cache button (as the bench's): IndexedDB tr808-cache, store hits, one entry per voice ----
+// ---- cached hits made here (as the bench's): IndexedDB tr808-cache, store hits, one entry per voice ----
 const T8_DB = 'tr808-cache', T8_STORE = 'hits';
 function t8Db() {
   return new Promise((ok, fail) => {
@@ -168,7 +168,7 @@ async function t8Revert(id) {
 }
 
 // ---- the page: every sound in its own box, all on one page: its name (tap to hear it), circuit or cached, its knobs,
-// and its cache button with what it plays ----
+// and what its cached hits are (they're made automatically when you move off a sound) ----
 async function t8Audition(id) {
   if (t8.models[id] === 'cached') await t8LoadCached(id);
   send({ type: 'hit808', id, acc: false });
@@ -183,13 +183,11 @@ function t8Card(id, into) {
     + '<button class="m-toggle" type="button" data-m="cached" title="Recorded hits, one picked at random each time: almost no CPU">cached</button>'
     + '<button class="m-toggle" type="button" data-m="sc" title="Synthetic: a simplified circuit, every knob works, a fraction of the CPU">synthetic</button></span></div>'
     + '<div class="m-808-set"></div>'
-    + '<button class="m-btn m-808-go" type="button" title="Record 4 normal + 4 accented hits through the circuit at these knobs, kept in this browser, played at random, never the same one twice running">cache</button>'
     + '<span class="m-808-status"></span>'
     + '<button class="m-808-revert" type="button" hidden title="Forget your hits and go back to the shipped ones (default knobs)">revert</button>';
   into.append(card);
   card.querySelector('.m-808-vname').addEventListener('click', () => t8Audition(id));
   card.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => t8SetModel(id, b.dataset.m)));
-  card.querySelector('.m-808-go').addEventListener('click', () => t8MakeCache(id));
   card.querySelector('.m-808-revert').addEventListener('click', () => t8Revert(id));
   const box = card.querySelector('.m-808-set');
   for (const p of T8_PARAMS[id]) {
@@ -207,7 +205,6 @@ function t8Draw() {
   for (const id in t8Cards) for (const card of t8Cards[id]) {
     const j = t8Jobs[id], c = t8Custom[id], st = card.querySelector('.m-808-status');
     card.querySelectorAll('[data-m]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.m === t8.models[id]));
-    card.querySelector('.m-808-go').disabled = !!j && !j.error;
     card.querySelector('.m-808-revert').hidden = !c || !!j;
     st.title = '';
     if (j) st.textContent = j.error ? 'failed' : j.total ? `${Math.round(100 * j.done / j.total)}%` : '…';

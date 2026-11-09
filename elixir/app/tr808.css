@@ -27,7 +27,7 @@
 .m .m-seg > .m-toggle:not([aria-pressed="true"]):hover { background: var(--tint) !important; }
 .m .m-seg > .m-toggle[aria-pressed="true"] { background: var(--spot, var(--ink)) !important; color: var(--on-spot, var(--panel)) !important; }
 /* ---- the 808 page: every sound in its own box, eight across, two rows: its name (tap to hear it), circuit or cached,
-   its knobs, then its cache button and what it plays ---- */
+   its knobs, then what its cached hits are ---- */
 .m-808-card { display: grid; min-height: 0; padding: 8px 2px; }
 .m-808-all { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 8px; min-height: 0; }
 .m-808-v { display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; gap: 4px; min-width: 0; min-height: 0; padding: 6px 4px; border: 1.5px solid var(--ink); border-radius: 8px; }
@@ -40,7 +40,6 @@
 .m .m-808-set .m-knob .m-vtrack { grid-row: 1 / 3; container-type: size; width: 100%; height: 100%; min-height: 26px; max-height: 52px; background: none; overflow: visible; border-radius: 0; }
 .m .m-808-set .m-knob output { grid-area: 1 / 2; font-size: 14px; line-height: 1; text-align: right; }
 .m .m-808-set .m-knob .m-flab { grid-area: 2 / 2; font-size: 12px; line-height: 1; text-align: right; white-space: nowrap; }
-.m .m-808-go { min-height: 30px; padding: 0; font-size: 14px !important; letter-spacing: .04em; }
 .m-808-status { font-size: 13px; line-height: 1; text-align: center; opacity: .8; white-space: nowrap; overflow: hidden; }
 .m .m-808-revert { min-height: 0; padding: 0; border: 0 !important; background: none !important; box-shadow: none !important; font-size: 12px !important; text-decoration: underline; color: var(--ink); text-transform: uppercase; }
 .m-808-revert[hidden] { display: none; }

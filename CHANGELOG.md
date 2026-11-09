@@ -3,6 +3,10 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.8.3
+
+- The cache button is gone. Caching already happens by itself: an edited sound plays on the circuit while you turn its knobs, then renders new hits when you move to another sound or page.
+
 ## 0.8.2
 
 - Every slider is now a 48px dial: the generator, density, FX, master and perform controls. Only the mixer's level faders stay as faders.

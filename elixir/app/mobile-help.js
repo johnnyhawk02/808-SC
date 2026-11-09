@@ -8,7 +8,7 @@ const HELP = [
 <p>(In a window under 1000 px wide it becomes the narrow layout: pages along the bottom, with the perform knobs on their own page.)</p>`],
   ['sounds', 'the three models', `<p>Each sound plays one of three models, picked on its card (grid page, right) or for every sound at once with the keys on top:</p>
 <ul><li><b>circuit</b>: the 808's schematic simulated part by part, sample by sample. The real thing, and heavy: a busy pattern can need most of a CPU core.</li>
-<li><b>cached</b> (the default): hits the circuit rendered in advance, played back at almost no CPU. Level, snap and accent stay live; the other knobs take effect when you press <b>cache</b> on the sound's card, which renders fresh hits at those settings.</li>
+<li><b>cached</b> (the default): hits the circuit rendered in advance, played back at almost no CPU. Level, snap and accent stay live; while you turn the other knobs the sound plays on the circuit so you hear them, and when you move on to another sound or page it renders fresh hits at those settings by itself, then goes back to cached.</li>
 <li><b>synthetic</b>: a simplified circuit, built from a few oscillators, filters and envelopes. Its knobs are live and mean the same as the circuit's, and its levels are matched to the circuit at the default settings.</li></ul>
 <p>The <b>cpu</b> readout beside them shows how much of the audio thread's time the sound takes; it turns dark at 80%.</p>`],
   ['grid', 'grid: patterns and sounds', `<p>Eight patterns (the <b>1</b> to <b>8</b> buttons, or keys 1 to 8), each a lane for each of the sixteen sounds, sixteen steps a bar and up to four bars.</p>
@@ -17,7 +17,7 @@ const HELP = [
 <li><b>generator</b> plays the generator page's pattern instead (shown in the lanes); your first edit makes it a pattern of your own.</li>
 <li>Right-click a pattern's number to record into it: from the next bar what you hear is written into it until you press it again.</li>
 <li>cmd (ctrl) + c copies the pattern, cmd + v pastes it over the one picked.</li>
-<li>On the right, the card of the sound picked (click its name above): its model, its knobs, and <b>cache</b>.</li></ul>`],
+<li>On the right, the card of the sound picked (click its name above): its model and its knobs.</li></ul>`],
   ['beat', 'generator: the pattern', `<ul><li><b>tempo</b>; <b>genre</b> picks a style, <b>beat</b> one of its grooves, <b>energy</b> how busy it is, <b>fills</b> how often it fills.</li>
 <li><b>velocity</b>; <b>groove</b> and <b>depth</b> give it swing or push; <b>accent</b> how loud the accents are.</li>
 <li><b>rush</b> builds a roll: the chosen sound (<b>rush on</b>) rolls faster and faster while the others drop out and a high-pass rises. Push it up for a build, drop it for the drop. Its curve is in <b>options</b> › <b>settings</b> › <b>rush</b>.</li>
