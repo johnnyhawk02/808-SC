@@ -64,4 +64,4 @@ writeFileSync(outFile || new URL('index.html', here), page.replaceAll('@VER@', (
 console.log(`${outFile || 'index.html'}: ${(page.length / 1024).toFixed(1)} KB`);
 // help.html: the same help as the app's HELP ME! pop-up (HELP in app/mobile-help.js), a section a tab, so the two agree
 const HELP = new Function(`return ${/const HELP = (\[[\s\S]*?\n\]);/.exec(read('app/mobile-help.js'))[1]}`)();
-if (!outFile) writeFileSync(new URL('help.html', here), read('help.src.html').replace('<!--@HELP@-->', () => HELP.map(([, title, body]) => `<h2>${title}</h2>\n  ${body}`).join('\n\n  ')));
+if (!outFile) writeFileSync(new URL('help.html', here), read('help.src.html').replaceAll('@VER@', () => ver).replace('<!--@HELP@-->', () => HELP.map(([, title, body]) => `<h2>${title}</h2>\n  ${body}`).join('\n\n  ')));
