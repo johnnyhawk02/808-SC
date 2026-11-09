@@ -3,6 +3,15 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.4.0
+
+- The model choice is a 3-way slide switch (circuit, cached, synthetic), on top for every sound and on each sound's card; click a word to pick it, or the slide to move it one along. The cards say synthetic too, not sc.
+- One name throughout: 808 SC (page titles, the app's title, the landscape note, the help, recordings' file names, the installed app). The footer's source link points to this repo.
+- The help is rewritten for the pages the app has now (grid, generator, fx, mix, mstr, prst), with a section on the three models and the CPU readout.
+- The generator's density faders and the master's sidechain use the 808 sound names (bd, lt, ht, sd, cy, ch, oh) instead of the old drum numbers.
+- The version reads v0.4.0 everywhere (app, help, bench). The bench's intro describes SC.
+- Narrow layout: the generator tab says gen so the tab bar no longer overlaps.
+
 ## 0.3.3
 
 - The Cloudflare Pages workflow no longer runs on push, only by hand; 808sc.pages.dev is deployed with wrangler for now.

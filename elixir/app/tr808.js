@@ -179,9 +179,9 @@ function t8Card(id, into) {
   const card = document.createElement('div');
   card.className = 'm-808-v';
   card.innerHTML = `<button class="m-808-vname" type="button" title="${T8_NAME[id]}: tap to hear it">${id}</button>`
-    + '<span class="m-808-models"><button class="m-toggle" type="button" data-m="circuit" title="The circuit simulation: every knob works, costs CPU">circuit</button>'
+    + '<span class="m-808-models m-3way"><span class="m-3way-track" aria-hidden="true"><i></i></span><button class="m-toggle" type="button" data-m="circuit" title="The circuit simulation: every knob works, costs CPU">circuit</button>'
     + '<button class="m-toggle" type="button" data-m="cached" title="Recorded hits, one picked at random each time: almost no CPU">cached</button>'
-    + '<button class="m-toggle" type="button" data-m="sc" title="Simplified circuit: a light model laid out like the circuit, every knob works, a fraction of the CPU">sc</button></span>'
+    + '<button class="m-toggle" type="button" data-m="sc" title="Synthetic: a simplified circuit, every knob works, a fraction of the CPU">synthetic</button></span>'
     + '<div class="m-808-set"></div>'
     + '<button class="m-btn m-808-go" type="button" title="Record 4 normal + 4 accented hits through the circuit at these knobs, kept in this browser, played at random, never the same one twice running">cache</button>'
     + '<span class="m-808-status"></span>'
@@ -189,6 +189,9 @@ function t8Card(id, into) {
   into.append(card);
   card.querySelector('.m-808-vname').addEventListener('click', () => t8Audition(id));
   card.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => t8SetModel(id, b.dataset.m)));
+  card.querySelector('.m-808-models .m-3way-track').addEventListener('click', () => {
+    t8SetModel(id, T8_MODELS[(T8_MODELS.indexOf(t8.models[id]) + 1) % 3]);
+  });
   card.querySelector('.m-808-go').addEventListener('click', () => t8MakeCache(id));
   card.querySelector('.m-808-revert').addEventListener('click', () => t8Revert(id));
   const box = card.querySelector('.m-808-set');
@@ -201,12 +204,27 @@ function t8Card(id, into) {
 }
 for (const id of T8_ORDER) t8Card(id, $('m-808-all'));
 
+// the 3-way switches (the one on top and each sound's): a slide switch whose thumb sits under the model playing (none on
+// top while the sounds play different ones); a word picks that position, a click on the slide moves it one along
+const T8_MODELS = ['circuit', 'cached', 'sc'];
+function t8Pos(sw) {
+  const i = [...sw.querySelectorAll('button')].findIndex((b) => b.getAttribute('aria-pressed') === 'true');
+  sw.dataset.pos = i < 0 ? 'mixed' : String(i);
+}
+function t8Slide(sw, pick) {
+  sw.querySelector('.m-3way-track').addEventListener('click', () => {
+    const i = sw.dataset.pos === 'mixed' ? 0 : (Number(sw.dataset.pos) + 1) % 3;
+    pick(T8_MODELS[i]);
+  });
+}
 const t8KnobText = (id, knobs) => T8_PARAMS[id].filter((p) => knobs?.[p.id] !== undefined).map((p) => `${p.name.toLowerCase()} ${Math.round(knobs[p.id] * 100)}`).join(' · ');
 function t8Draw() {
   document.querySelectorAll('#m-allmodels [data-all]').forEach((b) => b.setAttribute('aria-pressed', T8_IDS.every((id) => t8.models[id] === b.dataset.all)));
+  t8Pos($('m-allmodels'));
   for (const id in t8Cards) for (const card of t8Cards[id]) {
     const j = t8Jobs[id], c = t8Custom[id], st = card.querySelector('.m-808-status');
     card.querySelectorAll('[data-m]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.m === t8.models[id]));
+    t8Pos(card.querySelector('.m-3way'));
     card.querySelector('.m-808-go').disabled = !!j && !j.error;
     card.querySelector('.m-808-revert').hidden = !c || !!j;
     st.title = '';
@@ -222,10 +240,9 @@ function t8Draw() {
   }
 }
 // the switch on top: every sound as circuit, cached or synthetic (sc) at once; each sound can still be set on its own
-document.querySelectorAll('#m-allmodels [data-all]').forEach((b) => b.addEventListener('click', () => {
-  for (const id of T8_IDS) if (t8.models[id] !== b.dataset.all) t8SetModel(id, b.dataset.all);
-  t8Draw();
-}));
+const t8SetAll = (m) => { for (const id of T8_IDS) if (t8.models[id] !== m) t8SetModel(id, m); t8Draw(); };
+document.querySelectorAll('#m-allmodels [data-all]').forEach((b) => b.addEventListener('click', () => t8SetAll(b.dataset.all)));
+t8Slide($('m-allmodels'), t8SetAll);
 // the CPU readout beside it: the player's render time over the audio's time (sent every ~0.5 s from the audio thread)
 function t8ShowLoad(v) {
   const el = document.getElementById('m-cpu'); if (!el) return;

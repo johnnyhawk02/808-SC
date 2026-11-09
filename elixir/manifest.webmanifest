@@ -1,6 +1,6 @@
 {
-  "name": "808 Circuit",
-  "short_name": "808 Circuit",
+  "name": "808 SC",
+  "short_name": "808 SC",
   "description": "A drum machine playing circuit-modelled TR-808 sounds.",
   "start_url": "./",
   "scope": "./",

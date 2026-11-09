@@ -1,4 +1,4 @@
-// ---- density: a fader a track on the beat page (drum 1, 2, 3, snare, cymbal, closed hat, open hat), 0 to 200%.
+// ---- density: a fader a track on the beat page (bd, lt, ht, sd, cy, ch, oh: the 808 sounds the generator's tracks play), 0 to 200%.
 // Under 100% it thins that track's hits, the off-beats going first and the downbeats last; over 100% it adds hits on
 // the empty steps, eighths first, until at 200% every step plays. Which hits go or come is fixed per step (not rolled
 // each time), so moving the fader back and forth is repeatable. It changes what's sent to the player, not the pattern
@@ -30,8 +30,8 @@ send = function (m) {
   }
   densSend(m);
 };
-// the faders, under the beat page's (dr1 .. op), double-click to 100%
-const DENS_N = ['dr1', 'dr2', 'dr3', 'sn', 'cy', 'cl', 'op'];
+// the faders, under the beat page's, named after the 808 sound each track plays (tr808.js: T8_KIT), double-click to 100%
+const DENS_N = ['bd', 'lt', 'ht', 'sd', 'cy', 'ch', 'oh'];
 DENS_N.forEach((n, t) => mFader($('m-dens-faders'), n, { min: 0, max: 200, step: 5, get: () => perf.dens[t], dflt: 100,
   set: (v) => { perf.dens[t] = v; sendSeq(); setDirty(true); }, show: (v) => `${v}%` }));
 // each track's light: a thin line under its name that lights on every hit of that track (the sequencer's and the pads'),

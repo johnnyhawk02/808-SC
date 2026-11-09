@@ -512,7 +512,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
      settings, help, install), the randomise buttons, then play and rec (no loop button: rec's hold or right-click
      chooses free or a loop) -- */
   .m-top { grid-area: 1 / 1; align-self: center; justify-self: start; width: 180px; gap: 10px; border-bottom: 0; padding: 0 24px 0 4px; }
-  .m-pagename, .m-title-long, .m-userbtn, #m-set-open, #m-help-open, .m-ver-v { display: none; }
+  .m-pagename, .m-title-long, .m-userbtn, #m-set-open, #m-help-open { display: none; }
   .m-title { position: relative; display: inline-flex; align-items: center; }
   /* (a small cauldron in the LCD's ink, cast like the type; the version number on its body in the glass colour) */
   .m-title-short { display: inline-block; width: 46px; height: 46px; vertical-align: middle; font-size: 0; color: transparent; background: var(--ink);

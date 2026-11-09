@@ -93,7 +93,7 @@ async function finishTake(ev) {
   const blob = wavBlob(L, R, rate, bits, gain);
   const bpm = ev.bpm, preset = ($('kit').selectedOptions[0] || {}).textContent || 'take';
   const len = loop ? `${LENS[recSet.len]} bar${LENS[recSet.len] > 1 ? "s" : ""}` : `${(frames / rate).toFixed(1)} s`;
-  const name = `808 circuit ${preset.replace(/[^\w' -]/g, '').trim()} ${bpm}bpm ${loop ? LENS[recSet.len] + 'bar' : 'take'} ${++takeNo}.wav`;
+  const name = `808 SC ${preset.replace(/[^\w' -]/g, '').trim()} ${bpm}bpm ${loop ? LENS[recSet.len] + 'bar' : 'take'} ${++takeNo}.wav`;
   addTake({ name, blob, len, peak: peak * gain, rate, bits });
   $('rec-status').textContent = `took ${len}`;
 }

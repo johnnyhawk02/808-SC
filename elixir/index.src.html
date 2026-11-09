@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<title>808 Circuit</title>
+<title>808 SC</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>
 /* Phones and tablets get the laptop layout, shrunk to fit: the page is laid out at least 1280 x 710 (the smallest
@@ -33,7 +33,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<meta name="description" content="808 Circuit: a drum machine playing circuit-modelled TR-808 voices.">
+<meta name="description" content="808 SC: a drum machine playing the TR-808 voices as circuit simulations, cached hits or synthetic models.">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=VT323&display=swap">
@@ -43,7 +43,7 @@
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><img class="m-logo" src="@LOGO@" alt="808 SC"><span class="m-title-long">808 circuit</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i>@VER@</small><small class="m-loading" id="m-loading" hidden>caching sounds…</small></b>
+    <b class="m-title" id="m-title"><img class="m-logo" src="@LOGO@" alt="808 SC"><span class="m-title-long">808 SC</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i>@VER@</small><small class="m-loading" id="m-loading" hidden>caching sounds…</small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -51,7 +51,7 @@
     <b class="m-pagename" id="m-pagename" aria-live="polite">perform</b>
   </header>
   <section class="m-card m-trans">
-    <div class="m-allmodels" id="m-allmodels" role="group" aria-label="Every sound plays as"><button class="m-toggle" type="button" data-all="circuit" title="Every sound as the circuit simulation (every knob works, the most CPU)">circuit</button><button class="m-toggle" type="button" data-all="cached" title="Every sound as cached hits rendered by the circuit (almost no CPU)">cached</button><button class="m-toggle" type="button" data-all="sc" title="Every sound as SC, the simplified circuit from synthetic-808 (every knob works, little CPU)">synthetic</button><output class="m-cpu" id="m-cpu" title="CPU: how much of the real-time budget the sound takes (100% = one core, dropouts)">cpu –</output></div>
+    <div class="m-allmodels m-3way" id="m-allmodels" role="group" aria-label="Every sound plays as"><span class="m-3way-track" aria-hidden="true"><i></i></span><button class="m-toggle" type="button" data-all="circuit" title="Every sound as the circuit simulation (every knob works, the most CPU)">circuit</button><button class="m-toggle" type="button" data-all="cached" title="Every sound as cached hits rendered by the circuit (almost no CPU)">cached</button><button class="m-toggle" type="button" data-all="sc" title="Every sound as the synthetic model, a simplified circuit (every knob works, little CPU)">synthetic</button><output class="m-cpu" id="m-cpu" title="CPU: how much of the real-time budget the sound takes (100% = one core, dropouts)">cpu –</output></div>
     <button class="m-play" id="m-play" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M7 4.5v15l13-7.5z"/><rect class="i-stop" x="5.5" y="5.5" width="13" height="13" rx="2"/></svg><span>play</span></button>
     <button class="m-rec" id="m-rec" type="button" aria-pressed="false" aria-label="Record"><i></i><span id="m-rec-t">rec</span></button>
     <button class="m-rec m-loop" id="m-loop" type="button" aria-pressed="false" aria-label="Record a loop"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h9a4 4 0 0 1 0 8h-1"/><path d="M17 17H8a4 4 0 0 1 0-8h1"/><path d="M14 4l3 3-3 3"/><path d="M10 20l-3-3 3-3"/></svg><span id="m-loop-t">loop</span></button>
@@ -120,7 +120,7 @@
 
   <div class="m-panel" data-m-panel="comp">
     <section class="m-card m-comp-card">
-      <div class="m-chead"><b>drum 1 sidechain</b><div class="m-gr" aria-label="sidechain duck"><i><b id="m-dk"></b></i><output id="m-dk-out">0 dB</output></div></div>
+      <div class="m-chead"><b>bd sidechain</b><div class="m-gr" aria-label="sidechain duck"><i><b id="m-dk"></b></i><output id="m-dk-out">0 dB</output></div></div>
       <div class="m-faders" id="m-duck"></div>
       <div class="m-chead"><b>distortion</b></div>
       <div class="m-faders" id="m-dist"></div>
@@ -141,7 +141,7 @@
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v@VER@, @BUILT@</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/808-SC">Source</a> · v@VER@, @BUILT@</footer>
     </section>
   </div>
   </div>
@@ -232,7 +232,7 @@
   <nav class="m-tabs" role="tablist" aria-label="pages">
     <button type="button" role="tab" data-m-tab="play" aria-selected="true">perf</button>
     <button type="button" role="tab" data-m-tab="grid" aria-selected="false">grid</button>
-    <button type="button" role="tab" data-m-tab="beat" aria-selected="false">generator</button>
+    <button type="button" role="tab" data-m-tab="beat" aria-selected="false">gen<span class="m-tab-long">erator</span></button>
     <button type="button" role="tab" data-m-tab="t808" aria-selected="false">808</button>
     <button type="button" role="tab" data-m-tab="xy" aria-selected="false">x/y</button>
     <button type="button" role="tab" data-m-tab="fx" aria-selected="false">fx</button>
@@ -241,7 +241,7 @@
     <button type="button" role="tab" data-m-tab="presets" aria-selected="false">prst</button>
   </nav>
 </main>
-<div class="m-turn" id="m-turn"><div><b>turn it sideways</b><span>808 circuit plays in landscape</span><button type="button" id="m-turn-fs" hidden>full screen</button></div></div>
+<div class="m-turn" id="m-turn"><div><b>turn it sideways</b><span>808 SC plays in landscape</span><button type="button" id="m-turn-fs" hidden>full screen</button></div></div>
 
 <div class="wrap" aria-hidden="true">
   <header class="topbar">
