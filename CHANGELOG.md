@@ -3,6 +3,10 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.3.3
+
+- The Cloudflare Pages workflow no longer runs on push, only by hand; 808sc.pages.dev is deployed with wrangler for now.
+
 ## 0.3.2
 
 - The app shows the 808 logo in place of the title text, printed in multiply so it reads as ink on the panel.
