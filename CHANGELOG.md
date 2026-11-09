@@ -3,6 +3,10 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.7.4
+
+- Play and rec are symbols on plain framed keys: play a black triangle, rec a circle in the spot colour. Playing, the play key fills black with a stop square; recording, the rec key fills with the spot colour, its circle blinks and the time shows beside it.
+
 ## 0.7.3
 
 - The page's top edge runs unbroken under the closed tabs and meets the picked tab's sides (no gap); closed tabs are drawn in a lighter ink instead of faded as a whole.

@@ -226,3 +226,12 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
   .m > .m-tabs button[aria-selected="true"]::before { content: ""; position: absolute; left: -2px; right: -2px; bottom: 0; height: 2px; }
   .m .m-panel:not([data-m-panel="play"]) { margin: 0 4px; padding: 12px 12px 10px !important; border: 2px solid var(--ink) !important; border-top: 0 !important; border-radius: 0 0 10px 10px; }
 }
+/* ---- the transport as symbols: play a black triangle, rec a circle in the spot colour, on plain framed keys. Playing,
+   the play key fills with the ink and shows a stop square; recording, the rec key fills with the spot colour and its
+   circle blinks (the time or the loop's progress beside it) ---- */
+.m .m-play { background: transparent !important; color: var(--ink) !important; border: 2px solid var(--ink) !important; }
+.m .m-play > span, .m #m-rec:not(.on) > span { display: none; }
+.m .m-play svg { width: 28px; height: 28px; }
+.m .m-play[aria-pressed="true"] { background: var(--ink) !important; color: var(--panel) !important; }
+.m #m-rec > i { width: 24px; height: 24px; border-radius: 50%; background: var(--spot, var(--ink)); }
+.m #m-rec.on > i { width: 18px; height: 18px; border-radius: 50%; background: var(--on-spot, var(--panel)); }
