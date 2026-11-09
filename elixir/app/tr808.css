@@ -1,3 +1,14 @@
+/* ---- the 808 logo (icons/logo-808.png, black on white) in place of the title, in multiply: the white drops out and
+   the black prints like ink on the panel ---- */
+.m-logo { display: inline-block; height: 1.25em; width: auto; vertical-align: middle; mix-blend-mode: multiply; }
+.m .m-title-long { display: none; }
+@media (min-width: 1000px) {
+  .m-top { width: 250px !important; }
+  .m-pages .m-rand-card { margin-left: 266px !important; }
+  .m .m-title-short { display: none; }
+  .m-logo { height: 32px; }
+  .m .m-title .m-ver { position: static; transform: none; width: auto; margin-left: 6px; color: var(--ink); font-size: 13px; opacity: .8; }
+}
 /* ---- the switch on top: every sound as circuit, cached or synthetic (SC); lit when every sound plays that ---- */
 .m-allmodels { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) 64px; gap: 4px; align-items: center; }
 .m-cpu { font-size: 13px; line-height: 1; text-align: right; white-space: nowrap; letter-spacing: .02em; text-transform: uppercase; font-variant-numeric: tabular-nums; }

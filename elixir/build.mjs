@@ -51,6 +51,7 @@ const page = read('index.src.html')
   .replace('/*@PLAYER@*/\n', () => read('app/player.js'))
   .replace('/*@APP@*/\n', () => app)
   .replace('/*@ENGINE@*/', () => bundle.replace(/<\/script/gi, '<\\/script'))
+  .replace('@LOGO@', () => `data:image/png;base64,${readFileSync(new URL('icons/logo-808.png', here)).toString('base64')}`) // the 808 logo (icons/logo-808.png)
   .replace('/*@KITS@*/', () => `const BUNDLED_KITS = ${JSON.stringify(kits)};`)
   .replace('/*@PRESETS@*/', () => `const BUILTIN_PRESETS = ${JSON.stringify(presets).replace(/<\/script/gi, '<\\/script')};`)
   .replace('/*@SOURCES@*/', () => `const SOURCES = ${JSON.stringify(sources).replace(/<\/script/gi, '<\\/script')};`);
