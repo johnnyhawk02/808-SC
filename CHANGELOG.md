@@ -3,6 +3,10 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.8.7
+
+- 808sc.pages.dev deploys automatically on every push to main again (GitHub Actions, using the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID secrets).
+
 ## 0.8.6
 
 - Pressed (spot-colour) buttons keep the same ink outline as every other button, so they hold their shape and line up with their neighbours.

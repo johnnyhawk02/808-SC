@@ -1,9 +1,11 @@
 # Publishes the same site as pages.yml to Cloudflare Pages (https://808sc.pages.dev/, project 808sc) with wrangler,
-# when run by hand from the Actions tab (not on push for now: deploys go out with wrangler from Johnny's Mac).
+# on every push to main (and by hand from the Actions tab).
 # Needs two repository secrets: CLOUDFLARE_API_TOKEN (a token with Cloudflare Pages: Edit)
 # and CLOUDFLARE_ACCOUNT_ID. Without them the deploy step is skipped.
 name: Deploy to Cloudflare Pages
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
