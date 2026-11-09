@@ -39,7 +39,7 @@ $('m').addEventListener('dblclick', (e) => {
 // install app (whose own buttons the laptop hides) ----
 $('m-opts').addEventListener('click', (e) => {
   const tick = (id) => ($(id).checked ? '■ ' : '□ ');
-  const r = $('m-opts').getBoundingClientRect();
+  const r = ($('m-opts').offsetParent ? $('m-opts') : $('m-title')).getBoundingClientRect(); // (on the laptop the logo opens it)
   mMenu({ clientX: r.left, clientY: r.bottom + 6 }, [
     [tick('m-nextbar') + 'randomise on next bar', () => $('m-nextbar').click()],
     [tick('m-assign') + 'assign knobs', () => $('m-assign').click()],

@@ -478,7 +478,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m-menu { position: fixed; z-index: 30; display: grid; gap: 4px; min-width: 190px; padding: 6px; background-color: var(--panel); border: 2px solid var(--ink); border-radius: 4px;
   box-shadow: 4px 5px 0 rgba(23, 32, 14, .25); }
 .m .m-menu .m-btn { min-height: 34px; justify-content: flex-start; text-align: left; padding: 0 10px; font-size: var(--fs-s) !important; }
-.m .m-menu .m-btn:hover, .m .m-menu .m-btn:focus-visible { background: var(--ink); color: var(--panel); text-shadow: none; outline: 0; }
+.m .m-menu .m-btn:hover, .m .m-menu .m-btn:focus-visible { background: var(--ink) !important; color: var(--panel) !important; text-shadow: none; outline: 0; }
 /* ---- crossfeed has its own page on the laptop only (on the phone it's on fx) ---- */
 .m > .m-tabs button[data-m-tab="xf"] { display: none; }
 /* ---- mute and solo (laptop only) ---- */

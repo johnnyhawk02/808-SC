@@ -296,3 +296,14 @@ function t8Spot(hex, keep = true) {
   $('m-set-spot').addEventListener('click', () => pick.click());
   $('m-set-spot-ink').addEventListener('click', () => t8Spot(T8_SPOT));
 }
+
+// ---- the laptop's header: the logo opens the options menu (there is no options button), and the randomisers sit in a
+// pop-up under the RND key (undo stays in the header) ----
+$('m-title').addEventListener('click', (e) => { if (mWide.matches) { e.stopPropagation(); $('m-opts').click(); } });
+{
+  const card = document.querySelector('.m-rand-card'), key = $('m-rnd-open');
+  const show = (on) => { $('m').classList.toggle('m-rnd-open', on); key.setAttribute('aria-pressed', on); key.setAttribute('aria-expanded', on); };
+  key.addEventListener('click', (e) => { e.stopPropagation(); show(!$('m').classList.contains('m-rnd-open')); });
+  addEventListener('pointerdown', (e) => { if ($('m').classList.contains('m-rnd-open') && !card.contains(e.target) && !key.contains(e.target)) show(false); });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') show(false); });
+}

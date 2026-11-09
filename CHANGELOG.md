@@ -3,6 +3,11 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.8.0
+
+- The header is simpler on the laptop: no options button (click the 808 logo for the options menu), and the randomisers (everything, pattern, random fx, alter fx) moved into a pop-up under one RND key, with undo beside it. The pop-up stays open while you randomise and closes on a click outside or esc.
+- The options menu's highlighted item reads properly (its text was invisible under the pointer).
+
 ## 0.7.5
 
 - The line under the tabs stops exactly at the page's frame on both sides, and a clicked tab no longer gets a focus ring that closed it off from the page (a tab reached by keyboard underlines its name instead).

@@ -237,3 +237,20 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 .m .m-play[aria-pressed="true"] { background: var(--ink) !important; color: var(--panel) !important; }
 .m #m-rec > i { width: 24px; height: 24px; border-radius: 50%; background: var(--spot, var(--ink)); }
 .m #m-rec.on > i { width: 18px; height: 18px; border-radius: 50%; background: var(--on-spot, var(--panel)); }
+/* ---- the laptop's header: no options button (the logo opens the menu), an RND key whose pop-up holds the randomisers,
+   and undo beside it ---- */
+.m-rndbtn, .m-undobtn { display: none; }
+@media (min-width: 1000px) {
+  .m-top { width: auto !important; }
+  .m .m-optsbtn { display: none !important; }
+  .m .m-title { cursor: pointer; }
+  .m .m-rndbtn, .m .m-undobtn { display: grid; place-items: center; min-height: 36px; padding: 0 14px !important; font-size: var(--fs-xs) !important; letter-spacing: .06em; }
+  .m .m-undobtn:disabled { opacity: .3; }
+  .m-pages .m-rand-card { display: none; }
+  .m.m-rnd-open .m-pages .m-rand-card { display: block; position: absolute; z-index: 50; top: 76px; left: 150px; width: 300px; margin: 0 !important; padding: 12px !important;
+    background: var(--panel); border: 2px solid var(--ink) !important; border-radius: 10px; box-shadow: 4px 5px 0 color-mix(in srgb, var(--ink) 20%, transparent); }
+  .m.m-rnd-open .m-rand-card .m-rand { display: grid; grid-template-columns: 1fr; grid-template-rows: none; gap: 8px; }
+  .m.m-rnd-open .m-rand-card .m-rand > * { grid-column: auto !important; grid-row: auto !important; }
+  .m.m-rnd-open .m-rand-card .m-rand .m-btn { min-height: 44px; }
+  .m.m-rnd-open .m-rand-card #m-undo { display: none; }
+}
