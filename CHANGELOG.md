@@ -3,6 +3,10 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.9.2
+
+- Drum card: the head runs over both columns, with the sound's name on the left and narrower circuit/synthetic keys on the right. Echo and the top of the level fader start level with the first row of dials.
+
 ## 0.9.1
 
 - Drum card: the sound's dials and the echo/verb/pan dials share one row grid, each with its name and value under it. The level fader's top lines up with the first row of dials, and the echo and verb names are no longer cut short.

@@ -306,3 +306,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 .m-g8-side .m-808-v { grid-template-columns: minmax(0, 1fr) 140px; }
 .m .m-g8-side .m-g8-strip .m-knob { grid-template-columns: auto auto; justify-content: center; column-gap: 6px; }
 .m .m-g8-side .m-g8-strip .m-knob .m-flab { overflow: visible; }
+/* the card's head runs over both columns: the name on the left, the engine keys (sized to their names) on the right */
+.m-g8-side .m-808-v > .m-808-head { grid-column: 1 / -1; justify-content: space-between; }
+.m-g8-side .m-808-head .m-808-models { flex: none; grid-template-columns: auto auto; }
+.m .m-g8-side .m-808-models > .m-toggle { padding: 0 12px; min-height: 28px; }
