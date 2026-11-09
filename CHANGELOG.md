@@ -3,6 +3,11 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.12.0
+
+- fx · master follows the signal path, in three numbered groups: 1 the bd sidechain (on each drum, before anything else), 2 the sends (echo and reverb, side by side), 3 the master inserts (distortion, then compressor, left to right).
+- The two empty insert slots are gone from the page.
+
 ## 0.11.0
 
 - Desktop: the generator is no longer a tab. Press generator under the grid and its dials cover the grid while it plays. The button then reads insert into pattern N: it writes what the generator plays into that pattern and closes the generator; a pattern button closes it without writing.

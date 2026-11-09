@@ -101,19 +101,23 @@
   </div>
 
   <div class="m-panel" data-m-panel="fx">
+    <h3 class="m-fx-grp"><i>1</i><b>on each drum</b><span>the kick turns the other drums down, before anything else</span></h3>
+    <section class="m-card m-comp-card m-duck-card">
+      <div class="m-chead"><b>bd sidechain</b><div class="m-gr" aria-label="sidechain duck"><i><b id="m-dk"></b></i><output id="m-dk-out">0 dB</output></div></div>
+      <div class="m-faders" id="m-duck"></div>
+    </section>
+    <h3 class="m-fx-grp"><i>2</i><b>sends</b><span>side by side: each drum feeds them with its own echo and reverb dials, and they come back into the mix</span></h3>
     <section class="m-card m-fx-card">
       <div class="m-fx-row"><div class="m-fxhead"><b>echo</b><label class="m-chk"><input id="m-pp" type="checkbox"><i aria-hidden="true"></i>ping pong</label><label class="m-chk"><input id="m-sync" type="checkbox" checked><i aria-hidden="true"></i>sync</label></div><div class="m-faders" id="m-fx-echo"></div></div>
       <div class="m-fx-row"><div class="m-fxhead"><b>reverb</b><span class="m-irpick"><select id="m-ir" aria-label="impulse response"></select><button type="button" class="m-irbtn" id="m-ir-load" title="Load your own impulse response (a wav or other audio file, up to 5 s used); it's kept in this browser">load IR</button><button type="button" class="m-irbtn" id="m-ir-del" hidden title="Remove this IR of yours">remove</button><input type="file" id="m-ir-file" accept="audio/*,.wav,.aif,.aiff,.flac" hidden></span></div><div class="m-faders" id="m-fx-ring"></div></div>
-      <div class="m-fx-row m-fx-slot"><b>insert</b><div class="m-fx-empty">empty slot</div></div>
-      <div class="m-fx-row m-fx-slot"><b>insert</b><div class="m-fx-empty">empty slot</div></div>
     </section>
-    <section class="m-card m-comp-card">
-      <div class="m-chead"><b>bd sidechain</b><div class="m-gr" aria-label="sidechain duck"><i><b id="m-dk"></b></i><output id="m-dk-out">0 dB</output></div></div>
-      <div class="m-faders" id="m-duck"></div>
-      <div class="m-chead"><b>distortion</b></div>
-      <div class="m-faders" id="m-dist"></div>
-      <div class="m-chead"><b>compressor</b><div class="m-gr" aria-label="gain reduction"><i><b id="m-gr"></b></i><output id="m-gr-out">0 dB</output></div><button class="m-toggle" id="m-comp-on" type="button" aria-pressed="true">on</button></div>
-      <div class="m-faders" id="m-comp"></div>
+    <h3 class="m-fx-grp"><i>3</i><b>master inserts</b><span>the whole mix, sends included, runs through these left to right, then out</span></h3>
+    <section class="m-card m-comp-card m-chain-card">
+      <div class="m-chain-fx"><div class="m-chead"><b>distortion</b></div>
+      <div class="m-faders" id="m-dist"></div></div>
+      <i class="m-chain-arrow" aria-hidden="true">→</i>
+      <div class="m-chain-fx"><div class="m-chead"><b>compressor</b><div class="m-gr" aria-label="gain reduction"><i><b id="m-gr"></b></i><output id="m-gr-out">0 dB</output></div><button class="m-toggle" id="m-comp-on" type="button" aria-pressed="true">on</button></div>
+      <div class="m-faders" id="m-comp"></div></div>
     </section>
   </div>
 

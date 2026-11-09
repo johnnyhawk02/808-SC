@@ -483,3 +483,23 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
   .m .m-g8-tempo .m-num .m-vtrack::after { content: attr(aria-valuetext); font-size: var(--fs-xs); line-height: 1; }
 }
 @media (min-width: 1000px) { .m > .m-tabs { grid-template-columns: repeat(5, minmax(0, 1fr)); } .m.m-no808 > .m-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* ---- fx · master in signal order: 1 the kick's ducking (on each drum), 2 the sends, 3 the master inserts, left to right ---- */
+#m.m .m-fx-grp { display: flex; align-items: baseline; gap: 8px; margin: 4px 2px -6px; font-weight: 400; font-size: var(--fs-s); min-width: 0; }
+#m.m .m-fx-grp i { font-style: normal; flex: none; width: 1.5em; height: 1.5em; line-height: 1.5em; text-align: center; border: 1px solid var(--ink); border-radius: 50%; font-size: var(--fs-xs); }
+#m.m .m-fx-grp b { font-weight: 400; text-transform: uppercase; letter-spacing: .1em; white-space: nowrap; }
+#m.m .m-fx-grp span { color: var(--muted); font-size: var(--fs-xs); min-width: 0; }
+#m.m [data-m-panel="fx"] .m-duck-card, #m.m [data-m-panel="fx"] .m-chain-card { display: grid; grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: none !important; grid-auto-rows: auto; row-gap: 10px; }
+#m.m [data-m-panel="fx"] .m-comp-card > * { grid-area: auto !important; }
+#m.m .m-chain-fx { display: grid; grid-auto-rows: auto; row-gap: 10px; min-width: 0; }
+#m.m .m-chain-fx .m-chead { border-top: 0 !important; margin-top: 0 !important; padding-top: 0 !important; }
+#m.m .m-chain-arrow { font-style: normal; text-align: center; color: var(--muted); font-size: var(--fs-l, 1.2rem); line-height: 1; }
+#m.m .m-chain-arrow { transform: rotate(90deg); }
+@media (min-width: 1150px) {
+  #m.m [data-m-panel="fx"] .m-chain-card { grid-template-columns: max-content auto max-content minmax(0, 1fr) !important; column-gap: 14px; align-items: center; }
+  #m.m .m-chain-arrow { transform: none; }
+  #m.m .m-chain-card .m-faders { grid-template-columns: repeat(6, 100px) !important; }
+  #m.m .m-chain-card .m-chain-fx:last-child .m-faders { grid-template-columns: repeat(5, 100px) !important; }
+}
+#m.m .m-chain-fx .m-chead { min-height: 36px; }
+@media (min-width: 1150px) { #m.m [data-m-panel="fx"] .m-chain-card { align-items: start; } #m.m .m-chain-arrow { align-self: center; } }

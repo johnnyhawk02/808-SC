@@ -24,7 +24,7 @@
 <body>
 <main>
 <div class="lcd">
-  <h1>808 SC <small>v<!--v-->0.11.0<!--/v--></small></h1>
+  <h1>808 SC <small>v<!--v-->0.12.0<!--/v--></small></h1>
   <p class="lead">The sixteen TR-808 sounds as circuit simulations, cached hits or synthetic models, with a pattern grid, a generator, effects and a mixer. The same help is in the app: options › help, or press ?.</p>
 
   <h2>getting started</h2>
@@ -56,8 +56,8 @@
 <li><b>rush</b> builds a roll: the chosen sound (<b>rush on</b>) rolls faster and faster while the others drop out and a high-pass rises. Push it up for a build, drop it for the drop. Its curve is in <b>options</b> › <b>settings</b> › <b>rush</b>.</li>
 <li><b>density</b>, a fader for each of the generator's seven tracks (named after the sound each one plays): under 100% it thins that track, off-beats first; over 100% it adds hits on its empty steps, eighths first, until at 200% every step plays. The same steps go or come each time, and presets keep it.</li></ul>
 
-  <h2>fx · master: echo, reverb and the master chain</h2>
-  <ul><li><b>echo</b>: time (musical lengths, or free with <b>sync</b> off), tone, feedback, width and fine; tick <b>ping pong</b> to bounce it left and right.</li>
+  <h2>fx · master: the effects, in the order the sound runs through them</h2>
+  <p>Three numbered groups, top to bottom. <b>1</b> the bd sidechain: the kick turns every other drum down, before anything else. <b>2</b> the sends, echo and reverb, side by side: each drum feeds them with its own echo and reverb dials and they come back into the mix. <b>3</b> the master inserts: the whole mix, sends included, through the distortion and then the compressor, then out.</p><ul><li><b>echo</b>: time (musical lengths, or free with <b>sync</b> off), tone, feedback, width and fine; tick <b>ping pong</b> to bounce it left and right.</li>
 <li><b>reverb</b>: a convolution reverb, a recorded space (its impulse response, IR) put on the sound. Pick the IR in its header: a plate and a gated 80s one made here, or ten recorded rooms (wood shop to cathedral, from the OpenAIR library). <b>load IR</b> takes your own (a wav or other audio file; up to 5 s of it is used). Knobs: pre (the delay before it), length, low cut, tone, width, and the <b>gate</b>: each hit into the reverb opens it for a note length at the tempo, and <b>gate fine</b> stretches or shortens that by up to 50%.</li>
 <li>Each sound's echo and reverb sends are on the <b>mix</b> page.</li></ul>
 <p>Under them, the master chain; the whole mix runs through it top to bottom:</p>
