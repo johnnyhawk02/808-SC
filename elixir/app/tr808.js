@@ -259,3 +259,32 @@ if (!T8_PAGE) {
   document.querySelector('[data-m-panel="t808"]').hidden = true;
 }
 t8Draw();
+
+// ---- the background (options › background colour): any colour for the glass, kept in this browser. The ink follows
+// it: the panel's own hue near black on a light colour, near white on a dark one. The logo prints in multiply on a
+// light colour; on a dark one it is inverted and prints in screen, so it still reads as ink ----
+const T8_PANEL = '#ff4fbf', T8_PANEL_KEY = '808sc-panel';
+function t8Panel(hex, keep = true) {
+  const h = /^#[0-9a-f]{6}$/i.test(hex || '') ? hex.toLowerCase() : T8_PANEL;
+  const rgb = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const lin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+  const dark = 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]) < 0.18;
+  const k = dark ? rgb.map((c) => Math.round(255 - (255 - c) * 0.12)) : rgb.map((c) => Math.round(c * 0.11));
+  const ink = `rgb(${k.join(', ')})`, a = (x) => `rgba(${k.join(', ')}, ${x})`, s = $('m').style;
+  s.setProperty('--panel', h); s.setProperty('--glow', rgb.join(', '));
+  s.setProperty('--ink', ink); s.setProperty('--led', ink); s.setProperty('--muted', a(0.66));
+  s.setProperty('--tint', a(0.07)); s.setProperty('--tint-2', a(0.12)); s.setProperty('--ghost', a(0.12)); s.setProperty('--rule', `1px solid ${a(0.34)}`);
+  $('m').classList.toggle('m-dark', dark);
+  $('m-panel-pick').value = h;
+  if (keep) try { if (h === T8_PANEL) localStorage.removeItem(T8_PANEL_KEY); else localStorage.setItem(T8_PANEL_KEY, h); } catch {}
+}
+{
+  const pick = document.createElement('input');
+  pick.type = 'color'; pick.id = 'm-panel-pick'; pick.className = 'm-panel-pick'; pick.setAttribute('aria-label', 'Background colour'); pick.tabIndex = -1;
+  $('m-opts').after(pick);
+  pick.addEventListener('input', () => t8Panel(pick.value));
+  let saved = null; try { saved = localStorage.getItem(T8_PANEL_KEY); } catch {}
+  t8Panel(saved, false);
+  $('m-set-panel').addEventListener('click', () => pick.click());
+  $('m-set-panel-pink').addEventListener('click', () => t8Panel(T8_PANEL));
+}

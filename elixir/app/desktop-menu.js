@@ -45,6 +45,8 @@ $('m-opts').addEventListener('click', (e) => {
     [tick('m-assign') + 'assign knobs', () => $('m-assign').click()],
     [(g8.bdTop ? '■ ' : '□ ') + 'bass drum at the top of the grid', () => g8SetBdTop(!g8.bdTop)],
     ['reset sound (plain 808, patterns kept)', () => t8ResetSound()],
+    ['background colour…', () => $('m-panel-pick').click()],
+    ...($('m-panel-pick').value !== T8_PANEL ? [['background back to pink', () => t8Panel(T8_PANEL)]] : []),
     ['settings', () => $('m-set-open').click()], ['user settings', () => $('m-user-open').click()], ['help', () => $('m-help-open').click()],
     // (install app, while the browser offers it; its button under the presets is the phone's)
     ...(mInstallEv ? [['install app', () => $('m-install').click()]] : [])]);
