@@ -3,6 +3,12 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.3.1 (2026-11-09)
+
+- A Cloudflare Pages deploy with wrangler (`.github/workflows/cloudflare.yml`, project 808sc, https://808sc.pages.dev/)
+  on every push to main, once the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID secrets are set. Both deploys
+  collect the site with `.github/scripts/site.sh`.
+
 ## 0.3.0 (2026-11-09)
 
 - A CPU readout beside the switch on top: how much of the real-time budget the sound takes (render time over the

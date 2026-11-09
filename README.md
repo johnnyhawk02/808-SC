@@ -29,7 +29,7 @@ that runs in an AudioWorklet (with a ScriptProcessor fallback) or in Node.
 
 `elixir/` is Elixir 808: a copy of Elixir Desktop (the LXR-02 drum machine) with these voices on its tracks, built
 from `dsp/` and `voices/` by `node elixir/build.mjs` (rebuild it after changing them). See `elixir/README.md`;
-(808 Circuit's own site: https://johnnyhawk02.github.io/808-circuit/. This repo's Pages deploy, once enabled, serves the same layout without the custom domain.)
+(Live at https://808sc.pages.dev/ (Cloudflare Pages, `.github/workflows/cloudflare.yml`, needs the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID secrets) and https://johnnyhawk02.github.io/808-SC/; the bench at bench/.)
 
 ## Layout
 

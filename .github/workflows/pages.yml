@@ -23,14 +23,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Collect the site files
-        run: |
-          # 808 Circuit (elixir/) at the root, the voice bench under bench/ (the app reads bench/cache/)
-          mkdir -p site/bench
-          cp -r elixir/index.html elixir/help.html elixir/manifest.webmanifest elixir/sw.js elixir/icons elixir/irs site/
-          cp -r index.html app.js worklet.js cache-worker.js dsp voices cache site/bench/
-          # the old elixir/ address sends people to the root
-          mkdir site/elixir && printf '<!doctype html><meta charset="utf-8"><title>808 Circuit</title><meta http-equiv="refresh" content="0; url=../"><a href="../">808 Circuit has moved</a>\n' > site/elixir/index.html
-          # (the version, dsp/version.js, is built into elixir/index.html by elixir/build.mjs)
+        run: .github/scripts/site.sh
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
