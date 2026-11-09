@@ -1,3 +1,27 @@
+# 808-SC
+
+808 Circuit with a third model for every voice. Version: see `dsp/version.js` and `CHANGELOG.md` (also shown on the
+app, the bench and the plugin).
+
+## Three models: Circuit, Cached, SC
+
+Every voice can be switched, on its own, between:
+
+- **Circuit**: the component-level simulation (below). Every knob works; costs the most CPU.
+- **Cached**: hits rendered by the circuit and played back. Almost no CPU; Level, Decay and the clap's Snap stay
+  live, the Cache button bakes the other knobs in. The default, as before.
+- **SC** (simplified circuit): a light model laid out like each circuit, with constants fitted to it. Every knob
+  works live, at a small fraction of the circuit's CPU. The SC voices come from
+  [synthetic-808](https://github.com/johnnyhawk02/synthetic-808) v0.2.1 (`voices/sc/`); the cymbal, hats and cowbell
+  run on its own six-oscillator metal bank (`voices/sc/metal.js`).
+
+The SC voices take the same knobs as the other models, mapped so each knob does the same job
+(`voices/sc/sc-voices.js`). Their levels are set against the circuit: at default knobs each SC voice matches the
+circuit's RMS over the first 300 ms of a hit, normal and accented, and a per-knob trim follows the circuit's level at
+each knob's ends (`node test/sc-calibrate.mjs --write`, after `node test/ref-render.mjs all`). `node test/sc-check.mjs`
+renders every voice in all three models at default knobs and at each knob's ends and checks that SC stays stable and
+level-matched. The bench also keeps its Synth and 808 (recordings) models.
+
 # TR-808 voice prototypes (JavaScript)
 
 Each TR-808 voice circuit from the 1981 service notes, rebuilt as plain JS DSP
@@ -5,7 +29,7 @@ that runs in an AudioWorklet (with a ScriptProcessor fallback) or in Node.
 
 `elixir/` is Elixir 808: a copy of Elixir Desktop (the LXR-02 drum machine) with these voices on its tracks, built
 from `dsp/` and `voices/` by `node elixir/build.mjs` (rebuild it after changing them). See `elixir/README.md`;
-live at https://johnnyhawk02.github.io/808-circuit/ (the bench at /808-circuit/bench/).
+(808 Circuit's own site: https://johnnyhawk02.github.io/808-circuit/. This repo's Pages deploy, once enabled, serves the same layout without the custom domain.)
 
 ## Layout
 

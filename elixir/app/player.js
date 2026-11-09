@@ -427,7 +427,7 @@ class Player {
   }
   // ---- the TR-808 voices ----
   // messages from app/tr808.js: map808 (each track's 808 voice id, or null for its LXR voice), set808 (a knob, 0..1),
-  // model808 ('circuit' or 'cached'), cache808 (a voice's cached hits: info and 16-bit PCM)
+  // model808 ('circuit', 'cached' or 'sc'), cache808 (a voice's cached hits: info and 16-bit PCM)
   msg808(m) {
     if (!this.k808) {
       if (typeof TR808 === 'undefined') return;

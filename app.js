@@ -3,6 +3,8 @@ import { Kit, VOICES } from './dsp/kit.js';
 import { sampleFiles } from './dsp/sampler.js';
 import { parseWav } from './dsp/wav.js';
 import { readWav } from './dsp/cache.js';
+import { VERSION } from './dsp/version.js';
+document.getElementById('version').textContent = 'v' + VERSION;
 
 // Circuit reference + the manual's check values for each card.
 const INFO = {
@@ -126,6 +128,7 @@ for (const [i, v] of spec.entries()) {
     <div class="model" role="group" aria-label="${v.name} model">
       <button type="button" data-m="circuit" aria-pressed="${state.models[v.id] === 'circuit'}" title="Component-level simulation of every part on the schematic">Circuit</button>
       <button type="button" data-m="cached" aria-pressed="${state.models[v.id] === 'cached'}" title="16 normal + 16 accented hits rendered by the circuit at the default knobs, one picked at random per hit. Level, Decay and the clap's Snap work; pitch and tone knobs don't. Almost no CPU.">Cached</button>
+      <button type="button" data-m="sc" aria-pressed="${state.models[v.id] === 'sc'}" title="Simplified circuit (from synthetic-808 v0.2.1): a light model laid out like the circuit, every knob works, a fraction of the CPU">SC</button>
       <button type="button" data-m="behavioural" aria-pressed="${state.models[v.id] === 'behavioural'}" title="Synthesized: oscillators, filters and envelopes fitted to the circuit model, at a fraction of the CPU">Synth</button>
       <button type="button" data-m="sample" aria-pressed="${state.models[v.id] === 'sample'}" title="Recordings of a real TR-808 (Michael Fischer, 1994), nearest knob setting">808</button>
     </div>

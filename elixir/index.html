@@ -1601,7 +1601,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
 .m .m-808-vname { min-height: 30px; padding: 0; border: 0 !important; background: none !important; box-shadow: none !important; color: var(--ink);
   font-family: var(--display); font-size: var(--fs-m) !important; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
 .m .m-808-vname:active { background: var(--ink) !important; color: var(--panel); }
-.m-808-models { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.m-808-models { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px; }
 .m .m-808-models .m-toggle { min-width: 0; min-height: 26px; padding: 0; font-size: 13px !important; letter-spacing: 0; text-transform: uppercase; }
 .m-808-set { display: grid; grid-auto-rows: minmax(0, 1fr); gap: 2px; min-height: 0; }
 .m .m-808-set .m-knob { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; column-gap: 2px; min-height: 0; }
@@ -1768,7 +1768,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 
 <main class="m" id="m">
   <header class="m-top">
-    <b class="m-title" id="m-title"><span class="m-title-long">808 circuit</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->1.52<!--/v--></small><small class="m-loading" id="m-loading" hidden>caching sounds…</small></b>
+    <b class="m-title" id="m-title"><span class="m-title-long">808 circuit</span><span class="m-title-short" aria-hidden="true"></span><small class="m-ver"><i class="m-ver-v">v</i><!--v-->0.1.0<!--/v--></small><small class="m-loading" id="m-loading" hidden>caching sounds…</small></b>
     <button class="m-toggle m-setbtn m-optsbtn" id="m-opts" type="button" aria-label="Options">options</button>
     <button class="m-toggle m-setbtn m-userbtn" id="m-user-open" type="button" aria-label="User settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
     <button class="m-toggle m-setbtn" id="m-set-open" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
@@ -1865,7 +1865,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
         <button class="m-btn" id="m-pexport" type="button" title="Saves your presets, the built-in ones you saved over and every starred one, to a file">export presets</button>
         <button class="m-btn m-install" id="m-install" type="button" hidden>install app</button>
       </div>
-      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->1.52<!--/v-->, 7 Nov, 09:13</footer>
+      <footer class="m-foot">Erica Synths LXR-02 port, GPL-3.0, unofficial<br><a href="help.html">Help</a> · <a href="https://github.com/johnnyhawk02/elixir-desktop">Source</a> · v<!--v-->0.1.0<!--/v-->, 9 Nov, 13:23</footer>
     </section>
   </div>
   </div>
@@ -9296,6 +9296,1560 @@ CH.meta = { id: 'ch', name: 'Closed Hi-Hat', short: 'CH' };
 
 return { FIT: typeof FIT === 'undefined' ? undefined : FIT, OH: typeof OH === 'undefined' ? undefined : OH, CH: typeof CH === 'undefined' ? undefined : CH };
 })();
+// ---- voices/sc/dsp.js
+__m["voices/sc/dsp.js"] = (() => {
+// Small helpers shared by the drum voices (ported from the synthetic-808 Rust app).
+
+/** sign(x)·|x|^e, returning 0 when the result isn't finite. */
+function sgnpow(x, e) {
+  const y = Math.pow(Math.abs(x), e);
+  if (!Number.isFinite(y)) return 0;
+  return x < 0 || Object.is(x, -0) ? -y : y;
+}
+
+/**
+ * Rate conversion for oversampling. The voices were designed with some per-sample
+ * constants; when a voice runs `os` times faster these keep its timing unchanged.
+ * `follow(c, os)`: coefficient for x += (target − x)·c.  `decay(c, os)`: factor for x *= c.
+ * Both return c unchanged at os = 1, so 1x output stays bit-identical.
+ */
+function follow(c, os) {
+  return os === 1 || c >= 1 ? c : 1 - Math.pow(1 - c, 1 / os);
+}
+function decay(c, os) {
+  return os === 1 ? c : Math.pow(c, 1 / os);
+}
+
+function clamp(x, lo, hi) {
+  return x < lo ? lo : x > hi ? hi : x;
+}
+
+/** Samples in the 1 ms trigger history every voice keeps (round(sr·0.001·scale), min 1). */
+function histLen(sr, scale = 1) {
+  return Math.max(1, Math.round(sr * 0.001 * scale));
+}
+
+/**
+ * 64-bit xorshift (13, 7, 17) returning white noise in −1..1, matching the Rust
+ * voices' `white()` bit for bit. Kept as two 32-bit halves so no BigInt is needed
+ * on the audio thread.
+ */
+class XorShift64 {
+  /** seed: a BigInt or a Number below 2^53. */
+  constructor(seed) {
+    const s = BigInt.asUintN(64, BigInt(seed));
+    this.hi = Number(s >> 32n) >>> 0;
+    this.lo = Number(s & 0xffffffffn) >>> 0;
+  }
+  next() {
+    let hi = this.hi, lo = this.lo, h, l;
+    // x ^= x << 13
+    h = (hi << 13) | (lo >>> 19); l = lo << 13;
+    hi = (hi ^ h) >>> 0; lo = (lo ^ l) >>> 0;
+    // x ^= x >> 7
+    h = hi >>> 7; l = (lo >>> 7) | (hi << 25);
+    hi = (hi ^ h) >>> 0; lo = (lo ^ l) >>> 0;
+    // x ^= x << 17
+    h = (hi << 17) | (lo >>> 15); l = lo << 17;
+    hi = (hi ^ h) >>> 0; lo = (lo ^ l) >>> 0;
+    this.hi = hi; this.lo = lo;
+    // (x >> 11) / 2^53 · 2 − 1
+    return (hi * 2097152 + (lo >>> 11)) / 9007199254740992 * 2 - 1;
+  }
+}
+
+/** 32-bit xorshift (13, 17, 5) used by the clap, in f32 like the Rust engine. */
+class XorShift32 {
+  constructor(seed) { this.x = seed >>> 0; }
+  next() {
+    let x = this.x;
+    x = (x ^ (x << 13)) >>> 0;
+    x = (x ^ (x >>> 17)) >>> 0;
+    x = (x ^ (x << 5)) >>> 0;
+    this.x = x;
+    return Math.fround(Math.fround(Math.fround(x) / 4294967296) * 2 - 1);
+  }
+}
+
+/**
+ * The trigger every voice receives: a gate held for ~1 ms after `fire()`.
+ * `next()` returns the gate's value for this sample (0 when idle).
+ */
+class Gate {
+  constructor(sr) { this.sr = sr; this.left = 0; this.value = 0; }
+  fire(value = 1) { this.left = Math.max(1, Math.round(0.001 * this.sr)); this.value = value; }
+  next() {
+    if (this.left > 0) { this.left -= 1; return this.value; }
+    return 0;
+  }
+}
+
+function besselI0(x) {
+  let sum = 1, term = 1;
+  for (let k = 1; k < 50; k++) { term *= (x / (2 * k)) ** 2; sum += term; if (term < 1e-12 * sum) break; }
+  return sum;
+}
+
+/**
+ * 2:1 decimator: a 47-tap Kaiser-windowed half-band low-pass (flat to about 20 kHz at a
+ * 48 kHz output, stop band about −80 dB) followed by dropping every other sample.
+ * push(a, b) takes two input samples and returns one output sample.
+ */
+class HalfbandDecimator {
+  constructor(taps = 47, beta = 7.5) {
+    const m = (taps - 1) / 2;
+    // only the centre tap and the odd-offset taps are non-zero in a half-band filter
+    let sum = 0;
+    const raw = [];
+    for (let n = -m; n <= m; n++) {
+      const sinc = n === 0 ? 0.5 : n % 2 === 0 ? 0 : Math.sin(Math.PI * n / 2) / (Math.PI * n);
+      const w = besselI0(beta * Math.sqrt(1 - (n / m) ** 2)) / besselI0(beta);
+      raw.push(sinc * w);
+      sum += sinc * w;
+    }
+    this.h = Float64Array.from(raw, (x) => x / sum);
+    this.n = taps;
+    this.nz = [...this.h.keys()].filter((k) => this.h[k] !== 0); // the 25 non-zero taps
+    this.hz = Float64Array.from(this.nz, (k) => this.h[k]);
+    this.buf = new Float64Array(taps * 2);
+    this.pos = 0;
+  }
+  _in(x) {
+    this.pos = (this.pos + 1) % this.n;
+    this.buf[this.pos] = x;
+    this.buf[this.pos + this.n] = x;
+  }
+  push(a, b) {
+    this._in(a);
+    this._in(b);
+    // convolve: newest sample at this.pos
+    const buf = this.buf, start = this.pos + 1; // oldest sample
+    const nz = this.nz, hz = this.hz;
+    let y = 0;
+    for (let j = 0; j < nz.length; j++) y += hz[j] * buf[start + nz[j]];
+    return y;
+  }
+}
+
+return { sgnpow: typeof sgnpow === 'undefined' ? undefined : sgnpow, follow: typeof follow === 'undefined' ? undefined : follow, decay: typeof decay === 'undefined' ? undefined : decay, clamp: typeof clamp === 'undefined' ? undefined : clamp, histLen: typeof histLen === 'undefined' ? undefined : histLen, XorShift64: typeof XorShift64 === 'undefined' ? undefined : XorShift64, XorShift32: typeof XorShift32 === 'undefined' ? undefined : XorShift32, Gate: typeof Gate === 'undefined' ? undefined : Gate, HalfbandDecimator: typeof HalfbandDecimator === 'undefined' ? undefined : HalfbandDecimator };
+})();
+// ---- voices/sc/metal.js
+__m["voices/sc/metal.js"] = (() => {
+// Shared "metal" oscillator bank and the cowbell's two oscillators (port of app/src/metal.rs).
+// Every sample it produces two high-passed metal mixes (≈7.1 kHz `hi` and ≈3.4 kHz `lo`,
+// used by the cymbal and hi-hats) and the cowbell's two pulse waves (`cb1`, `cb2`, ±1).
+
+const { sgnpow, follow } = __m["voices/sc/dsp.js"];
+
+/** knob → 0..1 with an S-shaped curve: 0.5 ± 0.5·|2v−1|^pow */
+function shape(v, pow) {
+  const x = 2 * v - 1;
+  let m = Math.pow(Math.abs(x), pow);
+  if (!Number.isFinite(m)) m = 0;
+  return 0.5 + (x >= 0 ? 0.5 : -0.5) * m;
+}
+
+/** Pulse oscillator: phase steps by 1/period, output is high while 0 < phase ≤ duty. */
+class Pulse {
+  constructor() { this.flag = 0; this.phase = 0; }
+  step(periodSamples, duty) {
+    if (0 >= duty) { this.flag = 0; return 0; }
+    if (duty >= 1) { this.flag = 1; return 1; }
+    this.phase += 1 / Math.max(periodSamples, 1);
+    if (this.flag !== 0) {
+      if (this.phase > duty) {
+        this.flag = 0;
+        this.phase -= Math.floor(this.phase + 1 - duty);
+      }
+    } else if (this.phase > 0) {
+      this.flag = 1;
+    }
+    return this.flag;
+  }
+}
+
+/** Metal oscillator periods (ms) for 205.35, 304.4, 369.72, 522.7, 540.54, 800 Hz. */
+const SM_MS = [4.869810045, 3.285189867, 2.705450058, 1.913139969, 1.850000024, 1.25];
+const CB_HZ = [540.54, 800.0];
+/** shaping exponent for the DUTY, VOLT, CB_PW and CB_TUNE knobs */
+const HH_POW = 2.33;
+const SM_GM = Math.exp(SM_MS.reduce((a, v) => a + Math.log(v), 0) / SM_MS.length);
+/** SPREAD 0..1 → exponent on each oscillator's ratio to the group's geometric mean (0.25 .. 1 .. 2.5). */
+const spreadExp = (v) => { v = Math.min(Math.max(v, 0), 1); return v < 0.5 ? 0.25 + 1.5 * v : 1 + 3 * (v - 0.5); };
+
+class Biquad {
+  constructor() { this.x1 = 0; this.x2 = 0; this.y1 = 0; this.y2 = 0; }
+}
+
+function highpass(st, x, k, q) {
+  const k2 = k * k;
+  const d = 1 + k / q + k2;
+  const inv = 1 / d;
+  const a1n = (k2 - 1) * -2 / d;
+  const a2 = (1 - k / q + k2) / d;
+  const y = inv * x - 2 * inv * st.x1 + inv * st.x2 + a1n * st.y1 - a2 * st.y2;
+  st.x2 = st.x1; st.x1 = x; st.y2 = st.y1; st.y1 = y;
+  return y;
+}
+
+/**
+ * @typedef {object} MetalKnobs
+ * @property {number} duty    DUTY 0..1
+ * @property {number} volt    VOLT 0..1
+ * @property {number} cbPw    CB_PW 0..1
+ * @property {number} cbTune  CB_TUNE 0..1
+ * @property {number} cbO1    CB_O1 0..1
+ * @property {number} cbO2    CB_O2 0..1
+ * @property {boolean} cbFromHats  CB_SW: take the cowbell's oscillators from the metal bank
+ * @property {number} [spread] SPREAD 0..1 (0.5 = as built): pulls the six oscillators together or apart
+ */
+
+class Metal {
+  /** @param {number} sr  sample rate the bank runs at  @param {number} [os] oversampling factor included in sr */
+  constructor(sr, os = 1) {
+    this.sr = sr;
+    this.kS = follow(0.0303030303, os);
+    // fixed filter coefficients
+    this.g = Math.tan(2 * Math.PI * Math.min(sr * 0.25, 3333) / sr);
+    this.k1 = Math.tan(44717.42765 / (2 * sr));
+    this.k2 = Math.tan(21633.00596 / (2 * sr));
+    this._key = [NaN, NaN, NaN, NaN];
+    this._shaped = [0, 0, 0, 0];
+    this.dutyS = 0.5; this.voltS = 0.5; this.pwS = 0.5; this.tuneS = 0.5;
+    this.osc = Array.from({ length: 6 }, () => new Pulse());
+    this.cb = [new Pulse(), new Pulse()];
+    this.lpS = 0;
+    this.hp1 = new Biquad();
+    this.hp2 = new Biquad();
+    this.low = new Float64Array(6);
+    this.periods = SM_MS.slice(); this._spread = 0.5;
+    this.pitch = 1; // 808-SC: frequency multiplier on the six oscillators (not the cowbell pair)
+    /** last output; reused every tick to avoid allocation */
+    this.out = { raw: 0, hi: 0, lo: 0, cb1: 0, cb2: 0 };
+  }
+
+  /** @param {MetalKnobs} k  @returns {{hi:number, lo:number, cb1:number, cb2:number}} */
+  tick(k) {
+    const sr = this.sr;
+    const ms = sr * 0.001;
+    const sp = k.spread ?? 0.5;
+    if (sp !== this._spread) {
+      this._spread = sp;
+      const e = spreadExp(sp);
+      for (let i = 0; i < 6; i++) this.periods[i] = e === 1 ? SM_MS[i] : SM_GM * (SM_MS[i] / SM_GM) ** e;
+    }
+    this.dutyS += (k.duty - this.dutyS) * this.kS;
+    this.voltS += (k.volt - this.voltS) * this.kS;
+    this.pwS += (k.cbPw - this.pwS) * this.kS;
+    this.tuneS += (k.cbTune - this.tuneS) * this.kS;
+    // knob curves, recomputed only while a knob is moving
+    const key = this._key, sh = this._shaped;
+    if (key[0] !== this.dutyS) { key[0] = this.dutyS; sh[0] = sgnpow(shape(this.dutyS, HH_POW), 0.6) * 0.4 + 0.2; }
+    if (key[1] !== this.pwS) { key[1] = this.pwS; sh[1] = sgnpow(shape(this.pwS, HH_POW), 0.6) * 0.4 + 0.2; }
+    if (key[2] !== this.voltS) { key[2] = this.voltS; sh[2] = 1.5 - shape(this.voltS, HH_POW); }
+    if (key[3] !== this.tuneS) { key[3] = this.tuneS; sh[3] = 1.5 - shape(this.tuneS, HH_POW); }
+    const duty = sh[0], cbDuty = sh[1], voltF = sh[2], tuneF = sh[3];
+
+    const low = this.low;
+    let sum = 0;
+    for (let i = 0; i < 6; i++) {
+      const f = this.osc[i].step(ms * this.periods[i] * voltF / this.pitch, duty);
+      low[i] = 1 - f;
+      sum += low[i];
+    }
+    const m = 0.5 * sum;
+
+    // one-pole low-pass, then two high-passes
+    const g = this.g;
+    const v = (g * m + this.lpS) / (1 + g);
+    this.lpS = v + g * (m - v);
+    const hi = highpass(this.hp1, v, this.k1, 3.33);
+    const lo = highpass(this.hp2, v, this.k2, 3.22);
+
+    // cowbell oscillators (or two of the metal ones with SOURCE = HH)
+    const f1 = this.cb[0].step(ms * (CB_HZ[0] / 540.54 * 1.850000024) * (1.5 - k.cbO1) * tuneF, cbDuty);
+    const f2 = this.cb[1].step(ms * (CB_HZ[1] / 800.0 * 1.25) * (1.5 - k.cbO2) * tuneF, cbDuty);
+    const c1 = k.cbFromHats ? low[4] : f1;
+    const c2 = k.cbFromHats ? low[5] : f2;
+    const o = this.out;
+    o.raw = m; o.hi = hi; o.lo = lo; o.cb1 = (c1 - 0.5) * 2; o.cb2 = (c2 - 0.5) * 2;
+    return o;
+  }
+}
+
+return { CB_HZ: typeof CB_HZ === 'undefined' ? undefined : CB_HZ, Metal: typeof Metal === 'undefined' ? undefined : Metal };
+})();
+// ---- voices/sc/bass-808.js
+__m["voices/sc/bass-808.js"] = (() => {
+// Bass drum laid out like the TR-808's bass drum circuit, with the constants fitted to a
+// component-level simulation of that circuit (across Tone and Decay) and to the 25 recordings
+// of a real TR-808 bass drum in samples/808/BD.
+//
+// A bridged-T resonator around an op-amp rings as a damped sine. For the first few
+// milliseconds after the trigger a transistor shorts one of its resistors, so the first
+// half-cycle runs at about two and a half times the pitch; then a second, smaller kick restarts it at
+// the normal pitch. The pitch slides down a little to the network's resting ~49 Hz as a
+// capacitor recovers; the slide is quicker at short Decay settings. The trigger edge also
+// leaks straight through to the output (the click). Tone is the machine's pot network into a
+// one-pole low-pass, computed from its parts.
+//
+// Knobs: BD_ATK is Tone (as on the machine), BD_DEC the ring time, BD_TUNE the pitch
+// (x0.67 .. x1.5), BD_PAMT the depth of the pitch slide (0 .. x2), BD_CLICK the trigger click
+// (0 .. x2), BD_HOLD how long the fast first segment lasts (x1/3 .. x3); all centred = as built.
+
+const { sgnpow } = __m["voices/sc/dsp.js"];
+
+/** legacy: true uses the Rust app's bass drum (voices/bass-drum.js) instead; read when the Engine is built. */
+const BASS_FIT = { legacy: false };
+
+/** Fitted constants (times in seconds, frequencies in Hz). */
+const BASS_808 = {
+  f0: 49.448,        // resting pitch
+  glide: 0.10995,    // extra pitch at the start, fraction of f0
+  glideK: 0.26297,   // glide time constant, fraction of the ring time
+  d0: 0.051816, d5: 0.30798, d1: 0.8824, // ring time to -20 dB at Decay 0 / centre / max
+  fast: 2.396,       // pitch multiple while the first segment lasts
+  seg: 0.0048509,     // first segment length
+  kick1: 1.6009, kick2: 0.31928, // first kick and the re-trigger kick, × ring amplitude
+  click: 0.78865,    // trigger feed-through, × ring amplitude
+  accent: 2.07,     // accented ring amplitude, × normal
+  gain: 8.64,
+};
+
+const LN10 = Math.log(10);
+const clamp01 = (v) => Math.min(Math.max(v, 0), 1);
+const map3 = (p, lo, mid, hi) => (p < 0.5 ? lo * (mid / lo) ** (2 * p) : mid * (hi / mid) ** (2 * p - 1));
+
+class Bass808 {
+  /** @param {number} sr sample rate the voice runs at */
+  constructor(sr) {
+    this.sr = sr;
+    this.t = 1e9; this.amp = 0; this.g = 0; this.segN = 0;
+    this.f = 48; this.q = 10;
+    this.ic1 = 0; this.ic2 = 0; this.gg = 0; this.k = 1; this.a1 = 0; this.a2 = 0; this.a3 = 0;
+    this.pulseN = 0; this.pulseH = 0;
+    this.tz = 0; this.tA = 0; this.cz = 0;
+    this.cA = 1 - Math.exp(-2 * Math.PI * 400 / sr);
+    this.lvl = 0; this._volKey = NaN; this._lvlT = 0;
+    this._toneKey = NaN; this.pending = false; this.accented = false;
+    this.f0 = 48; this.t10 = 0.3; this.acc = 0; this.pitch = 1; this.gK = 0; this.glide = 0; this.clickK = 0;
+  }
+
+  /** velocity: 1 for a hit, 2 accented. */
+  // 808-SC: velocity 1..2 sets the accent continuously (1 normal, 2 full accent)
+  trigger(velocity) { this.pending = true; this.accented = velocity > 1; this.acc = clamp01(velocity - 1); }
+
+  _res(f) {
+    f = Math.min(f, this.sr * 0.45);
+    this.f = f;
+    this.gg = Math.tan(Math.PI * f / this.sr); this.k = 1 / this.q;
+    this.a1 = 1 / (1 + this.gg * (this.gg + this.k)); this.a2 = this.gg * this.a1; this.a3 = this.gg * this.a2;
+  }
+
+  /** pulse height that leaves the resonator ringing at peak amplitude amp (1 ms pulse) */
+  _kick(amp) {
+    const s = Math.abs(Math.sin(Math.PI * this.f * 0.001));
+    this.pulseH = amp / (2 * this.k * Math.max(s, 0.05));
+    this.pulseN = Math.max(1, Math.round(0.001 * this.sr));
+  }
+
+  /** One sample. Knobs are panel values 0..1 (BD_TUNE, BD_ATK = tone, BD_DEC, BD_PAMT, BD_VOL, BD_CLICK, BD_HOLD). */
+  tick(tune, tone, dec, pamt, vol, click = 0.5, hold = 0.5) {
+    const K = BASS_808, sr = this.sr;
+    if (vol !== this._volKey) { this._volKey = vol; this._lvlT = sgnpow(vol, 1.12); }
+    this.lvl += 0.02 * (this._lvlT - this.lvl);
+    if (tone !== this._toneKey) {
+      this._toneKey = tone;
+      // tone pot (10k, C taper) || 10k, in series with 220R, into 0.1 µF
+      const vr = 10e3 * (1 - clamp01(tone)) ** 2 + 1;
+      const R = 220 + (vr * 10e3) / (vr + 10e3);
+      this.tA = 1 - Math.exp(-2 * Math.PI * Math.min(1 / (2 * Math.PI * R * 0.1e-6), sr * 0.45) / sr);
+    }
+    if (this.pending) {
+      this.pending = false;
+      this.t10 = map3(clamp01(dec), K.d0, K.d5, K.d1);
+      this.f0 = K.f0 * 1.5 ** ((clamp01(tune) - 0.5) * 2) * this.pitch; // 808-SC: pitch, a frequency multiplier
+      this.q = Math.PI * K.f0 * this.t10 / LN10;
+      this.gK = Math.exp(-1 / (K.glideK * this.t10 * sr));
+      this.glide = K.glide * 2 * clamp01(pamt);
+      this.amp = 1 + (K.accent - 1) * this.acc;
+      this.t = 0; this.g = 1;
+      this.segN = Math.max(1, Math.round(K.seg * 3 ** ((clamp01(hold) - 0.5) * 2) * sr));
+      this.clickK = K.click * 2 * clamp01(click);
+      this._res(this.f0 * (1 + this.glide) * K.fast);
+      this._kick(this.amp * K.kick1);
+    }
+    if (this.t > sr * 6) return 0;
+    const t = this.t++;
+    if (t === this.segN) {
+      this._res(this.f0 * (1 + this.glide * this.g));
+      this._kick(this.amp * K.kick2);
+    } else if (t > this.segN && (t & 15) === 0) {
+      this._res(this.f0 * (1 + this.glide * this.g));
+    }
+    this.g *= this.gK;
+    let x = 0;
+    if (this.pulseN > 0) { this.pulseN -= 1; x = this.pulseH; }
+    const v3 = x - this.ic2;
+    const v1 = this.a1 * this.ic1 + this.a2 * v3;
+    const v2 = this.ic2 + this.a2 * this.ic1 + this.a3 * v3;
+    this.ic1 = 2 * v1 - this.ic1; this.ic2 = 2 * v2 - this.ic2;
+    let y = this.k * v1;
+    const ck = t < sr * 0.001 ? this.amp * this.clickK : 0;
+    this.cz += this.cA * (ck - this.cz);
+    y += ck - this.cz;
+    this.tz += this.tA * (y - this.tz);
+    return this.tz * this.lvl * K.gain;
+  }
+}
+
+return { BASS_FIT: typeof BASS_FIT === 'undefined' ? undefined : BASS_FIT, BASS_808: typeof BASS_808 === 'undefined' ? undefined : BASS_808, Bass808: typeof Bass808 === 'undefined' ? undefined : Bass808 };
+})();
+// ---- voices/sc/snare-808.js
+__m["voices/sc/snare-808.js"] = (() => {
+// Snare drum laid out like the TR-808's snare circuit (the later boards' revised parts), with
+// the constants fitted to a component-level simulation of that circuit (across Tone and
+// Snappy) and to the 25 recordings of a real TR-808 snare in samples/808/SD. An alternative to
+// the default snare (voices/snare.js), picked with the snare's Fit / Circuit switch (SD_SW).
+//
+//   drum    two bridged-T resonators (about 175 and 310 Hz) kicked by the 1 ms trigger
+//   Tone    the loaded pot between the two drums, computed from its parts
+//   snappy  the Snappy pot drives a transistor one Vbe down, so near the bottom of its travel
+//           there is no noise at all; above that the noise envelope grows with it. The envelope
+//           is a capacitor charged by the trigger, smoothed and discharging. White noise gated by
+//           it goes through a transistor's roll-off, the Sallen-Key high-pass of the snare wires
+//           (about 2.7 kHz) and a coupling high-pass.
+//   mixer   both paths into the output op-amp, whose feedback capacitor rounds off the top.
+//
+// Knobs, centred = as built: SD_DECAY scales the drums' ring (x1/3 .. x3), SD_NDEC the snappy
+// decay (x1/3 .. x3), SD_PITCH both drums (x0.67 .. x1.5), SD_BAL tilts drum against snappy,
+// SD_WIRES moves the wires' high-pass (x0.5 .. x2).
+
+const { XorShift32 } = __m["voices/sc/dsp.js"];
+
+/** Fitted constants (times in seconds, frequencies in Hz). */
+const SNARE_808 = {
+  fLo: 173.4, qLo: 15.6, fHi: 311.96, qHi: 9.3346,
+  kLo: 0.16556, kHi: 0.25863,         // ring amplitude per volt of trigger
+  nK: 1.4254,                         // noise per volt of snappy drive
+  nAtt: 9.2e-6, nDec: 0.033062,       // snappy envelope attack / decay
+  nLp: 861.69,                        // transistor roll-off
+  outLp: 9227.3,                      // output op-amp feedback capacitor
+  wires: 2750, wiresQ: 0.731,         // Sallen-Key high-pass of the wires
+  vb: 4.44, vbAccent: 8.88,           // trigger volts, normal / accented
+  gain: 13.73,                        // level matched to the default snare
+};
+
+const clamp01 = (v) => Math.min(Math.max(v, 0), 1);
+const span = (v, s) => s ** ((clamp01(v) - 0.5) * 2);
+const onePoleA = (f, sr) => 1 - Math.exp(-2 * Math.PI * Math.min(f, sr * 0.45) / sr);
+
+/** Trapezoidal SVF band-pass with unity peak gain, kicked by a rectangular pulse. */
+class Drum {
+  constructor() { this.ic1 = 0; this.ic2 = 0; this.k = 1; this.a1 = 0; this.a2 = 0; this.a3 = 0; this.f = 100; }
+  set(f, q, sr) {
+    this.f = Math.min(f, sr * 0.45);
+    const g = Math.tan(Math.PI * this.f / sr); this.k = 1 / q;
+    this.a1 = 1 / (1 + g * (g + this.k)); this.a2 = g * this.a1; this.a3 = g * this.a2;
+  }
+  height(amp) { return amp / (2 * this.k * Math.max(Math.abs(Math.sin(Math.PI * this.f * 0.001)), 0.05)); }
+  tick(x) {
+    const v3 = x - this.ic2, v1 = this.a1 * this.ic1 + this.a2 * v3, v2 = this.ic2 + this.a2 * this.ic1 + this.a3 * v3;
+    this.ic1 = 2 * v1 - this.ic1; this.ic2 = 2 * v2 - this.ic2;
+    return this.k * v1;
+  }
+}
+
+class Snare808 {
+  /** @param {number} sr sample rate the voice runs at */
+  constructor(sr, seed = 808) {
+    const K = SNARE_808;
+    this.sr = sr;
+    this.noise = new XorShift32(seed);
+    this.lo = new Drum(); this.hi = new Drum();
+    this.pulseN = 0; this.hLo = 0; this.hHi = 0;
+    this.eC = 0; this.eS = 0;
+    this.att = Math.exp(-1 / (K.nAtt * sr));
+    this.dec = 0; this.gLo = 0.5; this.gHi = 0.5;
+    this.k = null;
+    this.nA = onePoleA(K.nLp, sr); this.nz = 0;
+    this.oA = onePoleA(K.outLp, sr); this.oz = 0;
+    this.cA = onePoleA(1 / (2 * Math.PI * 27e3 * 0.01e-6), sr); this.cz = 0;
+    this.hb = [0, 0, 0, 0, 0]; this.x1 = 0; this.x2 = 0; this.y1 = 0; this.y2 = 0;
+    this.vb = K.vb; this.pending = false;
+    this.pitch = 1; // 808-SC: frequency multiplier on both drums
+  }
+
+  /** Read the knobs once per block: {tone, snappy, decay, ndec, wires?} (0..1). */
+  prepare(k) {
+    const K = SNARE_808, sr = this.sr, o = this.k, wires = k.wires ?? 0.5;
+    if (!o || k.tone !== o.tone) {
+      // Tone pot 100k between the drums, its wiper loaded by 100k
+      const t = clamp01(k.tone), R = 100e3, ra = Math.max(1, t * R), rb = Math.max(1, R - ra);
+      const load = 100e3 / ((ra * rb) / R + 100e3);
+      this.gLo = (rb / R) * load; this.gHi = (ra / R) * load;
+    }
+    if (!o || k.ndec !== o.ndec) this.dec = Math.exp(-1 / (K.nDec * span(k.ndec, 3) * sr));
+    if (!o || wires !== o.wires) {
+      const w = 2 * Math.PI * Math.min(K.wires * span(wires, 2), sr * 0.45) / sr;
+      const cw = Math.cos(w), al = Math.sin(w) / (2 * K.wiresQ), a0 = 1 + al;
+      this.hb = [(1 + cw) / 2 / a0, -(1 + cw) / a0, (1 + cw) / 2 / a0, -2 * cw / a0, (1 - al) / a0];
+    }
+    this.k = { tone: k.tone, snappy: k.snappy, decay: k.decay, ndec: k.ndec, wires };
+  }
+
+  /** velocity: 1 for a hit, 2 accented. */
+  trigger(velocity) { this.pending = true; this.vb = SNARE_808.vb + (SNARE_808.vbAccent - SNARE_808.vb) * clamp01(velocity - 1); } // 808-SC: accent 1..2, continuous
+
+  _start(pitch) {
+    const K = SNARE_808, sr = this.sr, m = span(pitch, 1.5) * this.pitch, d = span(this.k.decay, 3), vb = this.vb;
+    this.lo.set(K.fLo * m, K.qLo * d, sr); this.hi.set(K.fHi * m, K.qHi * d, sr);
+    this.hLo = this.lo.height(vb * K.kLo); this.hHi = this.hi.height(vb * K.kHi);
+    this.pulseN = Math.max(1, Math.round(0.001 * sr));
+    // the transistor's emitter: wiper volts minus a Vbe
+    const s = clamp01(this.k.snappy);
+    this.eC = Math.max(0, vb * (1e3 + 10e3 * s) / 11e3 - 0.6) * K.nK;
+  }
+
+  /** bal = SD_BAL (0 drum only .. 0.5 as built .. 1 snappy only), pitch = SD_PITCH. */
+  tick(bal, pitch) {
+    const K = SNARE_808;
+    if (this.pending && this.k) { this.pending = false; this._start(pitch); }
+    let xl = 0, xh = 0;
+    if (this.pulseN > 0) { this.pulseN -= 1; xl = this.hLo; xh = this.hHi; }
+    const b = clamp01(bal);
+    const drum = (this.gLo * this.lo.tick(xl) + this.gHi * this.hi.tick(xh)) * Math.min(1, 2 - 2 * b);
+    this.eC *= this.dec;
+    this.eS = this.eC + (this.eS - this.eC) * this.att;
+    let snap = 0;
+    if (this.eS > 1e-6 || this.eC > 1e-6) {
+      this.nz += this.nA * (this.noise.next() * this.eS - this.nz);
+      const h = this.hb, x = this.nz;
+      const y = h[0] * x + h[1] * this.x1 + h[2] * this.x2 - h[3] * this.y1 - h[4] * this.y2;
+      this.x2 = this.x1; this.x1 = x; this.y2 = this.y1; this.y1 = y;
+      this.cz += this.cA * (y - this.cz);
+      snap = (y - this.cz) * Math.min(1, 2 * b);
+    }
+    this.oz += this.oA * (drum + snap - this.oz);
+    return this.oz * K.gain;
+  }
+}
+
+return { SNARE_808: typeof SNARE_808 === 'undefined' ? undefined : SNARE_808, Snare808: typeof Snare808 === 'undefined' ? undefined : Snare808 };
+})();
+// ---- voices/sc/tom-808.js
+__m["voices/sc/tom-808.js"] = (() => {
+// Toms and congas laid out like the TR-808's tom / conga boards, with the constants fitted to a
+// component-level simulation of those boards (across the Tuning knob) and to recordings of a
+// real TR-808 (samples/808/LT ... HC).
+//
+// Each drum is a bridged-T resonator kicked by the 1 ms trigger pulse: a damped sine whose
+// pitch is set by the tuning pot. The higher the tuning, the louder the drum (less of the kick
+// is lost in the pot). Positive feedback around the resonator's op-amp makes the ring build up
+// over the first few milliseconds, modelled as a short swell. The toms add a burst of pink
+// noise through a VCA and a low-pass, decaying about as fast as the ring; its spectrum falls
+// steeply, so it mostly thickens the low end.
+//
+// Knobs (centred = as built): TUNE sweeps the pitch over the pot's range, DEC multiplies the
+// ring time (x1/3 .. x3), ATK sets the tom noise (0 .. x2, then up to x8), FLT tunes the
+// noise low-pass (x1/4 .. x4).
+
+const { XorShift64, follow } = __m["voices/sc/dsp.js"];
+
+/** legacy: true uses the Rust app's toms (voices/tom.js) instead; read when the Engine is built. */
+const TOM_FIT = { legacy: false };
+
+const LN10 = Math.log(10);
+
+/**
+ * Fitted constants per drum. f0/f5/f1: pitch (Hz) at tuning min / centre / max; g0/g1: level at
+ * min / max relative to centre; t10: ring time to -20 dB (s); sw/swT: swell depth and time
+ * constant; toms: nK noise level, nDec its decay (s), nLp its low-pass (Hz). gain: output level.
+ */
+const TOM_808 = {
+  lt: { f0: 79.72, f5: 87.91, f1: 94.47, g0: 0.6449, g1: 1.165, t10: 0.2048, sw: 0.3102, swT: 0.001523, nK: 69.9, nDec: 0.1339, nLp: 1.587, gain: 9.77 },
+  mt: { f0: 129.4, f5: 135.8, f1: 148.3, g0: 0.5521, g1: 0.9786, t10: 0.1275, sw: 0.1062, swT: 1.002, nK: 63.6, nDec: 0.1436, nLp: 1.041, gain: 12.9 },
+  ht: { f0: 161, f5: 187.2, f1: 199.3, g0: 0.5063, g1: 0.8871, t10: 0.08124, sw: 0.6703, swT: 0.2891, nK: 48.2, nDec: 0.143, nLp: 0.5886, gain: 28.0 },
+  lc: { f0: 175.2, f5: 191.5, f1: 213.9, g0: 0.8144, g1: 1.214, t10: 0.1815, sw: 0.01041, swT: 1, gain: 9.07 },
+  mc: { f0: 251.9, f5: 275.8, f1: 307.9, g0: 0.8089, g1: 1.156, t10: 0.09413, sw: 0, swT: 0.01, gain: 9.93 },
+  hc: { f0: 368.7, f5: 402.6, f1: 449.8, g0: 0.8302, g1: 1.213, t10: 0.08624, sw: 0, swT: 0.01, gain: 10.5 },
+  accent: 2,
+};
+
+/** Drum keys per voice slot: [tom, conga]. */
+const TOM_808_KEYS = [['lt', 'lc'], ['mt', 'mc'], ['ht', 'hc']];
+
+const clamp01 = (v) => Math.min(Math.max(v, 0), 1);
+const span = (v, s) => s ** ((clamp01(v) - 0.5) * 2);
+const map3 = (p, lo, mid, hi) => (p < 0.5 ? lo * (mid / lo) ** (2 * p) : mid * (hi / mid) ** (2 * p - 1));
+const lerp = (a, b, t) => a + (b - a) * t;
+
+class Tom808 {
+  /**
+   * @param {number} slot 0 low, 1 mid, 2 high  @param {number} sr sample rate the voice runs at
+   * @param {number|bigint} seed noise seed  @param {number} [os] oversampling factor included in sr
+   */
+  constructor(slot, sr, seed, os = 1) {
+    this.keys = TOM_808_KEYS[slot];
+    this.sr = sr;
+    this.k02 = follow(0.02, os);
+    this.noise = new XorShift64(BigInt(seed) | 1n);
+    this.noiseGain = Math.sqrt(os); // white noise keeps its audible-band power when oversampled
+    this.F = TOM_808[this.keys[0]];
+    this.tom = true;
+    this.pitch = 1; // 808-SC: frequency multiplier (set _t = NaN after changing it)
+    this.tuneS = 0.5; this.decS = 0.5; this.fltS = 0.5;
+    this._t = NaN; this._d = NaN; this._f = NaN; this._ns = 0; this.ringH = 0;
+    // resonator (trapezoidal SVF band-pass) and its state
+    this.g = 0; this.k = 1; this.a1 = 0; this.a2 = 0; this.a3 = 0; this.ic1 = 0; this.ic2 = 0;
+    this.pulseN = 0; this.pulseH = 0; this.amp = 0;
+    this.sw = 0; this.swK = 0;
+    // noise: P.N. bus (271 Hz Sallen-Key low-pass) then a one-pole low-pass
+    this.p1 = 0; this.p2 = 0; this.pb = [0, 0, 0, 0, 0]; this.nl = 0; this.nE = 0; this.nK = 0; this.nB = 0; this.nA = 0;
+    this._pinkSet();
+  }
+
+  _pinkSet() {
+    const w = 2 * Math.PI * 271 / this.sr, c = Math.cos(w), al = Math.sin(w) / (2 * 0.74), a0 = 1 + al;
+    this.pb = [(1 - c) / 2 / a0, (1 - c) / a0, (1 - c) / 2 / a0, -2 * c / a0, (1 - al) / a0];
+  }
+
+  /** velocity: 1 for a hit, 2 accented. tomMode: the TOM/CONGA switch (true = tom). */
+  trigger(velocity, tomMode) {
+    this.tom = !!tomMode;
+    this.F = TOM_808[this.keys[this.tom ? 0 : 1]];
+    this._t = NaN;
+    this.amp = 1 + (TOM_808.accent - 1) * clamp01(velocity - 1); // 808-SC: accent 1..2, continuous
+    this.pulseN = Math.max(1, Math.round(0.001 * this.sr));
+    this.pulseH = -1; // set on the next tick, once the knobs are read
+    this.sw = this.F.sw;
+    this.swK = Math.exp(-1 / (this.F.swT * this.sr));
+    this.nE = this.F.nK ? this.amp : 0;
+  }
+
+  _set() {
+    const F = this.F, sr = this.sr, t = this.tuneS;
+    const f = Math.min(map3(t, F.f0, F.f5, F.f1) * this.pitch, sr * 0.45); // 808-SC: pitch multiplier
+    const lvl = t < 0.5 ? lerp(F.g0, 1, t * 2) : lerp(1, F.g1, t * 2 - 1);
+    const q = Math.PI * f * F.t10 * span(this.decS, 3) / LN10;
+    this.g = Math.tan(Math.PI * f / sr); this.k = 1 / q;
+    this.a1 = 1 / (1 + this.g * (this.g + this.k)); this.a2 = this.g * this.a1; this.a3 = this.g * this.a2;
+    // pulse height that leaves the ring with peak amplitude lvl
+    this.ringH = lvl / (2 * this.k * Math.max(Math.abs(Math.sin(Math.PI * f * 0.001)), 0.05));
+    if (F.nK) {
+      this.nK = Math.exp(-1 / (F.nDec * span(this.decS, 3) * sr));
+      const K = Math.tan(Math.PI * Math.min(F.nLp * span(this.fltS, 4), sr * 0.45) / sr);
+      this.nB = K / (1 + K); this.nA = (K - 1) / (K + 1);
+    }
+  }
+
+  /** One sample. Knobs 0..1: xT_TUNE, xT_DEC, xT_ATK (tom noise), xT_FLT (noise filter). */
+  tick(tune, dec, atk, flt) {
+    this.tuneS += (tune - this.tuneS) * this.k02;
+    this.decS += (dec - this.decS) * this.k02;
+    this.fltS += (flt - this.fltS) * this.k02;
+    if (this.tuneS !== this._t || this.decS !== this._d || this.fltS !== this._f) {
+      this._t = this.tuneS; this._d = this.decS; this._f = this.fltS; this._set();
+    }
+    const F = this.F;
+
+    let x = 0;
+    if (this.pulseN > 0) {
+      if (this.pulseH < 0) this.pulseH = this.ringH * this.amp;
+      this.pulseN -= 1; x = this.pulseH;
+    }
+    const v3 = x - this.ic2;
+    const v1 = this.a1 * this.ic1 + this.a2 * v3;
+    const v2 = this.ic2 + this.a2 * this.ic1 + this.a3 * v3;
+    this.ic1 = 2 * v1 - this.ic1; this.ic2 = 2 * v2 - this.ic2;
+    let y = this.k * v1 * (1 - this.sw);
+    this.sw *= this.swK;
+
+    if (this.tom && this.nE > 1e-6) {
+      const n = this.noise.next() * this.noiseGain;
+      const b = this.pb, p = b[0] * n + this.p1;
+      this.p1 = b[1] * n - b[3] * p + this.p2;
+      this.p2 = b[2] * n - b[4] * p;
+      const a = clamp01(atk), amt = a < 0.5 ? 2 * a : 8 ** (2 * a - 1);
+      const s = p * this.nE * F.nK * amt;
+      this.nl = this.nB * s + this.nB * this._ns - this.nA * this.nl; this._ns = s;
+      this.nE *= this.nK;
+      y += this.nl;
+    }
+    return y * F.gain;
+  }
+}
+
+return { TOM_FIT: typeof TOM_FIT === 'undefined' ? undefined : TOM_FIT, TOM_808: typeof TOM_808 === 'undefined' ? undefined : TOM_808, TOM_808_KEYS: typeof TOM_808_KEYS === 'undefined' ? undefined : TOM_808_KEYS, Tom808: typeof Tom808 === 'undefined' ? undefined : Tom808 };
+})();
+// ---- voices/sc/rim-808.js
+__m["voices/sc/rim-808.js"] = (() => {
+// Rim shot and claves laid out like the TR-808's rim shot / claves board, with the constants
+// fitted to a component-level simulation of that board (across its decay, pitch and click
+// settings) and to recordings of a real TR-808 (samples/808/RS and CL).
+//
+// Rim shot: two bridged-T resonators (about 470 Hz and 1.9 kHz) are kicked by the trigger.
+//   Their sum drives a "swing" VCA: a transistor whose collector is pulled down by the signal's
+//   positive half-waves but never below a fast envelope (a capacitor charged by the trigger).
+//   That chops the tones into a woody, harmonic-rich click. A resonant ~590 Hz high-pass
+//   follows, and a FET mutes the output a few milliseconds after the hit.
+// Claves: one resonator (about 2.5 kHz) rings until the mute timer lets the FET short the
+//   output; a little of the ring leaks past it, and switching the FET leaves a small thump.
+//
+// Knobs (centred = as built): TUNE moves the pitch (x0.5 .. x2), DEC scales the envelope and
+// mute timer (x1/3 .. x3). Rim shot only: OSC1 / OSC2 set the low / high resonator levels
+// (0 .. x2), RES the drive into the VCA (x1/3 .. x3), FLT raises the high-pass (0 = as built).
+
+/** legacy: true uses the Rust app's rim shot (voices/rimshot.js) instead; read when the Engine is built. */
+const RIM_FIT = { legacy: false };
+
+/** Fitted constants (times in seconds, frequencies in Hz). */
+const RIM_808 = {
+  // rim shot
+  fH: 1883.8, qH: 12.59, fL: 473.25, qL: 7.984, kH: 0.1879, kL: 0.07698,
+  eK: 0.4078, eTau: 0.0043177, vca: 13.242, mute: 0.013039, muteTau: 0.0023122,
+  hpF: 586.4, hpQ: 2.872, rsGain: 6.84,
+  // claves
+  f: 2478.4, ring: 0.45523, k: 0.3709, clMute: 0.022501, clMuteTau: 1.29e-5, floor: 0.022808,
+  floorTau: 0.235, thA: 0.23969, thW: 0.010401, clGain: 1.51,
+  // trigger bus volts, normal and accented
+  vb: 4.44, vbAccent: 8.88,
+};
+
+const clamp01 = (v) => Math.min(Math.max(v, 0), 1);
+const span = (v, s) => s ** ((clamp01(v) - 0.5) * 2);
+const LN10 = Math.log(10);
+
+/** Damped sine started by a hit: y = a·sin(wn)·r^n, as a two-pole recursion. */
+class Ring {
+  constructor() { this.y1 = 0; this.y2 = 0; this.c = 0; this.r2 = 0; this.out = 0; }
+  start(f, q, a, sr) {
+    const w = 2 * Math.PI * Math.min(f, sr * 0.45) / sr, r = Math.exp(-Math.PI * f / (q * sr));
+    this.c = 2 * r * Math.cos(w); this.r2 = r * r;
+    // y[0] = 0, y[1] = a·r·sin(w); the recursion carries on from there
+    this.y2 = 0; this.y1 = a * r * Math.sin(w); this.out = 0;
+  }
+  tick() {
+    const y = this.out;
+    const n = this.c * this.y1 - this.r2 * this.y2;
+    this.out = this.y1; this.y2 = this.y1; this.y1 = n;
+    return y;
+  }
+}
+
+class Rim808 {
+  /** @param {number} sr  sample rate the voice runs at  @param {number} [os] oversampling factor included in sr */
+  constructor(sr, os = 1) {
+    this.sr = sr; this.os = os;
+    this.hi = new Ring(); this.lo = new Ring();
+    this.rimMode = true; this.pending = false; this.on = false;
+    this.vb = RIM_808.vb; this.t = 0;
+    this.e = 0; this.eK = 0; this.g = 0; this.muteN = 0; this.mK = 0; this.m = 0;
+    this.fl = 0; this.flK = 0; this.thN = 0; this.thK = 0; this.th = 0;
+    this.hb = [0, 0, 0, 0, 0]; this.x1 = 0; this.x2 = 0; this.h1 = 0; this.h2 = 0;
+  }
+
+  /** velocity: 1 for a hit, 2 accented. rimMode: true = rim shot, false = claves. */
+  trigger(velocity, rimMode) {
+    this.rimMode = !!rimMode;
+    this.vb = RIM_808.vb + (RIM_808.vbAccent - RIM_808.vb) * clamp01(velocity - 1); // 808-SC: accent 1..2, continuous
+    this.pending = true;
+  }
+
+  _start(k) {
+    const K = RIM_808, sr = this.sr, vb = this.vb;
+    const d = span(k.dec, 3), m = span(k.tune, 2);
+    this.t = 0; this.m = 1; this.on = true;
+    if (this.rimMode) {
+      this.hi.start(K.fH * m, K.qH, vb * K.kH * 2 * Math.max(k.osc2, 0), sr);
+      this.lo.start(K.fL * m, K.qL, vb * K.kL * 2 * Math.max(k.osc1, 0), sr);
+      this.e = vb * K.eK; this.eK = Math.exp(-1 / (K.eTau * d * sr));
+      this.g = K.vca * span(k.res, 3);
+      this.muteN = Math.round(K.mute * d * sr); this.mK = Math.exp(-1 / (K.muteTau * d * sr));
+      const w = 2 * Math.PI * Math.min(K.hpF * (1 + 3 * clamp01(k.flt)), sr * 0.45) / sr;
+      const cw = Math.cos(w), al = Math.sin(w) / (2 * K.hpQ), a0 = 1 + al;
+      this.hb = [(1 + cw) / 2 / a0, -(1 + cw) / a0, (1 + cw) / 2 / a0, -2 * cw / a0, (1 - al) / a0];
+    } else {
+      this.hi.start(K.f * m, Math.PI * K.f * K.ring / LN10, vb * K.k, sr);
+      this.muteN = Math.round(K.clMute * d * sr); this.mK = Math.exp(-1 / (K.clMuteTau * d * sr));
+      this.fl = K.floor; this.flK = Math.exp(-1 / (K.floorTau * d * sr));
+      this.thN = Math.round(K.thW * sr); this.thK = 1 - Math.exp(-1 / (K.thW * sr)); // one-pole at 1 / (2π·thW)
+      this.th = 0;
+    }
+  }
+
+  /** @param {{tune:number, dec:number, osc1:number, osc2:number, flt:number, res:number}} k */
+  tick(k) {
+    if (this.pending) { this.pending = false; this._start(k); }
+    if (!this.on) return 0;
+    const K = RIM_808, t = this.t++;
+    if (t > this.muteN) this.m *= this.mK;
+    let y;
+    if (this.rimMode) {
+      const s = this.hi.tick() + this.lo.tick();
+      const pull = s > 0 ? s * this.g : 0;
+      const v = -(pull < this.e ? pull : this.e);
+      this.e *= this.eK;
+      const b = this.hb, h = b[0] * v + b[1] * this.x1 + b[2] * this.x2 - b[3] * this.h1 - b[4] * this.h2;
+      this.x2 = this.x1; this.x1 = v; this.h2 = this.h1; this.h1 = h;
+      y = h * this.m * K.rsGain;
+    } else {
+      if (t > this.muteN) this.fl *= this.flK;
+      const r = this.hi.tick() * (this.fl + (1 - K.floor) * this.m);
+      const pulse = t > this.muteN && t < this.muteN + this.thN ? this.vb * K.thA : 0;
+      this.th += this.thK * (pulse - this.th);
+      y = (r + this.th) * K.clGain;
+    }
+    if (t > this.sr * 3) this.on = false;
+    return y;
+  }
+}
+
+return { RIM_FIT: typeof RIM_FIT === 'undefined' ? undefined : RIM_FIT, RIM_808: typeof RIM_808 === 'undefined' ? undefined : RIM_808, Rim808: typeof Rim808 === 'undefined' ? undefined : Rim808 };
+})();
+// ---- voices/sc/clap-808.js
+__m["voices/sc/clap-808.js"] = (() => {
+// Hand clap and maracas laid out like the TR-808's clap / maracas board, with the constants
+// fitted to a component-level simulation of that board (across its decay, spacing and reverb
+// settings) and to recordings of a real TR-808 (samples/808/CP and MA).
+//
+// Clap
+//   White noise through a band-pass (about 1.1 kHz), soft-clipped by the VCA's input stage.
+//   A sawtooth control voltage gates it: inside the trigger's window the sawtooth is dumped
+//   and restarts every ~11 ms (one clap per ramp); at the end of the window it is dumped once
+//   more and that last ramp falls slowly. The VCA opens exponentially with the sawtooth.
+//   A second, slower envelope (a peak-hold capacitor charged by the trigger) drives a
+//   transistor amplifier on the same band-passed noise: the "reverb" tail, low-passed.
+//   A little of the sawtooth leaks into the output as a low thump.
+// Maracas
+//   Noise through a gate that opens slowly (about 13 ms), stays open about 22 ms and snaps
+//   shut, then a 900 Hz high-pass, a resonant 10 kHz high-pass and the mixer's roll-off.
+//
+// Knobs (all centred = as built):
+//   clap:    OFFSET  clap spacing (x0.5 .. x2)        CLPS  window length: number of claps
+//            DEC     last clap's decay (x1/3 .. x3)   TAIL  reverb decay (x1/3 .. x3)
+//            REV     reverb level (0 .. x2)           FLT   reverb low-pass (x1/4 .. x4)
+//   maracas: DEC     gate length (x1/3 .. x3)         OFFSET attack (x0.5 .. x2)
+//            FLT     high-pass tuning (x0.5 .. x2)
+
+const { XorShift32 } = __m["voices/sc/dsp.js"];
+
+/** legacy: true uses the Rust app's clap (voices/clap.js) instead; read when the Engine is built. */
+const CLAP_FIT = { legacy: false };
+
+/** Fitted constants (times in seconds, frequencies in Hz). */
+const CLAP_808 = {
+  bpF: 1079.8, bpQ: 2.6, drive: 1.2831,
+  tooth: 0.011667, win: 0.028223, tTau: 0.0040433, lTau: 0.032754, expK: 1.4608,
+  vA: 0.029425, vAtt: 0.04171, vDec: 0.46987, vLp: 2200, vLev: 0.141,
+  thump: 0.010681,
+  // maracas
+  maAtt: 0.012621, maHold: 0.021841, maRel: 0.001999,
+  maHp1: 912.32, maHpF: 10111, maHpQ: 1.7524, maLp: 2764.7, maGain: 7.82,
+  gain: 8.15, // clap output level, matched to the earlier clap's loudness
+};
+
+const span = (v, s) => s ** ((Math.min(Math.max(v, 0), 1) - 0.5) * 2);
+const decayK = (t, sr) => Math.exp(-1 / (Math.max(t, 1e-5) * sr));
+const NOISE_GAIN = 0.866; // uniform noise in -1..1 scaled to 0.5 rms
+
+/** Direct-form-I biquad from RBJ coefficients. */
+class Biquad {
+  constructor() { this.b0 = 0; this.b1 = 0; this.b2 = 0; this.a1 = 0; this.a2 = 0; this.x1 = 0; this.x2 = 0; this.y1 = 0; this.y2 = 0; }
+  set(type, fc, q, sr) {
+    const w = 2 * Math.PI * Math.min(fc, sr * 0.45) / sr, cw = Math.cos(w), al = Math.sin(w) / (2 * q), a0 = 1 + al;
+    if (type === 'bp') { this.b0 = al / a0; this.b1 = 0; this.b2 = -al / a0; }
+    else { this.b0 = (1 + cw) / 2 / a0; this.b1 = -(1 + cw) / a0; this.b2 = this.b0; }
+    this.a1 = -2 * cw / a0; this.a2 = (1 - al) / a0;
+  }
+  run(x) {
+    const y = this.b0 * x + this.b1 * this.x1 + this.b2 * this.x2 - this.a1 * this.y1 - this.a2 * this.y2;
+    this.x2 = this.x1; this.x1 = x; this.y2 = this.y1; this.y1 = y;
+    return y;
+  }
+}
+
+/** Bilinear one-pole low- or high-pass. */
+class OnePole {
+  constructor(type, fc, sr) { this.type = type; this.x1 = 0; this.y1 = 0; this.set(fc, sr); }
+  set(fc, sr) {
+    const K = Math.tan(Math.PI * Math.min(fc, sr * 0.45) / sr);
+    this.a1 = (K - 1) / (K + 1);
+    if (this.type === 'lp') { this.b0 = K / (1 + K); this.b1 = this.b0; } else { this.b0 = 1 / (1 + K); this.b1 = -this.b0; }
+  }
+  run(x) { const y = this.b0 * x + this.b1 * this.x1 - this.a1 * this.y1; this.x1 = x; this.y1 = y; return y; }
+}
+
+class Clap808 {
+  constructor(sr, seed = 0x12345678) {
+    const K = CLAP_808;
+    this.sr = sr;
+    this.noise = new XorShift32(seed);
+    this.bp = new Biquad(); this.bp.set('bp', K.bpF, K.bpQ, sr);
+    this.vLp = new OnePole('lp', K.vLp, sr);
+    this.thHp = new OnePole('hp', 20, sr);
+    this.maHp1 = new OnePole('hp', K.maHp1, sr);
+    this.maHp = new Biquad(); this.maHp.set('hp', K.maHpF, K.maHpQ, sr);
+    this.maLp = new OnePole('lp', K.maLp, sr);
+    this.ek = Math.exp(K.expK) - 1;
+    this.maracas = false;
+    this.t = 1e9; this.saw = 0; this.vC = 0; this.vS = 0; this.e = 0;
+    this.toothN = 1; this.winN = 0; this.fast = 0; this.slow = 0; this.vDk = 0; this.vAk = 0; this.wet = 1; this.rev = 1;
+    this.holdN = 0; this.aK = 0; this.rK = 0;
+  }
+
+  /** @param {{maracas:boolean, offset:number, clps:number, dec:number, tail:number, rev:number, flt:number}} k */
+  trigger(k) {
+    const K = CLAP_808, sr = this.sr;
+    this.maracas = !!k.maracas;
+    this.t = 0;
+    if (this.maracas) {
+      const d = span(k.dec, 3), a = span(k.offset, 2), m = span(k.flt, 2);
+      this.aK = decayK(K.maAtt * d * a, sr); this.rK = decayK(K.maRel * d, sr);
+      this.holdN = Math.round(K.maHold * d * sr);
+      this.maHp1.set(K.maHp1 * m, sr); this.maHp.set('hp', K.maHpF * m, K.maHpQ, sr);
+      return;
+    }
+    const s = span(k.offset, 2), tail = span(k.tail, 3);
+    this.toothN = Math.max(1, Math.round(K.tooth * s * sr));
+    this.fast = decayK(K.tTau * s, sr);
+    this.winN = Math.round(K.win * span(k.clps, 2.2) * sr);
+    this.slow = decayK(K.lTau * span(k.dec, 3), sr);
+    this.vDk = decayK(K.vDec * tail, sr);
+    this.vAk = decayK(K.vAtt, sr);
+    this.rev = 2 * Math.min(Math.max(k.rev, 0), 1);
+    this.wet = this.rev * K.vA * tail ** K.vLev;
+    this.vLp.set(K.vLp * span(k.flt, 4), sr);
+    this.saw = 1; this.vC = 1;
+  }
+
+  tick() {
+    const K = CLAP_808;
+    const t = this.t;
+    if (t > this.sr * 4) return 0;
+    this.t = t + 1;
+    const n = this.noise.next() * NOISE_GAIN;
+    if (this.maracas) {
+      this.e = t < this.holdN ? 1 + (this.e - 1) * this.aK : this.e * this.rK;
+      if (t > this.holdN && this.e < 1e-6) this.t = 1e9;
+      return this.maLp.run(this.maHp.run(this.maHp1.run(n * this.e))) * K.maGain;
+    }
+    if (t < this.winN) { this.saw *= this.fast; if (t > 0 && t % this.toothN === 0) this.saw = 1; }
+    else { if (t === this.winN) this.saw = 1; this.saw *= this.slow; }
+    const g = (Math.exp(K.expK * this.saw) - 1) / this.ek;
+    this.vC *= this.vDk;
+    this.vS = this.vC + (this.vS - this.vC) * this.vAk;
+    const nz = this.bp.run(n);
+    const clap = Math.tanh(nz * K.drive) * g;
+    const verb = this.vLp.run(nz * this.vS * this.wet);
+    const thump = this.thHp.run(this.saw * K.thump * this.rev);
+    if (this.vC < 1e-5 && this.saw < 1e-5) this.t = 1e9;
+    return (clap + verb + thump) * K.gain;
+  }
+}
+
+return { CLAP_FIT: typeof CLAP_FIT === 'undefined' ? undefined : CLAP_FIT, CLAP_808: typeof CLAP_808 === 'undefined' ? undefined : CLAP_808, Clap808: typeof Clap808 === 'undefined' ? undefined : Clap808 };
+})();
+// ---- voices/sc/cowbell-808.js
+__m["voices/sc/cowbell-808.js"] = (() => {
+// Cowbell laid out like the TR-808's cowbell circuit, with the constants fitted to a
+// component-level simulation of that circuit (across Decay) and to a recording of a real
+// TR-808 (samples/808/CB).
+//
+// The two cowbell oscillators (about 540 and 800 Hz) each switch a transistor. While one is
+// off, the envelope current flows past it into a band-pass, so each oscillator contributes the
+// envelope gated on and off by its square wave: a one-sided pulse train, not a ±1 square. The
+// envelope is a capacitor with a second, slower capacitor as a load: a fast drop, then a long
+// tail. A coupling high-pass feeds the band-pass (about 890 Hz), and the output stage
+// high-passes again at about 330 Hz.
+//
+// Knobs: CB_DEC scales both envelope times (x1/3 .. x3), CB_RING the band-pass Q (x1/3 .. x3),
+// both centred = as built; CB_VOL is the level.
+// The oscillators come from the metal bank, so CB_TUNE, CB_O1, CB_O2 and CB_PW still apply.
+
+const { follow } = __m["voices/sc/dsp.js"];
+
+/** legacy: true uses the Rust app's cowbell (voices/cowbell.js) instead; read when the Engine is built. */
+const COWBELL_FIT = { legacy: false };
+
+/** Fitted constants (times in seconds, frequencies in Hz). */
+const COWBELL_808 = {
+  gLo: 0.85348, gHi: 0.76358,    // 540 Hz and 800 Hz paths
+  bpF: 887.04, bpQ: 5.9232,      // band-pass
+  fast: 0.0082663, slow: 0.12656, mixS: 0.14238, // envelope: fast drop, slow tail and its share
+  inHp: 3065.7,                  // coupling into the band-pass
+  outHp: 328.8,                  // output stage
+  accent: 2,
+  gain: 147.9,
+};
+
+const clamp01 = (v) => Math.min(Math.max(v, 0), 1);
+
+class Cowbell808 {
+  /** @param {number} sr  sample rate the voice runs at  @param {number} [os] oversampling factor included in sr */
+  constructor(sr, os = 1) {
+    const K = COWBELL_808;
+    this.sr = sr;
+    this.kS = follow(0.0151515151515, os);
+    this.lvlS = 0; this.decS = 0.5; this._dKey = NaN;
+    this.eF = 0; this.eS = 0; this.kF = 0; this.kSl = 0;
+    this.pending = false; this.amp = 1; this._ring = 0.5;
+    const w = 2 * Math.PI * K.bpF / sr, al = Math.sin(w) / (2 * K.bpQ), a0 = 1 + al;
+    this.b = [al / a0, 0, -al / a0, -2 * Math.cos(w) / a0, (1 - al) / a0];
+    this.x1 = 0; this.x2 = 0; this.y1 = 0; this.y2 = 0;
+    const hp = (f) => { const K2 = Math.tan(Math.PI * f / sr); return [1 / (1 + K2), (K2 - 1) / (K2 + 1)]; };
+    [this.ib, this.ia] = hp(K.inHp); [this.ob, this.oa] = hp(K.outHp);
+    this.ix = 0; this.iy = 0; this.ox = 0; this.oy = 0;
+  }
+
+  /** velocity: 1 for a hit, 2 accented. */
+  // 808-SC: velocity 1..2 sets the accent continuously
+  trigger(velocity) { this.pending = true; this.amp = 1 + (COWBELL_808.accent - 1) * clamp01(velocity - 1); }
+
+  /** cb1, cb2: the cowbell oscillators (±1) from Metal.tick(). vol = CB_VOL, dec = CB_DEC, ring = CB_RING. */
+  tick(cb1, cb2, vol, dec, ring = 0.5) {
+    const K = COWBELL_808;
+    this.lvlS += (vol - this.lvlS) * this.kS;
+    this.decS += (dec - this.decS) * this.kS;
+    if (this.decS !== this._dKey) {
+      this._dKey = this.decS;
+      const d = 3 ** ((clamp01(this.decS) - 0.5) * 2);
+      this.kF = Math.exp(-1 / (K.fast * d * this.sr)); this.kSl = Math.exp(-1 / (K.slow * d * this.sr));
+    }
+    if (this.pending) {
+      this.pending = false;
+      this.eF = Math.max(this.eF, this.amp * (1 - K.mixS)); this.eS = Math.max(this.eS, this.amp * K.mixS);
+    }
+    if (ring !== this._ring) {
+      this._ring = ring;
+      const sr = this.sr, w = 2 * Math.PI * K.bpF / sr, al = Math.sin(w) / (2 * K.bpQ * 3 ** ((clamp01(ring) - 0.5) * 2)), a0 = 1 + al;
+      this.b = [al / a0, 0, -al / a0, -2 * Math.cos(w) / a0, (1 - al) / a0];
+    }
+    this.eF *= this.kF; this.eS *= this.kSl;
+    const e = this.eF + this.eS;
+    // each path conducts while its square is low
+    const g = ((1 - cb1) * 0.5 * K.gLo + (1 - cb2) * 0.5 * K.gHi) * e;
+    const hi = this.ib * (g - this.ix) - this.ia * this.iy; this.ix = g; this.iy = hi;
+    const b = this.b, y = b[0] * hi + b[1] * this.x1 + b[2] * this.x2 - b[3] * this.y1 - b[4] * this.y2;
+    this.x2 = this.x1; this.x1 = hi; this.y2 = this.y1; this.y1 = y;
+    const o = this.ob * (y - this.ox) - this.oa * this.oy; this.ox = y; this.oy = o;
+    return o * this.lvlS * K.gain;
+  }
+}
+
+return { COWBELL_FIT: typeof COWBELL_FIT === 'undefined' ? undefined : COWBELL_FIT, COWBELL_808: typeof COWBELL_808 === 'undefined' ? undefined : COWBELL_808, Cowbell808: typeof Cowbell808 === 'undefined' ? undefined : Cowbell808 };
+})();
+// ---- voices/sc/cymbal-808.js
+__m["voices/sc/cymbal-808.js"] = (() => {
+// Cymbal laid out like the TR-808's cymbal circuit, with its constants fitted to the 25
+// recordings of a real TR-808 cymbal in samples/808/CY (Tone and Decay at 0, 2.5, 5, 7.5, 10).
+//
+// Three envelopes, as on the machine's voicing board:
+//   A     short (about 34 ms), feeds high band A
+//   B     medium (about 140 ms) plus a share of the long envelope, feeds high band B
+//   long  set by DECAY (an RC discharge, about 0.18 to 0.95 s), smoothed, feeds the low band
+// Each band is a switching VCA: the envelope is gated by the metal oscillators' high (hi) or
+// low (lo) band, then filtered: A through a 7 kHz high-pass and a resonant 8.8 kHz high-pass,
+// B through an 8.8 kHz high-pass, low through a 2.5 kHz high-pass and a 480 Hz low-pass.
+// TONE is the machine's pot network, crossfading A against B + low; the mixer's feedback
+// capacitor rounds off the top.
+
+const { sgnpow, follow } = __m["voices/sc/dsp.js"];
+
+/** legacy: true uses the Rust app's cymbal (voices/cymbal.js) instead; read when the Engine is built. */
+const CYMBAL_FIT = { legacy: false };
+
+/** Fitted constants (times in seconds, frequencies in Hz). */
+const CYMBAL_808 = {
+  a0: Math.exp(-1.397), tauA: 0.033977,
+  b0: Math.exp(-0.35575), tauB: 0.13642, bLong: Math.exp(-2.753),
+  th: 0.00089655, thLong: 0.005665,
+  tauLong: 0.38346,             // × (0.47 + 2·DECAY): R93 470k + VR2 2M into 1 µF
+  tauLowSmooth: 0.0726,         // R105 33k, 2.2 µF
+  kHi: 12.147, bHi: 0.11778,    // gate: 0.5·(1 − tanh(k·(x − b)))
+  kLo: 2.9529, bLo: -0.012079,
+  gA: Math.exp(-1.2509), gB: Math.exp(-1.9637), gLow: Math.exp(-2.1248),
+  qA: 7.5231, qB: 0.98788, qLow: 0.6628,
+  lpOut: 3024.8,
+  accent: 1.6,
+};
+
+// first-order (bilinear, prewarped) and RBJ second-order sections: [b0, b1, b2, a1, a2]
+function onePole(type, fc, sr) {
+  const K = Math.tan(Math.PI * Math.min(fc, sr * 0.45) / sr), a1 = (K - 1) / (K + 1);
+  return type === 'lp' ? [K / (1 + K), K / (1 + K), 0, a1, 0] : [1 / (1 + K), -1 / (1 + K), 0, a1, 0];
+}
+function hp2(fc, q, sr) {
+  const w = 2 * Math.PI * Math.min(fc, sr * 0.45) / sr, cw = Math.cos(w), al = Math.sin(w) / (2 * q), a0 = 1 + al;
+  return [(1 + cw) / 2 / a0, -(1 + cw) / a0, (1 + cw) / 2 / a0, -2 * cw / a0, (1 - al) / a0];
+}
+class Chain {
+  constructor(sections) { this.c = sections; this.z = new Float64Array(sections.length * 2); }
+  run(x) {
+    const c = this.c, z = this.z;
+    for (let i = 0, j = 0; i < c.length; i++, j += 2) {
+      const s = c[i], y = s[0] * x + z[j];
+      z[j] = s[1] * x - s[3] * y + z[j + 1];
+      z[j + 1] = s[2] * x - s[4] * y;
+      x = y;
+    }
+    return x;
+  }
+}
+
+/** The tone pot (VR4 20k, wiper grounded) and its resistors; returns [weight A, weight B + low]. */
+function toneWeights(tone) {
+  const t = Math.min(Math.max(tone, 0), 1);
+  const par = (a, b) => (a * b) / (a + b);
+  const zA = par(Math.max(20e3 * t, 1), 22e3);
+  const zL = par(20e3 * (1 - t) + 2.2e3, 15e3);
+  return [(zA / (22e3 + zA) / 22e3) * 1e4, (zL / (5e3 + zL) / 15e3) * 0.5e4];
+}
+
+class Cymbal808 {
+  /** @param {number} sr  sample rate the voice runs at  @param {number} [os] oversampling factor included in sr */
+  constructor(sr, os = 1) {
+    const K = CYMBAL_808;
+    this.sr = sr;
+    this.k02 = follow(0.02, os);
+    this.dA = Math.exp(-1 / (K.tauA * sr));
+    this.dB = Math.exp(-1 / (K.tauB * sr));
+    this.kSmooth = 1 - Math.exp(-1 / (K.tauLowSmooth * sr));
+    this.fA = new Chain([onePole('hp', 7090, sr), hp2(8840, K.qA, sr)]);
+    this.fB = new Chain([hp2(8840, K.qB, sr)]);
+    this.fLow = new Chain([hp2(2500, K.qLow, sr), onePole('hp', 159, sr), onePole('lp', 482, sr)]);
+    this.fOut = new Chain([onePole('lp', K.lpOut, sr)]);
+    this.eA = 0; this.eB = 0; this.eLong = 0; this.eLow = 0;
+    this.toneS = 0.5; this.decS = 1; this.lvlS = 0;
+    this._volKey = NaN; this._lvlT = 0; this._toneKey = NaN; this._decKey = NaN;
+    this.wA = 0; this.wL = 0; this.dLong = 0;
+  }
+
+  /** value: 1 for a hit, 2 accented. The envelope stores charge up to the trigger's level. */
+  trigger(value) {
+    const K = CYMBAL_808, amp = 1 + (K.accent - 1) * Math.min(Math.max(value - 1, 0), 1); // 808-SC: accent 1..2, continuous
+    this.eA = Math.max(this.eA, K.a0 * amp);
+    this.eB = Math.max(this.eB, K.b0 * amp);
+    this.eLong = Math.max(this.eLong, amp);
+  }
+
+  /** hi, lo: Metal.tick() band outputs. vol = RC_VOL, tone = RC_TONE, dec = RC_DEC. */
+  tick(hi, lo, vol, tone, dec) {
+    const K = CYMBAL_808;
+    if (vol !== this._volKey) { this._volKey = vol; this._lvlT = sgnpow(vol, 1.12); }
+    this.lvlS += (this._lvlT - this.lvlS) * this.k02;
+    this.toneS += (tone - this.toneS) * this.k02;
+    this.decS += (dec - this.decS) * this.k02;
+    if (this.toneS !== this._toneKey) { this._toneKey = this.toneS; [this.wA, this.wL] = toneWeights(this.toneS); }
+    if (this.decS !== this._decKey) {
+      this._decKey = this.decS;
+      const tau = Math.max(K.tauLong * (0.47 + 2 * this.decS), 0.01);
+      this.dLong = Math.exp(-1 / (tau * this.sr));
+    }
+
+    this.eA *= this.dA; this.eB *= this.dB; this.eLong *= this.dLong;
+    const long = Math.max(0, this.eLong - K.thLong);
+    this.eLow += (long - this.eLow) * this.kSmooth;
+    const envA = Math.max(0, this.eA - K.th);
+    const envB = Math.max(0, this.eB - K.th) + K.bLong * long;
+
+    const gHi = 0.5 * (1 - Math.tanh(K.kHi * (hi - K.bHi)));
+    const gLo = 0.5 * (1 - Math.tanh(K.kLo * (lo - K.bLo)));
+    const a = this.fA.run(envA * gHi) * K.gA;
+    const b = this.fB.run(envB * gHi) * K.gB;
+    const l = this.fLow.run(this.eLow * gLo) * K.gLow;
+    return this.fOut.run(this.wA * a + this.wL * (b + l)) * this.lvlS;
+  }
+}
+
+return { CYMBAL_FIT: typeof CYMBAL_FIT === 'undefined' ? undefined : CYMBAL_FIT, CYMBAL_808: typeof CYMBAL_808 === 'undefined' ? undefined : CYMBAL_808, Cymbal808: typeof Cymbal808 === 'undefined' ? undefined : Cymbal808 };
+})();
+// ---- voices/sc/hats-808.js
+__m["voices/sc/hats-808.js"] = (() => {
+// Open and closed hi-hats laid out like the TR-808's hi-hat circuits, with the constants fitted
+// to a component-level simulation of those circuits and to recordings of a real TR-808
+// (samples/808/OH and CH).
+//
+// Both hats take the six metal oscillators through a bridged-T band-pass (about 5.1 kHz for the
+// open hat, 7 kHz for the closed one, which also has a lower Q). Each hat
+// has a "swing" VCA: the band signal pulls the transistor's collector down, but never below the
+// envelope, so the output is the signal chopped by the envelope. With a finite gain the chopping
+// only starts once the envelope has fallen below the signal swing, which gives the hats their
+// fast-then-faster decay. A Sallen-Key high-pass (from the parts) and the mixer's roll-off follow.
+//   open:   the envelope capacitor charges through a resistor (a soft onset) and leaks slowly;
+//           when the decay timer (set by DECAY) runs out, a transistor dumps it. The closed hat
+//           dumps it the same way (the choke).
+//   closed: the envelope capacitor is charged by the hit and discharges into the VCA.
+//
+// Knobs, centred = as built: OH_DEC sets when the open hat is cut off, CH_DEC scales the closed
+// hat's envelope (x1/3 .. x3); tone (OH_TONE / CH_TONE) moves each hat's high-pass (x0.5 .. x2).
+
+/** legacy: true uses the Rust app's hats (voices/hats.js) instead; read when the Engine is built. */
+const HATS_FIT = { legacy: false };
+
+/** Fitted constants (times in seconds, frequencies in Hz). */
+const HATS_808 = {
+  oh: { bpF: 5096, bpQ: 5.844, vca: 13.75, e: 0.3081, att: 0.0121, dec: 0.2311, cut0: 0.03961, cut5: 0.6256, cut1: 1.066, dump: 0.009703, hpF: 7830, hpQ: 7.28, lp: 8084, gain: 17.6 },
+  ch: { bpF: 7033, bpQ: 1.699, vca: 40.63, e: 0.3817, att: 0.002217, dec: 0.01497, hpF: 11746, hpQ: 2.351, lp: 13904, gain: 44.5 },
+  in: 1,       // metal bank sum into the band-pass
+  accent: 2,
+};
+
+const clamp01 = (v) => Math.min(Math.max(v, 0), 1);
+const span = (v, s) => s ** ((clamp01(v) - 0.5) * 2);
+const map3 = (p, lo, mid, hi) => (p < 0.5 ? lo * (mid / lo) ** (2 * p) : mid * (hi / mid) ** (2 * p - 1));
+
+class Hat {
+  constructor(sr, F) {
+    this.sr = sr; this.F = F;
+    const g = Math.tan(Math.PI * Math.min(F.bpF, sr * 0.45) / sr), k = 1 / F.bpQ;
+    this.k = k; this.a1 = 1 / (1 + g * (g + k)); this.a2 = g * this.a1; this.a3 = g * this.a2; this.ic1 = 0; this.ic2 = 0;
+    this.aK = Math.exp(-1 / (F.att * sr));
+    this.dK = Math.exp(-1 / (F.dec * sr)); this.decK = this.dK;
+    this.dumpK = F.dump ? Math.exp(-1 / (F.dump * sr)) : 0;
+    this.lA = 1 - Math.exp(-2 * Math.PI * Math.min(F.lp, sr * 0.45) / sr); this.lz = 0;
+    this.hb = [0, 0, 0, 0, 0]; this.x1 = 0; this.x2 = 0; this.y1 = 0; this.y2 = 0; this._tone = NaN;
+    this.eC = 0; this.e = 0; this.t = 1e9; this.cutN = Infinity;
+  }
+  setTone(tone) {
+    if (tone === this._tone) return;
+    this._tone = tone;
+    const F = this.F, sr = this.sr, w = 2 * Math.PI * Math.min(F.hpF * span(tone, 2), sr * 0.45) / sr;
+    const cw = Math.cos(w), al = Math.sin(w) / (2 * F.hpQ), a0 = 1 + al;
+    this.hb = [(1 + cw) / 2 / a0, -(1 + cw) / a0, (1 + cw) / 2 / a0, -2 * cw / a0, (1 - al) / a0];
+  }
+  fire(amp, decSec, cutSec) {
+    this.eC = amp * this.F.e; this.t = 0;
+    this.dK = Math.exp(-1 / (decSec * this.sr));
+    this.cutN = cutSec === Infinity ? Infinity : Math.round(cutSec * this.sr);
+  }
+  choke() { this.dK = this.dumpK; this.cutN = Infinity; }
+  tick(x) {
+    // the band-pass keeps running between hits
+    const v3 = x - this.ic2, v1 = this.a1 * this.ic1 + this.a2 * v3, v2 = this.ic2 + this.a2 * this.ic1 + this.a3 * v3;
+    this.ic1 = 2 * v1 - this.ic1; this.ic2 = 2 * v2 - this.ic2;
+    const b = this.k * v1;
+    if (this.t++ === this.cutN) this.dK = this.dumpK;
+    this.eC *= this.dK;
+    this.e = this.eC + (this.e - this.eC) * this.aK;
+    if (this.e < 1e-6 && this.eC < 1e-6 && Math.abs(this.lz) < 1e-7) return 0;
+    const pull = b > 0 ? b * this.F.vca : 0;
+    const v = -(pull < this.e ? pull : this.e);
+    const h = this.hb, y = h[0] * v + h[1] * this.x1 + h[2] * this.x2 - h[3] * this.y1 - h[4] * this.y2;
+    this.x2 = this.x1; this.x1 = v; this.y2 = this.y1; this.y1 = y;
+    this.lz += this.lA * (y - this.lz);
+    return this.lz * this.F.gain;
+  }
+}
+
+class Hats808 {
+  /** @param {number} sr  sample rate the voice runs at  @param {number} [os] oversampling factor included in sr */
+  constructor(sr, os = 1) {
+    this.sr = sr;
+    this.open = new Hat(sr, HATS_808.oh); this.closed = new Hat(sr, HATS_808.ch);
+    this.open.setTone(0.5); this.closed.setTone(0.5);
+    this.pendO = 0; this.pendC = 0;
+    this.out = { open: 0, closed: 0 };
+  }
+  // 808-SC: value 1..2 sets the accent continuously
+  triggerClosed(value) { this.pendC = 1 + (HATS_808.accent - 1) * clamp01(value - 1); }
+  triggerOpen(value) { this.pendO = 1 + (HATS_808.accent - 1) * clamp01(value - 1); }
+
+  /** raw: Metal.tick().raw (the six oscillators' sum). chDec, ohDec: CH_DEC, OH_DEC. */
+  tick(raw, chDec, ohDec, chTone = 0.5, ohTone = 0.5) {
+    const K = HATS_808;
+    if (this.pendC) {
+      this.closed.fire(this.pendC, K.ch.dec * span(chDec, 3), Infinity);
+      this.open.choke();
+      this.pendC = 0;
+    }
+    if (this.pendO) {
+      this.open.fire(this.pendO, K.oh.dec, map3(clamp01(ohDec), K.oh.cut0, K.oh.cut5, K.oh.cut1));
+      this.pendO = 0;
+    }
+    this.open.setTone(ohTone); this.closed.setTone(chTone);
+    const x = raw * K.in;
+    this.out.open = this.open.tick(x);
+    this.out.closed = this.closed.tick(x);
+    return this.out;
+  }
+}
+
+return { HATS_FIT: typeof HATS_FIT === 'undefined' ? undefined : HATS_FIT, HATS_808: typeof HATS_808 === 'undefined' ? undefined : HATS_808, Hats808: typeof Hats808 === 'undefined' ? undefined : Hats808 };
+})();
+// ---- voices/sc/sc-calibration.js
+__m["voices/sc/sc-calibration.js"] = (() => {
+// Generated by test/sc-calibrate.mjs, against the circuit model (RMS over the first 300 ms of a hit).
+// SC_GAIN: per SC voice [normal gain, accented gain], so that at default knobs it is as loud as the circuit.
+// SC_TRIM: per knob [dB at 0, dB at 1], the circuit's level change at the knob's ends that the SC voice doesn't make.
+const SC_GAIN = {
+  bd: [0.18198, 0.1853],
+  sd: [0.17303, 0.32017],
+  lt: [0.10329, 0.28647],
+  mt: [0.0814, 0.21954],
+  ht: [0.11803, 0.31081],
+  lc: [0.19013, 0.32406],
+  mc: [0.11038, 0.19446],
+  hc: [0.17207, 0.26243],
+  rs: [0.11146, 0.25474],
+  cl: [0.53741, 0.82584],
+  cp: [0.83724, 2.0094],
+  ma: [1.3114, 2.0369],
+  cb: [0.1887, 0.2112],
+  cy: [236.32, 382.02],
+  oh: [0.29085, 0.30801],
+  ch: [0.14436, 0.12819],
+};
+const SC_TRIM = {
+  bd: { tone: [-0.5, 0.3], decay: [1.3, -0.4], pitch: [-7.4, 2.4], click: [-2.1, 2.3], attack: [-7.3, -1.2] },
+  sd: { tone: [-1, -2.2], snappy: [-1.2, 2.6], pitch: [-4.3, 4.5], decay: [1.4, -1.6], wires: [0, -0.5], snapdec: [-0.6, 0.5] },
+  lt: { tuning: [-2.4, 3.3], pitch: [-6.1, 4.7], decay: [-4.6, 5.3], noise: [2.3, -7.5] },
+  mt: { tuning: [-2.5, 3.5], pitch: [-5.4, 4.6], decay: [-3.7, 5.2], noise: [3.2, -9.1] },
+  ht: { tuning: [-2.6, 3.4], pitch: [-5.1, 4.9], decay: [-4.7, 5.1], noise: [3, -8.4] },
+  lc: { tuning: [-2.1, 2.6], pitch: [-4.3, 4.1], decay: [-9.2, 9.4] },
+  mc: { tuning: [-2.3, 2.7], pitch: [-4.4, 3.5], decay: [-9.2, 9.4] },
+  hc: { tuning: [-2.2, 2.6], pitch: [-4.4, 0.3], decay: [-8.9, 9.3] },
+  rs: { pitch: [1.1, -0.8], decay: [3, -7], click: [-0.1, 0.1] },
+  cl: { pitch: [-4.1, -2.4], decay: [-2, 0.2] },
+  cp: { snap: [0, -0.3], pitch: [-1.3, 0.4], decay: [-0.1, 0.1], spacing: [-2.3, 0.2] },
+  ma: { pitch: [-3, 14.8], decay: [0.9, 0.3] },
+  cb: { pitch: [3.2, -4.8], decay: [1.3, -6.2], detune: [-0.9, -2.8], ring: [-10.5, 11.8] },
+  cy: { tone: [-0.2, -0.8], decay: [-0.2, 0], pitch: [0.2, -0.3], spread: [0.2, 2] },
+  oh: { decay: [0.5, 0], pitch: [-0.7, 1.2], spread: [0.2, 1.4], tone: [-5, -3.2] },
+  ch: { pitch: [-0.8, 1.2], decay: [1.8, -0.6], spread: [0.2, 3.3], tone: [-3.5, 0.2] },
+};
+
+return { SC_GAIN: typeof SC_GAIN === 'undefined' ? undefined : SC_GAIN, SC_TRIM: typeof SC_TRIM === 'undefined' ? undefined : SC_TRIM };
+})();
+// ---- voices/sc/sc-voices.js
+__m["voices/sc/sc-voices.js"] = (() => {
+// The SC (simplified circuit) model of each of the 16 voices: the voices in this folder, which come from
+// synthetic-808 v0.2.1, wrapped in this repo's voice API (set / trigger / render, in volts) so the kit can play them
+// next to the circuit and cached models.
+//
+// Each wrapper takes the same knob list as the voice's other models and maps it onto the SC voice's panel values
+// (0..1, centred = as built) so that a knob does the same job in every model:
+//   Level   this repo's LEVEL pot law (dsp/calibration.js), times a gain that matches the circuit's loudness
+//           (SC_GAIN, voices/sc/sc-calibration.js, written by test/sc-calibrate.mjs)
+//   Accent  0..1 here is velocity 1..2 for the SC voice (the SC voices were edited to take it continuously)
+//   Pitch   +-12 semitones: a frequency multiplier on the voice's resonators (or its six metal oscillators)
+//   Decay   x1/3..x3 where the SC voice has the same span; the toms take the circuit's measured ring-time ratio;
+//           the cymbal's decay is the same pot (470k + 2M) in both models
+//   extras  Click, Attack, Wires, Snap dec, Noise, Ring, Detune, Spread, Tone, Spacing, Snap: onto the SC voice's
+//           control for the same part
+// The toms and congas, rim shot, claves, cowbell, cymbal and hats run at twice the sample rate with a half-band
+// decimator; the bass drum, snare, clap and maracas run at the output rate (as in synthetic-808).
+// The cymbal and hats read the six square-wave oscillators of voices/sc/metal.js: one shared bank (ScMetalBus) at the
+// stock tuning, or a private one when the voice's Pitch or Spread is off centre. The cowbell has its own bank (it
+// only uses the bank's cowbell pair, retuned by Pitch and Detune).
+const { Voice, clamp, lerp, map3, pitchMul, decayMul, spreadExp } = __m["dsp/core.js"];
+const { tomDecay } = __m["voices/tom-circuit.js"];
+const { HalfbandDecimator } = __m["voices/sc/dsp.js"];
+const { Metal, CB_HZ } = __m["voices/sc/metal.js"];
+const { Bass808 } = __m["voices/sc/bass-808.js"];
+const { Snare808 } = __m["voices/sc/snare-808.js"];
+const { Tom808 } = __m["voices/sc/tom-808.js"];
+const { Rim808 } = __m["voices/sc/rim-808.js"];
+const { Clap808, CLAP_808 } = __m["voices/sc/clap-808.js"];
+const { Cowbell808 } = __m["voices/sc/cowbell-808.js"];
+const { Cymbal808 } = __m["voices/sc/cymbal-808.js"];
+const { Hats808 } = __m["voices/sc/hats-808.js"];
+const { SC_GAIN, SC_TRIM } = __m["voices/sc/sc-calibration.js"];
+
+const LN2 = Math.log(2), LN3 = Math.log(3);
+// a frequency multiplier as an SC knob that spans x1/s .. xs around 0.5
+const spanKnob = (m, s) => 0.5 + Math.log(m) / (2 * Math.log(s));
+const METAL_KNOBS = { duty: 0.5, volt: 0.5, cbPw: 0.5, cbTune: 0.5, cbO1: 0.5, cbO2: 0.5, cbFromHats: false, spread: 0.5 };
+const QUIET = 1e-7; // SC output below this counts as silence
+const SLEEP = 0.25; // s of silence before a voice stops being ticked
+
+// Six metal oscillators at twice the output rate, rendered once a block for every voice that reads them.
+class ScMetalBus {
+  constructor(sr, pitch = 1, spread = 0.5) {
+    this.metal = new Metal(sr * 2, 2);
+    this.knobs = { ...METAL_KNOBS };
+    this.retune(pitch, spread);
+    this.raw = new Float64Array(0); this.hi = new Float64Array(0); this.lo = new Float64Array(0);
+    this.cb1 = new Float64Array(0); this.cb2 = new Float64Array(0);
+    this.fresh = false;
+  }
+  retune(pitch, spread) { this.metal.pitch = pitch; this.knobs.spread = spread; }
+  begin() { this.fresh = false; } // a new block: render again on the next get()
+  get(n2) {
+    if (this.fresh && this.raw.length >= n2) return this;
+    if (this.raw.length < n2) for (const k of ['raw', 'hi', 'lo', 'cb1', 'cb2']) this[k] = new Float64Array(n2);
+    const m = this.metal, k = this.knobs;
+    for (let i = 0; i < n2; i++) {
+      const o = m.tick(k);
+      this.raw[i] = o.raw; this.hi[i] = o.hi; this.lo[i] = o.lo; this.cb1[i] = o.cb1; this.cb2[i] = o.cb2;
+    }
+    this.fresh = true;
+    return this;
+  }
+}
+
+class ScVoice extends Voice {
+  // spec: the voice's knob list (the same as its other models'); os: 1 or 2
+  constructor(sr, id, spec, os) {
+    super(sr, spec.map((q) => ({ ...q })));
+    this.id = id; this.os = os;
+    this.dec = os === 2 ? new HalfbandDecimator() : null;
+    this.awake = false; this.idle = 0; this.g = 1;
+    const G = SC_GAIN[id] ?? [1, 1];
+    this.gN = G[0]; this.gA = G[1];
+    this.knobTrim = SC_TRIM[id]; // (Voice.knobGain)
+  }
+  trigger(accent = 0) {
+    const a = clamp(accent, 0, 1);
+    this.g = lerp(this.gN, this.gA, a);
+    this.awake = true; this.idle = 0;
+    this.fire(1 + a);
+  }
+  // per block, before the samples: read the knobs
+  prepare() {}
+  render(out, n) {
+    if (!this.awake) return;
+    this.prepare(n);
+    const lvl = this.levelGain() * this.g, quiet = this.sr * SLEEP;
+    for (let i = 0; i < n; i++) {
+      const y = this.os === 2 ? this.dec.push(this.tick(2 * i), this.tick(2 * i + 1)) : this.tick(i);
+      out[i] += y * lvl;
+      if (Math.abs(y) < QUIET) { if (++this.idle > quiet) { this.awake = false; break; } } else this.idle = 0;
+    }
+  }
+}
+
+class BDsc extends ScVoice {
+  constructor(sr, spec) { super(sr, 'bd', spec, 1); this.v = new Bass808(sr); this.v.lvl = 1; }
+  fire(vel) { this.v.pitch = pitchMul(this.p.pitch); this.v.trigger(vel); }
+  tick() { const p = this.p; return this.v.tick(0.5, p.tone, p.decay, 0.5, 1, p.click, p.attack); }
+}
+
+class SDsc extends ScVoice {
+  constructor(sr, spec) { super(sr, 'sd', spec, 1); this.v = new Snare808(sr); }
+  fire(vel) { this.prepare(); this.v.pitch = pitchMul(this.p.pitch); this.v.trigger(vel); }
+  prepare() { const p = this.p; this.v.prepare({ tone: p.tone, snappy: p.snappy, decay: p.decay, ndec: p.snapdec, wires: p.wires }); }
+  tick() { return this.v.tick(0.5, 0.5); }
+}
+
+const TOM_SLOT = { lt: 0, mt: 1, ht: 2, lc: 0, mc: 1, hc: 2 };
+class TomSc extends ScVoice {
+  constructor(sr, spec, id) {
+    super(sr, id, spec, 2);
+    this.isTom = id[1] === 't';
+    this.v = new Tom808(TOM_SLOT[id], sr * 2, 0x1111 * (TOM_SLOT[id] + 1) + (this.isTom ? 0 : 7), 2);
+    this.k = { tune: 0.5, dec: 0.5, atk: 0.5 };
+  }
+  fire(vel) { this.prepare(); this.v.trigger(vel, this.isTom); }
+  prepare() {
+    const p = this.p, m = pitchMul(p.pitch);
+    if (m !== this.v.pitch) { this.v.pitch = m; this.v._t = NaN; }
+    // DECAY: the circuit's ring-time ratio (R230, measured) as the SC voice's x1/3..x3
+    this.k.dec = spanKnob(tomDecay(this.id, p.decay)[0], 3);
+    // NOISE: 0 .. x1 .. x3 in the circuit (R232); the SC voice's tom noise goes 0 .. x1 .. x8
+    const nz = clamp(p.noise ?? 0.5, 0, 1);
+    this.k.atk = nz < 0.5 ? nz : 0.5 + (nz - 0.5) * LN3 / Math.log(8);
+    this.k.tune = p.tuning;
+  }
+  tick() { const k = this.k; return this.v.tick(k.tune, k.dec, k.atk, 0.5); }
+}
+
+class RSsc extends ScVoice {
+  constructor(sr, spec, id = 'rs') { super(sr, id, spec, 2); this.v = new Rim808(sr * 2, 2); this.rim = id === 'rs'; this.k = { tune: 0.5, dec: 0.5, osc1: 0.5, osc2: 0.5, flt: 0, res: 0.5 }; }
+  fire(vel) { this.prepare(); this.v.trigger(vel, this.rim); }
+  prepare() {
+    const p = this.p, k = this.k;
+    k.tune = spanKnob(pitchMul(p.pitch), 2); k.dec = p.decay; k.res = p.click ?? 0.5; // CLICK: the drive into the VCA
+  }
+  tick() { return this.v.tick(this.k); }
+}
+class CLsc extends RSsc { constructor(sr, spec) { super(sr, spec, 'cl'); } }
+
+class CPsc extends ScVoice {
+  constructor(sr, spec) { super(sr, 'cp', spec, 1); this.v = new Clap808(sr, 0x12345678); }
+  fire() {
+    const p = this.p;
+    // PITCH: the noise band-pass; DECAY: the reverb tail; SPACING: the clap spacing; SNAP: the reverb down to none
+    this.v.bp.set('bp', CLAP_808.bpF * pitchMul(p.pitch), CLAP_808.bpQ, this.sr);
+    this.v.trigger({ maracas: false, offset: p.spacing, clps: 0.5, dec: 0.5, tail: p.decay, rev: 0.5 * (1 - clamp(p.snap ?? 0, 0, 1)), flt: 0.5 });
+  }
+  tick() { return this.v.tick(); } // (no accent in the SC clap: accent is SC_GAIN's accented gain)
+}
+
+class MAsc extends ScVoice {
+  constructor(sr, spec) { super(sr, 'ma', spec, 1); this.v = new Clap808(sr, 0x2468ace1); }
+  fire() { const p = this.p; this.v.trigger({ maracas: true, dec: p.decay, offset: 0.5, flt: spanKnob(pitchMul(p.pitch), 2) }); }
+  tick() { return this.v.tick(); }
+}
+
+const CB_GM = Math.sqrt(CB_HZ[0] * CB_HZ[1]);
+class CBsc extends ScVoice {
+  constructor(sr, spec) { super(sr, 'cb', spec, 2); this.v = new Cowbell808(sr * 2, 2); this.v.lvlS = 1; this.bus = new ScMetalBus(sr); }
+  fire(vel) { this.v.trigger(vel); }
+  prepare(n) {
+    // PITCH and DETUNE: the two cowbell oscillators (the circuit's C5/C6), as frequency multipliers
+    const p = this.p, m = pitchMul(p.pitch), s = spreadExp(p.detune), k = this.bus.knobs;
+    k.cbO1 = 1.5 - 1 / (m * (CB_HZ[0] / CB_GM) ** (s - 1));
+    k.cbO2 = 1.5 - 1 / (m * (CB_HZ[1] / CB_GM) ** (s - 1));
+    this.bus.begin(); this.b = this.bus.get(2 * n);
+  }
+  tick(j) { const p = this.p; return this.v.tick(this.b.cb1[j], this.b.cb2[j], 1, p.decay, p.ring); }
+}
+
+// cymbal and hats: the shared bank at stock tuning, or their own
+class MetalSc extends ScVoice {
+  constructor(sr, id, spec, shared) { super(sr, id, spec, 2); this.shared = shared; this.own = null; }
+  bank(n) {
+    const m = pitchMul(this.p.pitch), s = this.p.spread ?? 0.5;
+    if (Math.abs(m - 1) < 1e-9 && Math.abs(s - 0.5) < 1e-9) { this.own = null; return this.shared.get(2 * n); }
+    this.own ??= new ScMetalBus(this.sr);
+    this.own.retune(m, s); this.own.begin();
+    return this.own.get(2 * n);
+  }
+}
+
+class CYsc extends MetalSc {
+  constructor(sr, spec, shared) { super(sr, 'cy', spec, shared); this.v = new Cymbal808(sr * 2, 2); this.v.lvlS = 1; }
+  fire(vel) { this.v.trigger(vel); }
+  prepare(n) { this.b = this.bank(n); }
+  tick(j) { const p = this.p; return this.v.tick(this.b.hi[j], this.b.lo[j], 1, p.tone, p.decay); }
+}
+
+class OHsc extends MetalSc {
+  constructor(sr, spec, shared) { super(sr, 'oh', spec, shared); this.v = new Hats808(sr * 2, 2); }
+  fire(vel) { this.v.triggerOpen(vel); }
+  choke() { this.v.open.choke(); }
+  prepare(n) { this.b = this.bank(n); }
+  tick(j) { const p = this.p; return this.v.tick(this.b.raw[j], 0.5, p.decay, 0.5, p.tone).open; }
+}
+
+class CHsc extends MetalSc {
+  constructor(sr, spec, shared) { super(sr, 'ch', spec, shared); this.v = new Hats808(sr * 2, 2); }
+  fire(vel) { this.v.triggerClosed(vel); }
+  prepare(n) { this.b = this.bank(n); }
+  tick(j) { const p = this.p; return this.v.tick(this.b.raw[j], p.decay, 0.5, p.tone, 0.5).closed; }
+}
+
+// id -> a new SC voice; spec: the voice's knob list; bus: the shared ScMetalBus
+function makeSc(id, sr, spec, bus) {
+  switch (id) {
+    case 'bd': return new BDsc(sr, spec);
+    case 'sd': return new SDsc(sr, spec);
+    case 'lt': case 'mt': case 'ht': case 'lc': case 'mc': case 'hc': return new TomSc(sr, spec, id);
+    case 'rs': return new RSsc(sr, spec);
+    case 'cl': return new CLsc(sr, spec);
+    case 'cp': return new CPsc(sr, spec);
+    case 'ma': return new MAsc(sr, spec);
+    case 'cb': return new CBsc(sr, spec);
+    case 'cy': return new CYsc(sr, spec, bus);
+    case 'oh': return new OHsc(sr, spec, bus);
+    case 'ch': return new CHsc(sr, spec, bus);
+  }
+  return null;
+}
+
+return { ScMetalBus: typeof ScMetalBus === 'undefined' ? undefined : ScMetalBus, BDsc: typeof BDsc === 'undefined' ? undefined : BDsc, SDsc: typeof SDsc === 'undefined' ? undefined : SDsc, TomSc: typeof TomSc === 'undefined' ? undefined : TomSc, RSsc: typeof RSsc === 'undefined' ? undefined : RSsc, CLsc: typeof CLsc === 'undefined' ? undefined : CLsc, CPsc: typeof CPsc === 'undefined' ? undefined : CPsc, MAsc: typeof MAsc === 'undefined' ? undefined : MAsc, CBsc: typeof CBsc === 'undefined' ? undefined : CBsc, CYsc: typeof CYsc === 'undefined' ? undefined : CYsc, OHsc: typeof OHsc === 'undefined' ? undefined : OHsc, CHsc: typeof CHsc === 'undefined' ? undefined : CHsc, makeSc: typeof makeSc === 'undefined' ? undefined : makeSc };
+})();
 // ---- dsp/kit.js
 __m["dsp/kit.js"] = (() => {
 // The kit: owns the shared metal oscillators, all 16 voices, a sample-
@@ -9320,6 +10874,7 @@ const { MA } = __m["voices/ma.js"];
 const { CB } = __m["voices/cb.js"];
 const { CY } = __m["voices/cy.js"];
 const { OH, CH } = __m["voices/hats.js"];
+const { makeSc, ScMetalBus } = __m["voices/sc/sc-voices.js"];
 
 // Panel order. Volts -> digital: 12 V peak is about -6 dBFS.
 const VOICES = [
@@ -9377,6 +10932,13 @@ class Kit {
     // per voice with loadCache()
     this.cached = {};
     for (const [id] of VOICES) this.cached[id] = new CachedVoice(sr, this.behavioural[id].params);
+    // fourth model: SC, the simplified circuit voices (voices/sc/), on the same knobs
+    this.scBus = new ScMetalBus(sr);
+    this.sc = {};
+    for (const [id] of VOICES) {
+      const v = (this.sc[id] = makeSc(id, sr, this.behavioural[id].params, this.scBus));
+      v.levelPts = LEVEL[id];
+    }
     this.model = {};
     for (const [id] of VOICES) this.setModel(id, 'circuit');
     this.master = 0.8;
@@ -9402,10 +10964,11 @@ class Kit {
     this.sampled[id]?.set(param, value);
     this.circuit[id]?.set(param, value);
     this.cached[id]?.set(param, value);
+    this.sc[id]?.set(param, value);
   }
-  // model: 'circuit' | 'cached' | 'behavioural' | 'sample'
+  // model: 'circuit' | 'cached' | 'sc' | 'behavioural' | 'sample'
   setModel(id, model) {
-    const m = model === 'sample' ? 'sample'
+    const m = model === 'sample' ? 'sample' : model === 'sc' ? 'sc'
       : model === 'cached' && this.cached[id]?.loaded ? 'cached'
       : model === 'behavioural' || model === 'cached' || !this.circuit[id] ? 'behavioural' : 'circuit';
     this.model[id] = m;
@@ -9430,6 +10993,7 @@ class Kit {
       this.behavioural.oh?.choke?.();
       this.sampled.oh?.choke?.();
       this.cached.oh?.choke();
+      this.sc.oh?.choke();
       if (this.model.ch !== 'circuit') this.circuit.oh?.choke?.();
     }
     v.trigger(accent * (this.fx[id]?.accent ?? 1));
@@ -9467,6 +11031,7 @@ class Kit {
     if (this.mix.length < n) this.mix = new Float32Array(n);
     const mix = this.mix; mix.fill(0, 0, n);
     this.metal.render(n);
+    this.scBus.begin(); // (the SC cymbal and hats render it when they first need it)
     const sh = this.shared;
     if (this._usesCircuit(NOISE_IDS)) sh.noise.render(n);
     sh.metal.active = () => this._usesCircuit(METAL_IDS);
@@ -9476,7 +11041,7 @@ class Kit {
     const sp = this.split, to = sp ? (id) => (sp[id] ? (off ? sp[id].subarray(off, off + n) : sp[id]) : mix) : () => mix;
     for (const id of ids) this._voiceOut(id, this.voices[id], to(id), n);
     // the models that aren't selected finish any tail they were playing
-    if (!this.solo) for (const [id] of VOICES) for (const m of ['behavioural', 'circuit', 'cached', 'sampled']) {
+    if (!this.solo) for (const [id] of VOICES) for (const m of ['behavioural', 'circuit', 'cached', 'sampled', 'sc']) {
       const other = this[m][id];
       if (!other || other === this.voices[id]) continue;
       if (m === 'behavioural' || (other.awake ?? true)) this._voiceOut(id, other, to(id), n);
@@ -10051,7 +11616,7 @@ class Player {
   }
   // ---- the TR-808 voices ----
   // messages from app/tr808.js: map808 (each track's 808 voice id, or null for its LXR voice), set808 (a knob, 0..1),
-  // model808 ('circuit' or 'cached'), cache808 (a voice's cached hits: info and 16-bit PCM)
+  // model808 ('circuit', 'cached' or 'sc'), cache808 (a voice's cached hits: info and 16-bit PCM)
   msg808(m) {
     if (!this.k808) {
       if (typeof TR808 === 'undefined') return;
@@ -14552,6 +16117,7 @@ addEventListener('keydown', (e) => {
 // the standard kit). Each sound plays as the circuit simulation or as cached hits, with its own knobs; the cache
 // button renders a sound's hits at its current knobs in a worker, as on the bench, kept in this browser (IndexedDB
 // tr808-cache, the bench's own, so caches made on either show up in both); revert brings the shipped ones back.
+// Or it plays as SC, the simplified circuit (voices/sc/): every knob live, a fraction of the circuit's CPU, nothing to load.
 // Models and knobs are kept in this browser, not in the presets.
 const T8_IDS = TR808.VOICES.map(([id]) => id);
 const T8_NAME = Object.fromEntries(TR808.VOICES.map(([id, name]) => [id, name.toLowerCase()]));
@@ -14577,7 +16143,7 @@ try {
   if (s) {
     if (Array.isArray(s.map) && s.map.length === 7) t8.map = s.map.map((id, t) => (T8_IDS.includes(id) ? id : T8_KIT[t]));
     for (const id of T8_IDS) {
-      if (s.models?.[id] === 'circuit' || s.models?.[id] === 'cached') t8.models[id] = s.models[id];
+      if (['circuit', 'cached', 'sc'].includes(s.models?.[id])) t8.models[id] = s.models[id];
       for (const p of T8_PARAMS[id]) if (typeof s.values?.[id]?.[p.id] === 'number') t8.values[id][p.id] = s.values[id][p.id];
     }
   }
@@ -14727,7 +16293,8 @@ function t8Card(id, into) {
   card.className = 'm-808-v';
   card.innerHTML = `<button class="m-808-vname" type="button" title="${T8_NAME[id]}: tap to hear it">${id}</button>`
     + '<span class="m-808-models"><button class="m-toggle" type="button" data-m="circuit" title="The circuit simulation: every knob works, costs CPU">circuit</button>'
-    + '<button class="m-toggle" type="button" data-m="cached" title="Recorded hits, one picked at random each time: almost no CPU">cached</button></span>'
+    + '<button class="m-toggle" type="button" data-m="cached" title="Recorded hits, one picked at random each time: almost no CPU">cached</button>'
+    + '<button class="m-toggle" type="button" data-m="sc" title="Simplified circuit: a light model laid out like the circuit, every knob works, a fraction of the CPU">sc</button></span>'
     + '<div class="m-808-set"></div>'
     + '<button class="m-btn m-808-go" type="button" title="Record 4 normal + 4 accented hits through the circuit at these knobs, kept in this browser, played at random, never the same one twice running">cache</button>'
     + '<span class="m-808-status"></span>'
@@ -14970,7 +16537,7 @@ for (const id of T8_ORDER) t8Card(id, $('m-g8-side'));
 // Autocache: everything plays cached except the sound being edited. Picking a sound on the grid, or moving one of its
 // knobs (here or on the 808 page), plays it on the circuit, so its knobs are heard as they move; moving away (another
 // sound, or another page) caches it at its new knobs and plays that (if no knob moved, it just goes back to cached).
-// Picking circuit by hand keeps it on the circuit.
+// Picking circuit by hand keeps it on the circuit; a sound on SC stays on SC (every knob plays live there).
 let g8Auto = null, g8Quiet = 0; // { id, moved }
 function g8Unauto() {
   const a = g8Auto; g8Auto = null;
@@ -14981,6 +16548,7 @@ function g8Unauto() {
 function g8Edit(id, moved) {
   if (g8Auto?.id !== id) {
     g8Unauto();
+    if (t8.models[id] === 'sc') return;
     if (t8.models[id] !== 'cached' && !moved) return;
     g8Auto = { id, moved: false };
   }
@@ -15190,6 +16758,8 @@ async function t8UseKnobs(id, vals) {
   g8Quiet++;
   try {
     if (g8Auto?.id === id) g8Auto = null;
+    // a sound on SC plays every knob live: just the knobs
+    if (t8.models[id] === 'sc') { for (const p of T8_PARAMS[id]) t8SetKnob(id, p.id, want[p.id]); return; }
     // (hits being made at other knobs are dropped)
     const job = t8Jobs[id];
     if (job && !job.error && !same(job.knobs)) { job.w?.terminate(); delete t8Jobs[id]; }

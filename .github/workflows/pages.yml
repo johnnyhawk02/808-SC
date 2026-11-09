@@ -28,13 +28,9 @@ jobs:
           mkdir -p site/bench
           cp -r elixir/index.html elixir/help.html elixir/manifest.webmanifest elixir/sw.js elixir/icons elixir/irs site/
           cp -r index.html app.js worklet.js cache-worker.js dsp voices cache site/bench/
-          [ -f CNAME ] && cp CNAME site/
           # the old elixir/ address sends people to the root
           mkdir site/elixir && printf '<!doctype html><meta charset="utf-8"><title>808 Circuit</title><meta http-equiv="refresh" content="0; url=../"><a href="../">808 Circuit has moved</a>\n' > site/elixir/index.html
-          # 808 Circuit's version, 1.N: N the number of changes merged into main
-          VER="1.$(git rev-list --count --first-parent HEAD)"
-          sed -i "s#<!--v-->[^<]*<!--/v-->#<!--v-->$VER<!--/v-->#g" site/index.html
-          grep -c "<!--v-->$VER" site/index.html
+          # (the version, dsp/version.js, is built into elixir/index.html by elixir/build.mjs)
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

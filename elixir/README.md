@@ -21,10 +21,10 @@ from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.git
 - **Mix page**: a strip for each of the sixteen sounds (its name lights as it hits; echo send, reverb send, pan, level), mixed per sound in the
   player (`vmix808`; the echo takes them through `renderFx`'s extra input in `lxr.js`). The kick keys the sidechain and
   the rest duck. Each sound still has a track (`BUS808`) for mutes and the rush.
-- Looks: 80s magenta. The version, 1.N on the cauldron (and in the presets footer), N the number of changes merged into
-  main, stamped in by the Pages deploy.
-- Each voice plays as the **circuit** simulation (every knob works, costs CPU) or **cached** hits (16 normal + 16
-  accented hits rendered by the circuit; level, decay and the clap's snap stay live; almost no CPU), with its own knobs.
+- Looks: 80s magenta. The version (808-SC's, `dsp/version.js`) on the cauldron and in the presets footer.
+- Each voice plays as the **circuit** simulation (every knob works, costs CPU), **cached** hits (16 normal + 16
+  accented hits rendered by the circuit; level, decay and the clap's snap stay live; almost no CPU) or **sc**, the
+  simplified circuit (every knob live, little CPU; autocache leaves a sound on sc alone), with its own knobs.
 - **Cache**, on every voice, records 4 normal + 4 accented hits through the circuit at its current knobs in a worker (a
   few seconds, the cymbal longest) and plays them as cached, random robin (picked at random, never the same one twice
   running); **revert** goes back to the shipped 16 + 16 hits (`../cache/`). They're kept in

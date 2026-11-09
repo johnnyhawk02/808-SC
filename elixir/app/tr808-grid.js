@@ -193,7 +193,7 @@ for (const id of T8_ORDER) t8Card(id, $('m-g8-side'));
 // Autocache: everything plays cached except the sound being edited. Picking a sound on the grid, or moving one of its
 // knobs (here or on the 808 page), plays it on the circuit, so its knobs are heard as they move; moving away (another
 // sound, or another page) caches it at its new knobs and plays that (if no knob moved, it just goes back to cached).
-// Picking circuit by hand keeps it on the circuit.
+// Picking circuit by hand keeps it on the circuit; a sound on SC stays on SC (every knob plays live there).
 let g8Auto = null, g8Quiet = 0; // { id, moved }
 function g8Unauto() {
   const a = g8Auto; g8Auto = null;
@@ -204,6 +204,7 @@ function g8Unauto() {
 function g8Edit(id, moved) {
   if (g8Auto?.id !== id) {
     g8Unauto();
+    if (t8.models[id] === 'sc') return;
     if (t8.models[id] !== 'cached' && !moved) return;
     g8Auto = { id, moved: false };
   }

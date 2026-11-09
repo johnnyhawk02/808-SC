@@ -4,6 +4,7 @@
 // the standard kit). Each sound plays as the circuit simulation or as cached hits, with its own knobs; the cache
 // button renders a sound's hits at its current knobs in a worker, as on the bench, kept in this browser (IndexedDB
 // tr808-cache, the bench's own, so caches made on either show up in both); revert brings the shipped ones back.
+// Or it plays as SC, the simplified circuit (voices/sc/): every knob live, a fraction of the circuit's CPU, nothing to load.
 // Models and knobs are kept in this browser, not in the presets.
 const T8_IDS = TR808.VOICES.map(([id]) => id);
 const T8_NAME = Object.fromEntries(TR808.VOICES.map(([id, name]) => [id, name.toLowerCase()]));
@@ -29,7 +30,7 @@ try {
   if (s) {
     if (Array.isArray(s.map) && s.map.length === 7) t8.map = s.map.map((id, t) => (T8_IDS.includes(id) ? id : T8_KIT[t]));
     for (const id of T8_IDS) {
-      if (s.models?.[id] === 'circuit' || s.models?.[id] === 'cached') t8.models[id] = s.models[id];
+      if (['circuit', 'cached', 'sc'].includes(s.models?.[id])) t8.models[id] = s.models[id];
       for (const p of T8_PARAMS[id]) if (typeof s.values?.[id]?.[p.id] === 'number') t8.values[id][p.id] = s.values[id][p.id];
     }
   }
@@ -179,7 +180,8 @@ function t8Card(id, into) {
   card.className = 'm-808-v';
   card.innerHTML = `<button class="m-808-vname" type="button" title="${T8_NAME[id]}: tap to hear it">${id}</button>`
     + '<span class="m-808-models"><button class="m-toggle" type="button" data-m="circuit" title="The circuit simulation: every knob works, costs CPU">circuit</button>'
-    + '<button class="m-toggle" type="button" data-m="cached" title="Recorded hits, one picked at random each time: almost no CPU">cached</button></span>'
+    + '<button class="m-toggle" type="button" data-m="cached" title="Recorded hits, one picked at random each time: almost no CPU">cached</button>'
+    + '<button class="m-toggle" type="button" data-m="sc" title="Simplified circuit: a light model laid out like the circuit, every knob works, a fraction of the CPU">sc</button></span>'
     + '<div class="m-808-set"></div>'
     + '<button class="m-btn m-808-go" type="button" title="Record 4 normal + 4 accented hits through the circuit at these knobs, kept in this browser, played at random, never the same one twice running">cache</button>'
     + '<span class="m-808-status"></span>'

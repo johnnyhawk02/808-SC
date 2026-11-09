@@ -158,7 +158,7 @@ input[type=range] { accent-color: var(--fam, var(--fam-c)); width: 100%; margin:
 
 <div class="wrap">
   <div class="bar">
-    <h1>808 Voice Bench</h1>
+    <h1>808 Voice Bench <small id="version"></small></h1>
     <div class="bar-ctl">
       <button type="button" class="btn primary" id="play" aria-pressed="false">Play</button>
       <label class="ctl" for="tempo">Tempo <output id="tempo-out">118</output><input type="range" id="tempo" min="60" max="200" step="1" value="118"></label>
@@ -178,6 +178,7 @@ input[type=range] { accent-color: var(--fam, var(--fam-c)); width: 100%; margin:
         <div class="model wide" role="group" aria-label="Model for all voices" id="all-models">
           <button type="button" data-m="circuit" aria-pressed="false">All circuit</button>
           <button type="button" data-m="cached" aria-pressed="false">All cached</button>
+          <button type="button" data-m="sc" aria-pressed="false">All SC</button>
           <button type="button" data-m="behavioural" aria-pressed="false">All synth</button>
           <button type="button" data-m="sample" aria-pressed="false">All 808</button>
         </div>

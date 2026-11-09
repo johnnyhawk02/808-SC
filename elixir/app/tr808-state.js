@@ -14,6 +14,8 @@ async function t8UseKnobs(id, vals) {
   g8Quiet++;
   try {
     if (g8Auto?.id === id) g8Auto = null;
+    // a sound on SC plays every knob live: just the knobs
+    if (t8.models[id] === 'sc') { for (const p of T8_PARAMS[id]) t8SetKnob(id, p.id, want[p.id]); return; }
     // (hits being made at other knobs are dropped)
     const job = t8Jobs[id];
     if (job && !job.error && !same(job.knobs)) { job.w?.terminate(); delete t8Jobs[id]; }
