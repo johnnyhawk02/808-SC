@@ -56,7 +56,7 @@ XS.forEach((short, n) => {
   mFader($('m-mix-pan'), short, { min: 0, max: 127, get: () => values[pan], dflt: () => initValues[pan], knob: true,
     show: (v) => (v === 63 ? 'C' : v < 63 ? `L${63 - v}` : `R${v - 63}`), set: (v) => { setValue(pan, v, true); setDirty(true); } });
   const vol = PAR.VOL1 + n;
-  mFader($('m-mix-vol'), short, { min: 0, max: 127, get: () => values[vol], show: String, dflt: () => initValues[vol],
+  mFader($('m-mix-vol'), short, { knob: false, min: 0, max: 127, get: () => values[vol], show: String, dflt: () => initValues[vol],
     set: (v) => { setValue(vol, v, true); setDirty(true); } });
 });
 

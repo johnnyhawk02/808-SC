@@ -26,7 +26,7 @@ T8_ORDER.forEach(t8mSend);
     knob('echo', 'echo', 0, 100, (v) => (v ? String(v) : 'off'));
     knob('verb', 'verb', 0, 100, (v) => (v ? String(v) : 'off'));
     knob('pan', 'pan', 0, 127, (v) => (v === 63 ? 'C' : v < 63 ? `L${63 - v}` : `R${v - 63}`));
-    mFader(strip, 'level', { min: 0, max: 127, get: () => t8m[id].vol, show: String, dflt: 127,
+    mFader(strip, 'level', { knob: false, min: 0, max: 127, get: () => t8m[id].vol, show: String, dflt: 127,
       set: (v) => { t8m[id].vol = v; t8mSave(); t8mSend(id); mDrawAll(); } });
     box.append(strip);
   }
@@ -43,7 +43,7 @@ for (const id of T8_ORDER) {
   knob('echo', 'echo', 0, 100, (v) => (v ? String(v) : 'off'));
   knob('verb', 'verb', 0, 100, (v) => (v ? String(v) : 'off'));
   knob('pan', 'pan', 0, 127, (v) => (v === 63 ? 'C' : v < 63 ? `L${63 - v}` : `R${v - 63}`));
-  mFader(strip, 'level', { min: 0, max: 127, get: () => t8m[id].vol, show: String, dflt: 127,
+  mFader(strip, 'level', { knob: false, min: 0, max: 127, get: () => t8m[id].vol, show: String, dflt: 127,
     set: (v) => { t8m[id].vol = v; t8mSave(); t8mSend(id); mDrawAll(); } });
   const meter = document.createElement('u'); meter.className = 'm-g8-meter'; meter.setAttribute('aria-hidden', 'true');
   strip.lastElementChild.querySelector('.m-vtrack').append(meter);

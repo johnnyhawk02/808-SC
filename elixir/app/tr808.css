@@ -265,3 +265,6 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 .m .m-808-strip .m-knob .m-vtrack,
 .m .m-g8-strip .m-knob .m-vtrack,
 .m .m-mix-card .m-knob .m-vtrack { flex: none; width: var(--knob); height: var(--knob); min-height: var(--knob); max-height: var(--knob); justify-self: center; align-self: center; }
+.m .m-knob .m-vtrack { container-type: size; background: none; overflow: visible; border-radius: 0; }
+.m [data-m-panel] .m-vf.m-knob:not(.m-808-set .m-knob) { display: flex; flex-direction: column; align-items: center; justify-content: start; gap: 2px; min-height: 0; }
+.m [data-m-panel] .m-vf.m-knob output { white-space: pre-line; text-align: center; line-height: 1.05; }

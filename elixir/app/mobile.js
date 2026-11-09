@@ -88,7 +88,7 @@ const mDraws = [], mFaders = [];
 // (a number box, num: true, is the same control drawn as its readout in a box, dragged like a knob; a knob, knob: true,
 // is the same control drawn as a segmented ring; it drags up and down over a fixed distance, as
 // the ring is too small to be the range. Any of them also turns with the mouse wheel or a two-finger trackpad scroll)
-function mFader(box, label, { min, max, step = 1, get, set, show, dflt, travel = 1, knob = false, num = false }) {
+function mFader(box, label, { min, max, step = 1, get, set, show, dflt, travel = 1, knob = !arguments[2].num, num = false }) {
   const el = document.createElement('div');
   el.className = knob ? 'm-vf m-knob' : num ? 'm-vf m-num' : 'm-vf';
   el.innerHTML = '<output></output><div class="m-vtrack" role="slider" tabindex="0"><i></i><b></b></div><span class="m-flab"></span>';
