@@ -25,6 +25,8 @@ from this repo instead of the LXR-02 voices. **Play it: https://johnnyhawk02.git
 - Each voice plays as the **circuit** simulation (every knob works, costs CPU), **cached** hits (16 normal + 16
   accented hits rendered by the circuit; level, decay and the clap's snap stay live; almost no CPU) or **sc**, the
   simplified circuit (every knob live, little CPU; autocache leaves a sound on sc alone), with its own knobs.
+- **The switch on top** (circuit / cached / synthetic) sets every sound's model at once; the **CPU** readout beside it
+  shows how much of the real-time budget the sound takes (not in the plugin).
 - **Cache**, on every voice, records 4 normal + 4 accented hits through the circuit at its current knobs in a worker (a
   few seconds, the cymbal longest) and plays them as cached, random robin (picked at random, never the same one twice
   running); **revert** goes back to the shipped 16 + 16 hits (`../cache/`). They're kept in

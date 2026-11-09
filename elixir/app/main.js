@@ -32,6 +32,7 @@ function markBar(b) {
 }
 function onEvent(ev) {
   if (ev.type === 'rec' || ev.type === 'recData') return recEvent(ev);
+  if (ev.type === 'load') return t8ShowLoad(ev.value);
   const delay = ctx && ctx.outputLatency ? ctx.outputLatency * 1000 : 0;
   if (ev.type === 'lvl') { if (delay) setTimeout(() => lvmFeed(ev.l, ev.v), delay); else lvmFeed(ev.l, ev.v); return; }
   if (ev.type !== 'step' || !playing) return;

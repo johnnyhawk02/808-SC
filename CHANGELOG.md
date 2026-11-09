@@ -3,6 +3,11 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.3.0 (2026-11-09)
+
+- A CPU readout beside the switch on top: how much of the real-time budget the sound takes (render time over the
+  audio's own time, every half second; underlined from 80%). Not in the plugin, whose sound runs in C++.
+
 ## 0.2.0 (2026-11-09)
 
 - A switch on top of the app, **circuit / cached / synthetic**, sets every sound's model at once (synthetic is SC).

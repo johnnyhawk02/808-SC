@@ -226,6 +226,13 @@ document.querySelectorAll('#m-allmodels [data-all]').forEach((b) => b.addEventLi
   for (const id of T8_IDS) if (t8.models[id] !== b.dataset.all) t8SetModel(id, b.dataset.all);
   t8Draw();
 }));
+// the CPU readout beside it: the player's render time over the audio's time (sent every ~0.5 s from the audio thread)
+function t8ShowLoad(v) {
+  const el = document.getElementById('m-cpu'); if (!el) return;
+  const pc = Math.round(v * 100);
+  el.textContent = `cpu ${pc}%`;
+  el.classList.toggle('m-cpu-hot', pc >= 80);
+}
 M_PAGE_NAMES.t808 = '808';
 // The 808 page is hidden for now (the grid's controls panel edits every sound); true brings its tab back
 const T8_PAGE = false;

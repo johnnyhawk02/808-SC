@@ -1,5 +1,7 @@
 /* ---- the switch on top: every sound as circuit, cached or synthetic (SC); lit when every sound plays that ---- */
-.m-allmodels { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.m-allmodels { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) 64px; gap: 4px; align-items: center; }
+.m-cpu { font-size: 13px; line-height: 1; text-align: right; white-space: nowrap; letter-spacing: .02em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
+.m-cpu.m-cpu-hot { font-weight: bold; text-decoration: underline; }
 .m .m-allmodels .m-toggle { min-width: 0; min-height: 30px; padding: 0 4px; font-size: 13px !important; letter-spacing: .04em; text-transform: uppercase; }
 @media (min-width: 1000px) {
   .m > .m-card.m-trans { row-gap: 6px; }
