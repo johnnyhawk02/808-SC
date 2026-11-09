@@ -416,3 +416,28 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 .m .m-g8-side .m-808-set { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 #m.m .m-g8-side .m-808-set .m-knob, #m.m .m-g8-side .m-g8-strip .m-knob { min-height: max-content; }
 #m.m .m-g8-side .m-vf.m-knob .m-flab, #m.m .m-g8-side .m-vf.m-knob output { flex: none; overflow: visible; }
+
+/* ---- a short window: a dial is never squeezed out of its name and value; the page scrolls instead ---- */
+#m.m [data-m-panel] .m-vf.m-knob { min-height: max-content; }
+#m.m [data-m-panel] .m-vf.m-knob .m-flab, #m.m [data-m-panel] .m-vf.m-knob output { flex: none; }
+@media (min-width: 1000px) {
+  #m.m [data-m-panel="beat"], #m.m [data-m-panel="fx"], #m.m [data-m-panel="comp"] { overflow-y: auto; overflow-x: hidden; align-content: start; grid-template-rows: auto !important; }
+  #m.m .m-beat-card, #m.m [data-m-panel="fx"] .m-fx-card, #m.m .m-comp-card { height: auto; min-height: max-content; align-self: start; }
+  #m.m .m-beat-card { grid-template-rows: auto auto !important; }
+  #m.m #m-beat-faders, #m.m #m-dens-faders, #m.m .m-dens, #m.m .m-comp-card .m-faders, #m.m [data-m-panel="fx"] .m-fx-row, #m.m #m-fx-echo, #m.m #m-fx-ring { min-height: max-content; }
+  /* a long value (fills: every 4, 4 steps) takes a second line, not an ellipsis */
+  #m.m #m-beat-faders .m-vf output { white-space: pre-line !important; height: auto !important; overflow: visible !important; text-overflow: clip; display: block; }
+}
+
+/* ---- every dial and fader: its name above, its readout below ---- */
+#m.m .m-vf.m-knob .m-flab, #m.m .m-g8-side .m-g8-strip .m-vf:not(.m-knob) .m-flab, #m.m .m-808-strip .m-vf .m-flab { order: 0; }
+#m.m .m-vf.m-knob .m-vtrack, #m.m .m-g8-side .m-g8-strip .m-vf:not(.m-knob) .m-vtrack, #m.m .m-808-strip .m-vf .m-vtrack { order: 1; }
+#m.m .m-vf.m-knob output, #m.m .m-g8-side .m-g8-strip .m-vf:not(.m-knob) output, #m.m .m-808-strip .m-vf output { order: 2; }
+#m.m .m-vf.m-knob .m-vtrack { margin: 2px 0; }
+#m.m .m-808-strip .m-vf:not(.m-knob) { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 0; }
+#m.m .m-808-strip .m-vf:not(.m-knob) .m-vtrack { flex: 1; }
+/* the mixer's strips: the dials take the room they need, the fader the rest, and the page scrolls when short */
+#m.m .m-808-strip { grid-template-rows: auto auto auto auto minmax(120px, 1fr); }
+@media (min-width: 1000px) { #m.m .m-808-mixer { grid-template-rows: minmax(max-content, 1fr); } }
+/* the phone's perform dials: a long value takes a second line, not an ellipsis */
+#m.m #m-faders .m-vf.m-knob output { white-space: pre-line; height: auto; overflow: visible; text-overflow: clip; }

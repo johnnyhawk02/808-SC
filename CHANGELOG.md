@@ -3,6 +3,12 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.10.3
+
+- Every dial and fader has its name above it and its readout below it, on every page.
+- In a short window a dial is never squeezed out of its name or value: the generator, FX, mixer and master pages scroll instead of clipping.
+- A long value (fills: every 4, 4 steps) takes a second line instead of being cut off.
+
 ## 0.10.2
 
 - Fixed the drum card losing its dial names and values on sounds with many dials (the snare in synthetic mode): the dials now sit three across, so they always fit, and a dial is never squeezed out of its labels.
