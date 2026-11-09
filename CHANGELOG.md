@@ -3,6 +3,10 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.8.8
+
+- Play and rec are just their icons, with no box: the triangle turns into a stop square while playing, and the red dot pulses and shows the time while recording.
+
 ## 0.8.7
 
 - 808sc.pages.dev deploys automatically on every push to main again (GitHub Actions, using the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID secrets).
