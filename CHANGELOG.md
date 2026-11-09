@@ -3,6 +3,10 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.7.2
+
+- On a sound's card the model keys sit on the same line as its name, to the right of it (BD [circuit | cached | synthetic]).
+
 ## 0.7.1
 
 - The model choice is a row of three joined keys (circuit, cached, synthetic) instead of the slide switch, on top and on each sound's card; the one playing is lit in the spot colour, none on top while the sounds play different models.

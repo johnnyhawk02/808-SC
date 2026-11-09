@@ -30,7 +30,7 @@
    its knobs, then its cache button and what it plays ---- */
 .m-808-card { display: grid; min-height: 0; padding: 8px 2px; }
 .m-808-all { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 8px; min-height: 0; }
-.m-808-v { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto auto; gap: 4px; min-width: 0; min-height: 0; padding: 6px 4px; border: 1.5px solid var(--ink); border-radius: 8px; }
+.m-808-v { display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; gap: 4px; min-width: 0; min-height: 0; padding: 6px 4px; border: 1.5px solid var(--ink); border-radius: 8px; }
 .m .m-808-vname { min-height: 30px; padding: 0; border: 0 !important; background: none !important; box-shadow: none !important; color: var(--ink);
   font-family: var(--display); font-size: var(--fs-m) !important; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
 .m .m-808-vname:active { background: var(--ink) !important; color: var(--panel); }
@@ -116,7 +116,12 @@
 .m .m-g8-picks .m-toggle { min-width: 0; min-height: 26px; padding: 0; font-size: 14px !important; letter-spacing: 0; text-transform: uppercase; opacity: .55; }
 .m .m-g8-picks .m-toggle.used, .m .m-g8-picks .m-toggle[aria-pressed="true"] { opacity: 1; }
 .m-g8-side > [hidden] { display: none; }
-.m-g8-side .m-808-v { grid-template-rows: auto auto minmax(0, 1fr) auto auto auto; }
+.m-g8-side .m-808-v { grid-template-rows: auto minmax(0, 1fr) auto auto auto; }
+/* (the sound's name, then its model keys to the right of it on the same line) */
+.m-808-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.m-808-head .m-808-vname { flex: none; padding: 0 4px !important; }
+.m-808-head .m-808-models { flex: 1; min-width: 0; }
+.m-808-all .m-808-head { flex-direction: column; align-items: stretch; gap: 4px; }
 .m .m-g8-side .m-808-set .m-knob .m-vtrack { max-height: 90px; }
 .m .m-g8-lab.sel { text-decoration: underline; text-underline-offset: 3px; }
 

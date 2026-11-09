@@ -178,10 +178,10 @@ const t8Cards = Object.fromEntries(T8_ORDER.map((id) => [id, []]));
 function t8Card(id, into) {
   const card = document.createElement('div');
   card.className = 'm-808-v';
-  card.innerHTML = `<button class="m-808-vname" type="button" title="${T8_NAME[id]}: tap to hear it">${id}</button>`
+  card.innerHTML = `<div class="m-808-head"><button class="m-808-vname" type="button" title="${T8_NAME[id]}: tap to hear it">${id}</button>`
     + '<span class="m-808-models m-seg" role="group" aria-label="Plays as"><button class="m-toggle" type="button" data-m="circuit" title="The circuit simulation: every knob works, costs CPU">circuit</button>'
     + '<button class="m-toggle" type="button" data-m="cached" title="Recorded hits, one picked at random each time: almost no CPU">cached</button>'
-    + '<button class="m-toggle" type="button" data-m="sc" title="Synthetic: a simplified circuit, every knob works, a fraction of the CPU">synthetic</button></span>'
+    + '<button class="m-toggle" type="button" data-m="sc" title="Synthetic: a simplified circuit, every knob works, a fraction of the CPU">synthetic</button></span></div>'
     + '<div class="m-808-set"></div>'
     + '<button class="m-btn m-808-go" type="button" title="Record 4 normal + 4 accented hits through the circuit at these knobs, kept in this browser, played at random, never the same one twice running">cache</button>'
     + '<span class="m-808-status"></span>'
