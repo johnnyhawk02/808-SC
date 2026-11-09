@@ -254,3 +254,14 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
   .m.m-rnd-open .m-rand-card .m-rand .m-btn { min-height: 44px; }
   .m.m-rnd-open .m-rand-card #m-undo { display: none; }
 }
+
+/* every dial the same size, everywhere */
+.m { --knob: 48px; }
+.m .m-knob .m-vtrack,
+.m #m-faders .m-knob .m-vtrack,
+.m .m-808-set .m-knob .m-vtrack,
+.m .m-g8-side .m-808-set .m-knob .m-vtrack,
+.m .m-808-all .m-808-set .m-knob .m-vtrack,
+.m .m-808-strip .m-knob .m-vtrack,
+.m .m-g8-strip .m-knob .m-vtrack,
+.m .m-mix-card .m-knob .m-vtrack { flex: none; width: var(--knob); height: var(--knob); min-height: var(--knob); max-height: var(--knob); justify-self: center; align-self: center; }

@@ -3,6 +3,10 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.8.1
+
+- Every dial is now the same size (48px) on every page: the sound card, its echo/verb/pan strip, the mix strips and the narrow-screen knobs.
+
 ## 0.8.0
 
 - The header is simpler on the laptop: no options button (click the 808 logo for the options menu), and the randomisers (everything, pattern, random fx, alter fx) moved into a pop-up under one RND key, with undo beside it. The pop-up stays open while you randomise and closes on a click outside or esc.
