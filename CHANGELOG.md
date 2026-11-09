@@ -3,6 +3,10 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.8.10
+
+- Fixed controls getting stuck "held" and then turning on hover with no button down. A drag now ends whenever the mouse button is up, whatever happened to the release (a right click, a release outside the window, lost capture). The same guard is on the randomise depth drag and grid painting.
+
 ## 0.8.9
 
 - Dials lose the pointer line from the centre; the ring of filled ticks shows the value.

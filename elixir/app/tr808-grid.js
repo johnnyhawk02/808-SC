@@ -172,10 +172,11 @@ function g8PaintStart(c, e) {
 function g8PaintEnd() { g8Paint = null; }
 addEventListener('pointermove', (e) => {
   if (!g8Paint) return;
+  if (e.pointerType === 'mouse' && !(e.buttons & 1)) { g8PaintEnd(); return; } // (released where we didn't hear it)
   const c = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('.m-g8-cell');
   if (c) g8PaintCell(c);
 });
-addEventListener('pointerup', g8PaintEnd); addEventListener('pointercancel', g8PaintEnd);
+addEventListener('pointerup', g8PaintEnd); addEventListener('pointercancel', g8PaintEnd); addEventListener('blur', g8PaintEnd);
 // the side panel: the controls of the sound last put on a lane (or whose name was tapped)
 // (over them, a button for each sound picks which one's controls show; picking doesn't play it)
 const g8Picks = {};

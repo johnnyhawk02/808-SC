@@ -116,16 +116,20 @@ function mFader(box, label, { min, max, step = 1, get, set, show, dflt, travel =
   // (Elixir 808: a click doesn't keep the control focused or open its step sequencer, and holding it still just drags)
   tr.addEventListener('pointerdown', (e) => {
     e.preventDefault(); // (no focus, no selection)
+    if (e.button !== 0) return; // (a right click opens the menu: no drag, so no drag left hanging when its release is lost)
     tr.setPointerCapture(e.pointerId); el.classList.add('held');
-    drag = { y: e.clientY, v: fd.base !== null ? fd.base : get(), h: knob || num ? 160 : tr.getBoundingClientRect().height };
+    drag = { id: e.pointerId, y: e.clientY, v: fd.base !== null ? fd.base : get(), h: knob || num ? 160 : tr.getBoundingClientRect().height };
   });
   tr.addEventListener('pointermove', (e) => {
-    if (!drag) return;
+    if (!drag || e.pointerId !== drag.id) return;
+    // (the button came up somewhere the release never reached us: the drag is over, a hover mustn't turn it)
+    if (e.pointerType === 'mouse' && !(e.buttons & 1)) { end(); return; }
     if (Math.abs(drag.y - e.clientY) > 6) clearTimeout(hold);
     move(drag.v + (drag.y - e.clientY) / (drag.h * travel) * (hiOf() - min));
   });
   const end = () => { clearTimeout(hold); drag = null; el.classList.remove('held'); if (document.activeElement === tr) tr.blur(); };
-  tr.addEventListener('pointerup', end); tr.addEventListener('pointercancel', end);
+  tr.addEventListener('pointerup', end); tr.addEventListener('pointercancel', end); tr.addEventListener('lostpointercapture', end);
+  window.addEventListener('blur', () => { if (drag) end(); });
   let wheel = null, over = 0;
   // (a scroll that was already going when the pointer slid onto it scrolls on past: it turns only once the pointer has
   // been on it a moment)

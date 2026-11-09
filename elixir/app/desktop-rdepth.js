@@ -42,9 +42,10 @@ for (const id of RD_IDS) {
   }, { capture: true });
   // dragging sets the depth (and then the press neither randomises nor opens the settings)
   let drag = null;
-  b.addEventListener('pointerdown', (e) => { drag = { y: e.clientY, x: e.clientX, d: mDepthOf(id), on: false }; });
+  b.addEventListener('pointerdown', (e) => { if (e.button === 0) drag = { y: e.clientY, x: e.clientX, d: mDepthOf(id), on: false }; });
   b.addEventListener('pointermove', (e) => {
     if (!drag) return;
+    if (e.pointerType === 'mouse' && !(e.buttons & 1)) { drag = null; return; } // (released somewhere else: over)
     const dy = drag.y - e.clientY, dx = e.clientX - drag.x;
     if (!drag.on && Math.abs(dy) + Math.abs(dx) < 5) return;
     if (!drag.on) { drag.on = true; b.setPointerCapture(e.pointerId); document.querySelector('.m-rand').dispatchEvent(new Event('pointercancel')); }
@@ -55,6 +56,7 @@ for (const id of RD_IDS) {
   // (marked until just after the click that follows, if one does)
   const end = () => { if (drag && drag.on) { b.dataset.dragged = '1'; setTimeout(() => delete b.dataset.dragged, 0); } drag = null; };
   b.addEventListener('pointerup', end); b.addEventListener('pointercancel', end);
+  addEventListener('pointerup', () => { if (drag && !drag.on) drag = null; }); // (a press let go off the button)
 }
 // (the click that ends a drag is stopped before anything sees it: the randomise, next bar's flash and the settings hold)
 addEventListener('click', (e) => {
