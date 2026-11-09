@@ -72,7 +72,7 @@ body { padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-i
   background: transparent !important; border: 2px solid var(--ink); border-radius: 3px; font-weight: 400; text-transform: uppercase; letter-spacing: .06em; }
 .m .m-btn:active, .m .m-big, .m .m-play, .m-tabs button[aria-selected="true"], .m .m-toggle[aria-pressed="true"], .m .m-plist li.cur .m-pload, .m .m-rec.on,
 .m .m-voice .m-btn[aria-selected="true"], .m .m-rs-tabs .m-btn[aria-selected="true"], .m .m-ch-list .m-btn[aria-pressed="true"], .m .m-looplens .m-btn[aria-pressed="true"] {
-  background: var(--spot, var(--ink)) !important; border-color: var(--spot, var(--ink)) !important; color: var(--on-spot, var(--panel)) !important; text-shadow: none; }
+  background: var(--spot, var(--ink)) !important; border-color: var(--ink) !important; color: var(--on-spot, var(--panel)) !important; text-shadow: none; }
 .m .m-big:active, .m .m-play:active { transform: none; background: transparent !important; color: var(--ink) !important; }
 .m .m-btn:disabled { opacity: .3; }
 

@@ -3,6 +3,10 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.8.6
+
+- Pressed (spot-colour) buttons keep the same ink outline as every other button, so they hold their shape and line up with their neighbours.
+
 ## 0.8.5
 
 - The app ships one cached hit per drum (one plain, one accented, plus the clap's dry pair) in `cache1/`, 2.2 MB instead of the bench's 46 MB. `test/cache-one.mjs` cuts it from `cache/`. The bench keeps its 16 + 16.
