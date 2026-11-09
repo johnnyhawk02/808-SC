@@ -20,6 +20,7 @@ import { MA } from '../voices/ma.js';
 import { CB } from '../voices/cb.js';
 import { CY } from '../voices/cy.js';
 import { OH, CH } from '../voices/hats.js';
+import { makeSc, ScMetalBus } from '../voices/sc/sc-voices.js';
 
 // Panel order. Volts -> digital: 12 V peak is about -6 dBFS.
 export const VOICES = [
@@ -77,6 +78,13 @@ export class Kit {
     // per voice with loadCache()
     this.cached = {};
     for (const [id] of VOICES) this.cached[id] = new CachedVoice(sr, this.behavioural[id].params);
+    // fourth model: SC, the simplified circuit voices (voices/sc/), on the same knobs
+    this.scBus = new ScMetalBus(sr);
+    this.sc = {};
+    for (const [id] of VOICES) {
+      const v = (this.sc[id] = makeSc(id, sr, this.behavioural[id].params, this.scBus));
+      v.levelPts = LEVEL[id];
+    }
     this.model = {};
     for (const [id] of VOICES) this.setModel(id, 'circuit');
     this.master = 0.8;
@@ -102,10 +110,11 @@ export class Kit {
     this.sampled[id]?.set(param, value);
     this.circuit[id]?.set(param, value);
     this.cached[id]?.set(param, value);
+    this.sc[id]?.set(param, value);
   }
-  // model: 'circuit' | 'cached' | 'behavioural' | 'sample'
+  // model: 'circuit' | 'cached' | 'sc' | 'behavioural' | 'sample'
   setModel(id, model) {
-    const m = model === 'sample' ? 'sample'
+    const m = model === 'sample' ? 'sample' : model === 'sc' ? 'sc'
       : model === 'cached' && this.cached[id]?.loaded ? 'cached'
       : model === 'behavioural' || model === 'cached' || !this.circuit[id] ? 'behavioural' : 'circuit';
     this.model[id] = m;
@@ -130,6 +139,7 @@ export class Kit {
       this.behavioural.oh?.choke?.();
       this.sampled.oh?.choke?.();
       this.cached.oh?.choke();
+      this.sc.oh?.choke();
       if (this.model.ch !== 'circuit') this.circuit.oh?.choke?.();
     }
     v.trigger(accent * (this.fx[id]?.accent ?? 1));
@@ -167,6 +177,7 @@ export class Kit {
     if (this.mix.length < n) this.mix = new Float32Array(n);
     const mix = this.mix; mix.fill(0, 0, n);
     this.metal.render(n);
+    this.scBus.begin(); // (the SC cymbal and hats render it when they first need it)
     const sh = this.shared;
     if (this._usesCircuit(NOISE_IDS)) sh.noise.render(n);
     sh.metal.active = () => this._usesCircuit(METAL_IDS);
@@ -176,7 +187,7 @@ export class Kit {
     const sp = this.split, to = sp ? (id) => (sp[id] ? (off ? sp[id].subarray(off, off + n) : sp[id]) : mix) : () => mix;
     for (const id of ids) this._voiceOut(id, this.voices[id], to(id), n);
     // the models that aren't selected finish any tail they were playing
-    if (!this.solo) for (const [id] of VOICES) for (const m of ['behavioural', 'circuit', 'cached', 'sampled']) {
+    if (!this.solo) for (const [id] of VOICES) for (const m of ['behavioural', 'circuit', 'cached', 'sampled', 'sc']) {
       const other = this[m][id];
       if (!other || other === this.voices[id]) continue;
       if (m === 'behavioural' || (other.awake ?? true)) this._voiceOut(id, other, to(id), n);

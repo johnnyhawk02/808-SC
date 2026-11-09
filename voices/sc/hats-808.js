@@ -83,8 +83,9 @@ export class Hats808 {
     this.pendO = 0; this.pendC = 0;
     this.out = { open: 0, closed: 0 };
   }
-  triggerClosed(value) { this.pendC = value > 1 ? HATS_808.accent : 1; }
-  triggerOpen(value) { this.pendO = value > 1 ? HATS_808.accent : 1; }
+  // 808-SC: value 1..2 sets the accent continuously
+  triggerClosed(value) { this.pendC = 1 + (HATS_808.accent - 1) * clamp01(value - 1); }
+  triggerOpen(value) { this.pendO = 1 + (HATS_808.accent - 1) * clamp01(value - 1); }
 
   /** raw: Metal.tick().raw (the six oscillators' sum). chDec, ohDec: CH_DEC, OH_DEC. */
   tick(raw, chDec, ohDec, chTone = 0.5, ohTone = 0.5) {

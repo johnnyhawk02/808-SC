@@ -56,6 +56,7 @@ export class Tom808 {
     this.noiseGain = Math.sqrt(os); // white noise keeps its audible-band power when oversampled
     this.F = TOM_808[this.keys[0]];
     this.tom = true;
+    this.pitch = 1; // 808-SC: frequency multiplier (set _t = NaN after changing it)
     this.tuneS = 0.5; this.decS = 0.5; this.fltS = 0.5;
     this._t = NaN; this._d = NaN; this._f = NaN; this._ns = 0; this.ringH = 0;
     // resonator (trapezoidal SVF band-pass) and its state
@@ -77,7 +78,7 @@ export class Tom808 {
     this.tom = !!tomMode;
     this.F = TOM_808[this.keys[this.tom ? 0 : 1]];
     this._t = NaN;
-    this.amp = velocity > 1 ? TOM_808.accent : 1;
+    this.amp = 1 + (TOM_808.accent - 1) * clamp01(velocity - 1); // 808-SC: accent 1..2, continuous
     this.pulseN = Math.max(1, Math.round(0.001 * this.sr));
     this.pulseH = -1; // set on the next tick, once the knobs are read
     this.sw = this.F.sw;
@@ -87,7 +88,7 @@ export class Tom808 {
 
   _set() {
     const F = this.F, sr = this.sr, t = this.tuneS;
-    const f = Math.min(map3(t, F.f0, F.f5, F.f1), sr * 0.45);
+    const f = Math.min(map3(t, F.f0, F.f5, F.f1) * this.pitch, sr * 0.45); // 808-SC: pitch multiplier
     const lvl = t < 0.5 ? lerp(F.g0, 1, t * 2) : lerp(1, F.g1, t * 2 - 1);
     const q = Math.PI * f * F.t10 * span(this.decS, 3) / LN10;
     this.g = Math.tan(Math.PI * f / sr); this.k = 1 / q;

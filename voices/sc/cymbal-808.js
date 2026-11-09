@@ -84,7 +84,7 @@ export class Cymbal808 {
 
   /** value: 1 for a hit, 2 accented. The envelope stores charge up to the trigger's level. */
   trigger(value) {
-    const K = CYMBAL_808, amp = value > 1 ? K.accent : 1;
+    const K = CYMBAL_808, amp = 1 + (K.accent - 1) * Math.min(Math.max(value - 1, 0), 1); // 808-SC: accent 1..2, continuous
     this.eA = Math.max(this.eA, K.a0 * amp);
     this.eB = Math.max(this.eB, K.b0 * amp);
     this.eLong = Math.max(this.eLong, amp);

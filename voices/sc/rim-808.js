@@ -66,7 +66,7 @@ export class Rim808 {
   /** velocity: 1 for a hit, 2 accented. rimMode: true = rim shot, false = claves. */
   trigger(velocity, rimMode) {
     this.rimMode = !!rimMode;
-    this.vb = velocity > 1 ? RIM_808.vbAccent : RIM_808.vb;
+    this.vb = RIM_808.vb + (RIM_808.vbAccent - RIM_808.vb) * clamp01(velocity - 1); // 808-SC: accent 1..2, continuous
     this.pending = true;
   }
 

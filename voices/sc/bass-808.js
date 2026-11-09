@@ -49,11 +49,12 @@ export class Bass808 {
     this.cA = 1 - Math.exp(-2 * Math.PI * 400 / sr);
     this.lvl = 0; this._volKey = NaN; this._lvlT = 0;
     this._toneKey = NaN; this.pending = false; this.accented = false;
-    this.f0 = 48; this.t10 = 0.3; this.gK = 0; this.glide = 0; this.clickK = 0;
+    this.f0 = 48; this.t10 = 0.3; this.acc = 0; this.pitch = 1; this.gK = 0; this.glide = 0; this.clickK = 0;
   }
 
   /** velocity: 1 for a hit, 2 accented. */
-  trigger(velocity) { this.pending = true; this.accented = velocity > 1; }
+  // 808-SC: velocity 1..2 sets the accent continuously (1 normal, 2 full accent)
+  trigger(velocity) { this.pending = true; this.accented = velocity > 1; this.acc = clamp01(velocity - 1); }
 
   _res(f) {
     f = Math.min(f, this.sr * 0.45);
@@ -84,11 +85,11 @@ export class Bass808 {
     if (this.pending) {
       this.pending = false;
       this.t10 = map3(clamp01(dec), K.d0, K.d5, K.d1);
-      this.f0 = K.f0 * 1.5 ** ((clamp01(tune) - 0.5) * 2);
+      this.f0 = K.f0 * 1.5 ** ((clamp01(tune) - 0.5) * 2) * this.pitch; // 808-SC: pitch, a frequency multiplier
       this.q = Math.PI * K.f0 * this.t10 / LN10;
       this.gK = Math.exp(-1 / (K.glideK * this.t10 * sr));
       this.glide = K.glide * 2 * clamp01(pamt);
-      this.amp = this.accented ? K.accent : 1;
+      this.amp = 1 + (K.accent - 1) * this.acc;
       this.t = 0; this.g = 1;
       this.segN = Math.max(1, Math.round(K.seg * 3 ** ((clamp01(hold) - 0.5) * 2) * sr));
       this.clickK = K.click * 2 * clamp01(click);

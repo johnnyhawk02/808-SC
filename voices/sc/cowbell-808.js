@@ -49,7 +49,8 @@ export class Cowbell808 {
   }
 
   /** velocity: 1 for a hit, 2 accented. */
-  trigger(velocity) { this.pending = true; this.amp = velocity > 1 ? COWBELL_808.accent : 1; }
+  // 808-SC: velocity 1..2 sets the accent continuously
+  trigger(velocity) { this.pending = true; this.amp = 1 + (COWBELL_808.accent - 1) * clamp01(velocity - 1); }
 
   /** cb1, cb2: the cowbell oscillators (±1) from Metal.tick(). vol = CB_VOL, dec = CB_DEC, ring = CB_RING. */
   tick(cb1, cb2, vol, dec, ring = 0.5) {

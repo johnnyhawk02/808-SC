@@ -86,6 +86,7 @@ export class Metal {
     this.hp2 = new Biquad();
     this.low = new Float64Array(6);
     this.periods = SM_MS.slice(); this._spread = 0.5;
+    this.pitch = 1; // 808-SC: frequency multiplier on the six oscillators (not the cowbell pair)
     /** last output; reused every tick to avoid allocation */
     this.out = { raw: 0, hi: 0, lo: 0, cb1: 0, cb2: 0 };
   }
@@ -115,7 +116,7 @@ export class Metal {
     const low = this.low;
     let sum = 0;
     for (let i = 0; i < 6; i++) {
-      const f = this.osc[i].step(ms * this.periods[i] * voltF, duty);
+      const f = this.osc[i].step(ms * this.periods[i] * voltF / this.pitch, duty);
       low[i] = 1 - f;
       sum += low[i];
     }

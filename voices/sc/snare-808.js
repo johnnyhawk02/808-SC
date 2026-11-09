@@ -68,6 +68,7 @@ export class Snare808 {
     this.cA = onePoleA(1 / (2 * Math.PI * 27e3 * 0.01e-6), sr); this.cz = 0;
     this.hb = [0, 0, 0, 0, 0]; this.x1 = 0; this.x2 = 0; this.y1 = 0; this.y2 = 0;
     this.vb = K.vb; this.pending = false;
+    this.pitch = 1; // 808-SC: frequency multiplier on both drums
   }
 
   /** Read the knobs once per block: {tone, snappy, decay, ndec, wires?} (0..1). */
@@ -89,10 +90,10 @@ export class Snare808 {
   }
 
   /** velocity: 1 for a hit, 2 accented. */
-  trigger(velocity) { this.pending = true; this.vb = velocity > 1 ? SNARE_808.vbAccent : SNARE_808.vb; }
+  trigger(velocity) { this.pending = true; this.vb = SNARE_808.vb + (SNARE_808.vbAccent - SNARE_808.vb) * clamp01(velocity - 1); } // 808-SC: accent 1..2, continuous
 
   _start(pitch) {
-    const K = SNARE_808, sr = this.sr, m = span(pitch, 1.5), d = span(this.k.decay, 3), vb = this.vb;
+    const K = SNARE_808, sr = this.sr, m = span(pitch, 1.5) * this.pitch, d = span(this.k.decay, 3), vb = this.vb;
     this.lo.set(K.fLo * m, K.qLo * d, sr); this.hi.set(K.fHi * m, K.qHi * d, sr);
     this.hLo = this.lo.height(vb * K.kLo); this.hHi = this.hi.height(vb * K.kHi);
     this.pulseN = Math.max(1, Math.round(0.001 * sr));
