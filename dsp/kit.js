@@ -120,6 +120,8 @@ export class Kit {
     this.model[id] = m;
     this.voices[id] = m === 'sample' ? this.sampled[id] : this[m][id];
   }
+  // a voice's synthetic design, where it has more than one (the snare: 1 algorithmic, 2 circuit-layout)
+  setScDesign(id, n) { this.sc[id]?.setDesign?.(n); }
   loadCache(id, info, int16) { this.cached[id].load(info, int16); }
   // one recording: key is the knob positions from the file name ('5050', '')
   loadSample(id, key, wav) { this.sampled[id]?.add(key, wav); }

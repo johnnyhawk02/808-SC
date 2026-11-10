@@ -1,2 +1,2 @@
 // 808-SC's version (also in package.json and CHANGELOG.md): shown on the app, the bench and the plugin.
-export const VERSION = '0.14.0';
+export const VERSION = '0.15.0';

@@ -515,6 +515,10 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
   #m.m #m-beat-faders > :nth-child(n+5) { grid-row: 4; grid-column: auto; }
 }
 
+/* (0.15.0: the snare's three keys, circuit, synthetic, synthetic (circuit)) */
+.m-g8-side .m-808-head .m-808-models:has([data-d]) { grid-template-columns: auto auto auto; }
+.m .m-g8-side .m-808-models:has([data-d]) > .m-toggle { padding: 0 8px; white-space: nowrap; }
+
 /* ---- 0.14.0: the laptop window (html.win, set by desktop-menu.js): a 16:10 panel laid out at 1280 x 800, scaled
    as one piece (--z) and centred, with a small triangle in its bottom right corner to drag it smaller or larger ---- */
 .win body { padding: 0; height: 100dvh; min-height: 0; overflow: hidden; }

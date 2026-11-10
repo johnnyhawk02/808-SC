@@ -28,12 +28,14 @@ const T8_CACHE_URL = new URL(location.pathname.includes('/elixir/') ? '../cache1
 let t8PendingAuto = null; try { t8PendingAuto = JSON.parse(localStorage.getItem('808sc-autocache'))?.id ?? null; } catch (e) {}
 let t8SavedVals = {}; // the sounds whose knobs were saved here (those win over the knobs their saved hits were made at)
 const t8 = { map: T8_KIT.slice(), models: Object.fromEntries(T8_IDS.map((id) => [id, 'cached'])),
-  values: Object.fromEntries(T8_SPEC.map((v) => [v.id, { ...v.values }])) };
+  values: Object.fromEntries(T8_SPEC.map((v) => [v.id, { ...v.values }])),
+  syn: { sd: 2 } }; // (syn: which synthetic design a sound with two of them plays: the snare's 1 algorithmic, 2 circuit-layout)
 try {
   const s = JSON.parse(localStorage.getItem(T8_KEY));
   if (s) {
     if (Array.isArray(s.map) && s.map.length === 7) t8.map = s.map.map((id, t) => (T8_IDS.includes(id) ? id : T8_KIT[t]));
     t8SavedVals = s.values ?? {};
+    if (s.syn?.sd === 1) t8.syn.sd = 1;
     for (const id of T8_IDS) {
       if (['circuit', 'cached', 'sc'].includes(s.models?.[id])) t8.models[id] = s.models[id];
       // (circuit plays from its cached hits; it plays the live circuit only mid-edit, so a sound left there by a
@@ -119,6 +121,7 @@ const t8CustomReady = (async () => {
   t8Draw();
 })();
 // the voices playing cached load their hits now (after any saved ones are read)
+for (const id in t8.syn) send({ type: 'scdesign808', id, design: t8.syn[id] });
 for (const id of T8_IDS) { send({ type: 'model808', id, model: t8.models[id] }); if (t8.models[id] === 'cached' && t8.map.includes(id)) t8LoadCached(id); }
 
 function t8SetKnob(id, p, x, save = true) {
@@ -186,7 +189,9 @@ async function t8Revert(id) {
 // ---- the engine, as the keys show it: circuit (the circuit's cached hits, the live circuit while editing or while
 // its hits render) or synthetic (sc) ----
 const t8Eng = (id) => (t8.models[id] === 'sc' ? 'sc' : 'circuit');
-function t8Engine(id, e) {
+// (design: for a sound with two synthetic designs, the one to play)
+function t8Engine(id, e, design) {
+  if (design && t8.syn[id] !== design) { t8.syn[id] = design; t8Save(); send({ type: 'scdesign808', id, design }); t8Draw(); }
   if (t8Eng(id) === e) return;
   if (e === 'sc') { t8SetModel(id, 'sc'); return; }
   t8SetModel(id, 'cached');
@@ -206,13 +211,16 @@ function t8Card(id, into) {
   card.className = 'm-808-v';
   card.innerHTML = `<div class="m-808-head"><button class="m-808-vname" type="button" title="${T8_NAME[id]}: tap to hear it">${id}</button>`
     + '<span class="m-808-models m-seg" role="group" aria-label="Plays as"><button class="m-toggle" type="button" data-m="circuit" title="The circuit simulation: plays from hits it renders by itself, the live circuit while you turn its knobs">circuit</button>'
-    + '<button class="m-toggle" type="button" data-m="sc" title="Synthetic: a simplified circuit, every knob live, a fraction of the CPU">synthetic</button></span></div>'
+    + (t8.syn[id]
+      ? '<button class="m-toggle" type="button" data-m="sc" data-d="1" title="Synthetic: algorithmic, resonators and noise fitted to recordings of an 808, not laid out like the circuit">synthetic</button>'
+        + '<button class="m-toggle" type="button" data-m="sc" data-d="2" title="Synthetic (circuit): a simplified circuit, laid out like the schematic">synthetic (circuit)</button></span></div>'
+      : '<button class="m-toggle" type="button" data-m="sc" title="Synthetic: a simplified circuit, every knob live, a fraction of the CPU">synthetic</button></span></div>')
     + '<div class="m-808-set"></div>'
     + '<span class="m-808-status"></span>'
     + '<button class="m-808-revert" type="button" hidden title="Forget your hits and go back to the shipped ones (default knobs)">revert</button>';
   into.append(card);
   card.querySelector('.m-808-vname').addEventListener('click', () => t8Audition(id));
-  card.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => t8Engine(id, b.dataset.m)));
+  card.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => t8Engine(id, b.dataset.m, Number(b.dataset.d) || 0)));
   card.querySelector('.m-808-revert').addEventListener('click', () => t8Revert(id));
   const box = card.querySelector('.m-808-set');
   for (const p of T8_PARAMS[id]) {
@@ -229,7 +237,7 @@ function t8Draw() {
   document.querySelectorAll('#m-allmodels [data-all]').forEach((b) => b.setAttribute('aria-pressed', T8_IDS.every((id) => t8Eng(id) === b.dataset.all)));
   for (const id in t8Cards) for (const card of t8Cards[id]) {
     const j = t8Jobs[id], c = t8Custom[id], st = card.querySelector('.m-808-status');
-    card.querySelectorAll('[data-m]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.m === t8Eng(id)));
+    card.querySelectorAll('[data-m]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.m === t8Eng(id) && (!b.dataset.d || Number(b.dataset.d) === t8.syn[id])));
     card.querySelector('.m-808-revert').hidden = !c || !!j;
     st.title = '';
     if (j) st.textContent = j.error ? 'failed' : j.total ? `${Math.round(100 * j.done / j.total)}%` : '…';

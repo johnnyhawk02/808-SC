@@ -3,6 +3,12 @@
 808-SC starts from 808 Circuit's history (johnnyhawk02/808-circuit, up to "Plugin: re-sign the macOS bundles so
 Ableton loads them").
 
+## 0.15.0
+
+- The snare has three keys on its card: **circuit**, **synthetic** and **synthetic (circuit)**.
+- **synthetic** is new here: the algorithmic snare from synthetic-808 (two resonators and filtered noise fitted to recordings of an 808, not laid out like the schematic). It lives in `voices/sc/snare.js`.
+- **synthetic (circuit)** is the synthetic snare 808 SC has had all along, laid out like the snare's schematic. It is still what the snare plays when everything is switched to synthetic, until you pick the other one; the choice is remembered.
+
 ## 0.14.0
 
 - On a laptop the app is now a window of fixed 16:10 proportion, centred in the browser. Everything in it scales together, so the layout is the same at every size.

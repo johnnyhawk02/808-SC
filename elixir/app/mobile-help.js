@@ -39,7 +39,8 @@ const HELP = [
 <li><b>o</b> presets, <b>/</b> search presets, <b>?</b> help. <b>esc</b> closes whatever is open.</li>
 <li>Click a knob or fader, then the arrow keys step it. Scroll on one with the mouse wheel or trackpad to turn it.</li>
 <li>Right-click a knob or fader for its step sequencer and reset. Double-click one to reset it.</li></ul>`],
-  ['more', 'more', `<ul><li>On a laptop the app is a window of fixed 16:10 shape: drag the small triangle in its bottom right corner to make it smaller or larger, and double click the triangle to fill the browser window again.</li>
+  ['more', 'more', `<ul><li>The snare has two synthetic keys on its card: <b>synthetic</b> is an algorithmic snare (resonators and noise fitted to recordings of an 808), <b>synthetic (circuit)</b> a simplified version of the snare's circuit. The key at the top that sets every sound to synthetic leaves the snare on whichever of the two you chose last.</li>
+<li>On a laptop the app is a window of fixed 16:10 shape: drag the small triangle in its bottom right corner to make it smaller or larger, and double click the triangle to fill the browser window again.</li>
 <li>The options menu (click the logo) holds randomise on next bar, assign knobs, the bass drum at the top of the grid, reset sound, and:</li>
 <li><b>background colour</b>: any colour for the panel, kept in this browser; the ink and the logo follow it (<b>background back to default</b> undoes it). <b>spot colour</b>: one colour for what is on or lit (pressed buttons, the page tab, play, the model keys; the grid's notes stay in the ink); red by default; <b>spot back to default</b> undoes a change.</li>
 <li><b>settings</b>: copy the knob assignments or your presets, export or clear presets.</li><li><b>tempo</b>: the slider at the top of the options menu (double-click it for 118).</li>

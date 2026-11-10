@@ -447,6 +447,7 @@ class Player {
     else if (m.type === 'set808') K.set(m.id, m.param, m.value);
     else if (m.type === 'vmix808') this.vmix[m.id] = { vol: m.vol / 127, pl: Math.sqrt((127 - m.pan) / 127), pr: Math.sqrt(m.pan / 127), echo: m.echo / 100, verb: m.verb / 100 };
     else if (m.type === 'model808') { this.want808[m.id] = m.model; K.setModel(m.id, m.model); }
+    else if (m.type === 'scdesign808') K.setScDesign(m.id, m.design); // (the snare's synthetic design, 1 or 2)
     else if (m.type === 'cache808') { K.loadCache(m.id, m.info, new Int16Array(m.pcm)); K.setModel(m.id, this.want808[m.id] || 'cached'); }
   }
   // a hit on track t: its 808 voice, accented or not (Elixir 808 plays no LXR voices). (The 808 voice takes the accent in

@@ -23,6 +23,7 @@ import { HalfbandDecimator } from './dsp.js';
 import { Metal, CB_HZ } from './metal.js';
 import { Bass808 } from './bass-808.js';
 import { Snare808 } from './snare-808.js';
+import { Snare } from './snare.js';
 import { Tom808 } from './tom-808.js';
 import { Rim808 } from './rim-808.js';
 import { Clap808, CLAP_808 } from './clap-808.js';
@@ -100,13 +101,19 @@ export class BDsc extends ScVoice {
   tick() { const p = this.p; return this.v.tick(0.5, p.tone, p.decay, 0.5, 1, p.click, p.attack); }
 }
 
+// The snare has two synthetic designs: 1, the algorithmic snare (voices/sc/snare.js: fitted resonators and noise,
+// not laid out like the circuit), and 2, the circuit-layout snare (voices/sc/snare-808.js). Both read the same knobs;
+// design 1 takes them as synthetic-808's panel does (its noise colour fixed at that app's 0.25).
 export class SDsc extends ScVoice {
-  constructor(sr, spec) { super(sr, 'sd', spec, 1); this.v = new Snare808(sr); }
-  fire(vel) { this.prepare(); this.v.pitch = pitchMul(this.p.pitch); this.v.trigger(vel); }
-  prepare() { const p = this.p; this.v.prepare({ tone: p.tone, snappy: p.snappy, decay: p.decay, ndec: p.snapdec, wires: p.wires }); }
-  tick() { return this.v.tick(0.5, 0.5); }
+  constructor(sr, spec) { super(sr, 'sd', spec, 1); this.v1 = new Snare(sr); this.v2 = new Snare808(sr); this.design = 2; this.v = this.v2; }
+  setDesign(n) { this.design = n === 1 ? 1 : 2; }
+  // (a hit that is still ringing finishes on the design it started on)
+  fire(vel) { this.v = this.design === 1 ? this.v1 : this.v2; this.prepare(); this.v.pitch = pitchMul(this.p.pitch); this.v.trigger(vel); }
+  prepare() { const p = this.p; this.v.prepare({ tone: p.tone, snappy: p.snappy, decay: p.decay, ndec: p.snapdec, wires: p.wires, color: 0.25 }); }
+  tick() { return this.v.tick(0.5, 0.5) * (this.v === this.v1 ? SD1_GAIN : 1); }
 }
 
+const SD1_GAIN = 1; // design 1 against design 2 at centred knobs (their levels already match there)
 const TOM_SLOT = { lt: 0, mt: 1, ht: 2, lc: 0, mc: 1, hc: 2 };
 export class TomSc extends ScVoice {
   constructor(sr, spec, id) {
